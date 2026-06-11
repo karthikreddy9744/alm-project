@@ -25,9 +25,8 @@ def analyze_audio(audio_input):
     try:
         transcript, scene, conf, ai_text = pipeline.run(audio, sr)
         
-        # Live Smoothing Logic
-        scene_buffer.append(scene)
-        smoothed_scene = max(set(scene_buffer), key=scene_buffer.count)
+        # Live Smoothing Logic (Removed for full timeline analysis in v4.0)
+        smoothed_scene = scene
         
     except Exception as e:
         return (f"Error during transcription: {str(e)}", 
@@ -36,7 +35,7 @@ def analyze_audio(audio_input):
     
     return (
         f'{transcript}' if transcript else '[No speech detected]',
-        f'{smoothed_scene} ({conf:.0%} Confidence)',
+        f'{smoothed_scene} ({conf*100:.1f}% Max Confidence)',
         ai_text
     )
 
@@ -84,7 +83,7 @@ with gr.Blocks(title='ALM — Audio Language Model') as demo:
                     ai_out = gr.Textbox(label='CASRE Scene Understanding & Action Engine', lines=6)
                 
                 with gr.TabItem("System Information"):
-                    gr.Markdown("### ALM Architecture\n1. **Whisper Encoder:** Extracts 512-D speech features.\n2. **CLAP Encoder:** Extracts 512-D environmental features.\n3. **Fusion Layer:** Combines features (1024-D -> 256-D) using LayerNorm and Dropout.\n4. **Scene Network:** Classifies 15 robust environmental scenes.\n5. **CASRE:** Cross-modal context reasoning engine.")
+                    gr.Markdown("### ALM v4.0 Architecture\n1. **Audio Frontend:** Silero VAD + LUFS Normalization.\n2. **Whisper Encoder:** VAD-guided transcript extraction.\n3. **CLAP Encoder:** 512-D environmental feature extraction.\n4. **Fusion Layer:** Advanced Cross-Attention Fusion (Transformer-based).\n5. **Scene Network:** Multi-label environment prediction (20 categories).\n6. **CASRE Engine:** Media playback detection, risk scoring, and timeline reasoning.")
     
     analyze_btn.click(
         analyze_audio,

@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 from core.inference_pipeline import ALMInferencePipeline, preprocess_audio_array
 
-from core.context_builder import SCENE_LABELS
+from core.casre_engine import SCENE_LABELS
 
 class TestInferencePipeline(unittest.TestCase):
     def setUp(self):

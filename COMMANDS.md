@@ -1,0 +1,104 @@
+# ALM Project: Quick Reference Commands
+
+This document contains all the essential terminal commands you will need to operate, train, test, and deploy the ALM (Audio Language Model) project. 
+
+> [!TIP]
+> **Important Note on `PYTHONPATH`:** 
+> For scripts inside the `training/` or `tests/` directories, you must prepend the command with `PYTHONPATH=.` so Python knows to look for the `core/` module in the root directory.
+
+---
+
+## 1. Environment Setup
+
+Before running anything, ensure your virtual environment is active and all required libraries are installed.
+
+**Activate Virtual Environment:**
+```bash
+source venv/bin/activate
+```
+*Why it's useful: Activates your local python environment where all the specific library versions (like PyTorch, Whisper, Gradio) are isolated.*
+
+**Install/Update Dependencies:**
+```bash
+pip install -r requirements.txt
+```
+*Why it's useful: Ensures you have the exact packages required to run the codebase without hitting `ModuleNotFoundError`. Run this whenever `requirements.txt` is updated.*
+
+---
+
+## 2. Running the Application
+
+**Launch the Gradio Browser Interface:**
+```bash
+python app.py
+```
+*Why it's useful: Boots up the interactive web UI where you can upload audio files, record from your microphone, and instantly see the CASRE Engine's timeline output and transcription in real-time.*
+
+---
+
+## 3. Training the Model
+
+**Run the Training Pipeline (Default):**
+```bash
+PYTHONPATH=. python training/train.py
+```
+*Why it's useful: Automatically generates the simulated multi-label dataset mixtures and trains the `FusionLayer` and `SceneContextNetwork` across 50 epochs. It triggers early stopping and saves the best model to `models/scene_model.pt`.*
+
+**Run Training with Custom Hyperparameters:**
+```bash
+PYTHONPATH=. python training/train.py --epochs 100 --batch_size 64 --lr 0.0005
+```
+*Why it's useful: Allows you to scale up training time or learning rates when moving from simulated data to actual large-scale production datasets like AudioSet.*
+
+**Run Dataset Builder (Standalone):**
+```bash
+PYTHONPATH=. python training/dataset_builder.py
+```
+*Why it's useful: Processes raw `.wav` or `.mp3` files into extracted numpy embeddings (Whisper/CLAP arrays) so that the `train.py` script can ingest them without having to process raw audio repeatedly.*
+
+---
+
+## 4. Evaluation & Testing
+
+**Evaluate the Trained Model:**
+```bash
+PYTHONPATH=. python training/evaluate.py
+```
+*Why it's useful: Runs the model over an evaluation dataset to compute the Accuracy, F1 Score, and a comprehensive Classification Report. It will also generate and display a visual Confusion Matrix plot using `matplotlib` and `seaborn`.*
+
+**Run All Unit Tests:**
+```bash
+PYTHONPATH=. pytest tests/
+```
+*Why it's useful: Automatically executes all the `test_pipeline.py`, `test_casre.py`, etc. validating that the inference pipeline functions properly, the layers connect seamlessly, and no bugs have been introduced into the core framework.*
+
+**Run a Specific Unit Test File:**
+```bash
+PYTHONPATH=. pytest tests/test_pipeline.py
+```
+*Why it's useful: Focuses the testing framework entirely on one script when you are actively debugging a single component.*
+
+---
+
+## 5. Conceptual FAQ
+
+**Q: What is the difference between `dataset_builder.py` and `train.py`?**
+* **`dataset_builder.py` (Prepping the Ingredients):** Raw audio files (`.wav`/`.mp3`) are heavy and slow to process. This script processes them through Whisper and CLAP exactly once, extracting their mathematical summaries ("embeddings"), and saves them to a lightweight data file.
+* **`train.py` (Cooking the Meal):** This script loads those lightweight embeddings instantly and feeds them into the neural network (`FusionLayer` and `SceneContextNetwork`) hundreds of times to mathematically adjust their weights. This makes training incredibly fast.
+
+**Q: What do the hyperparameters (`--epochs`, `--batch_size`, `--lr`) do?**
+* **`--epochs 100`:** Tells the model how many times to read through the entire dataset to memorize patterns.
+* **`--batch_size 64`:** Tells the model how many examples (flashcards) to process simultaneously before updating its memory weights. A larger batch size is faster and more stable but requires more RAM.
+* **`--lr 0.0005` (Learning Rate):** Controls how aggressively the model changes its mathematical weights when it makes a mistake. A lower learning rate makes tiny, careful adjustments resulting in much sharper and more precise final accuracy.
+
+---
+
+## 6. Process Flow: Handling Worst-Case & Critical Audio
+
+When dealing with terribly recorded, extremely noisy, or highly critical audio files, standard AI models fail completely. Our ALM v4.0 handles this via a strict 5-step pipeline flow:
+
+1. **LUFS Normalization (Audio Frontend):** Before anything else happens, the audio is mathematically forced to a perfect `-23 LUFS`. This instantly fixes audios that are recorded too quietly or aggressively loud.
+2. **Silero VAD Isolation:** Standard models try to transcribe static and wind, causing hallucinations. Silero mathematically isolates exactly which milliseconds contain human vocal cords, allowing Whisper to entirely bypass the wind and static.
+3. **CLAP Encoding:** Background noise (sirens, traffic) is not deleted. Instead, CLAP converts the noise into a 512-dimensional vector. The noise is transformed into highly critical data used to predict the environment.
+4. **Cross-Attention Fusion:** If speech is completely corrupted by deafening noise, the Attention mechanisms in the Fusion Layer mathematically lower the weight of the Whisper embeddings and heavily rely on the CLAP embeddings to figure out the context.
+5. **CASRE Reasoning:** As a final logic gate, CASRE compares the transcript to the environmental prediction. If the environment is "Siren & Alarm" (High Urgency) but the transcript has zero distress words, CASRE automatically flags a **Contradiction**. This catches fake audio, recorded media, or highly unusual real-world scenarios.

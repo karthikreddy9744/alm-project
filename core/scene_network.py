@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 class SceneContextNetwork(nn.Module):
-    def __init__(self, input_dim=256, num_classes=15):
+    def __init__(self, input_dim=256, num_classes=20):
         super().__init__()
         self.classifier = nn.Sequential(
             nn.Linear(input_dim, 128),

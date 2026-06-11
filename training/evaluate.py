@@ -10,7 +10,7 @@ import seaborn as sns
 from core.fusion_layer import FusionLayer
 from core.scene_network import SceneContextNetwork
 from training.train import ALMDataset, load_processed_data
-from core.context_builder import SCENE_LABELS
+from core.casre_engine import SCENE_LABELS
 
 def evaluate_model(data_path: str = "data/processed",
                    model_path: str = "models/scene_model.pt",

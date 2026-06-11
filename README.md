@@ -7,9 +7,9 @@ A deep learning system that **listens, thinks, and understands** both speech and
 - **Multi-modal Input**: Live microphone, file upload, and drag-and-drop audio
 - **Speech Analysis**: OpenAI's Whisper for transcription and speech embeddings
 - **Environmental Analysis**: CLAP (Contrastive Language-Audio Pretraining) for environmental sound classification
-- **Fusion Architecture**: Custom PyTorch fusion layer to combine speech + environmental embeddings
-- **Scene Classification**: 15 categories including Emergency, Traffic, Weather, Water, Wildlife, Indoor, Crowd, and more.
-- **Context-Aware Response Engine (CASRE)**: Generates natural language scene understanding without external LLMs
+- **Fusion Architecture**: Custom Transformer Cross-Attention Fusion layer to dynamically combine speech + environmental embeddings
+- **Scene Classification**: 20 categories including Traffic, Media, Emergency, Weather, Weather, Water, Wildlife, Indoor, Crowd, and more.
+- **Context-Aware Response Engine (CASRE)**: Generates natural language scene understanding, media detection, and risk scoring without external LLMs
 - **Premium UI/UX**: State-of-the-art Glassmorphic responsive interface with a dark theme and Google Inter typography.
 
 ## Architecture
@@ -17,15 +17,17 @@ A deep learning system that **listens, thinks, and understands** both speech and
 2. **Whisper Encoder**: Extracts 512-d speech embeddings and transcript (with repetition-based hallucination suppression)
 3. **CLAP Encoder**: Extracts 512-d environmental audio embeddings
 4. **Fusion Layer**: Combines embeddings into 256-d fused representation (regularized with `Dropout(0.3)` to prevent modality collapse)
-5. **Scene Context Network**: Classifies scene into 15 categories (trained with weighted CrossEntropyLoss for class balancing)
+5. **Scene Context Network**: Multi-label classification across 20 categories (trained with BCEWithLogitsLoss for class balancing)
 6. **CASRE**: Generates natural language explanation of scene + recommended action (featuring cross-modal contradiction detection)
 
-## 🚀 What's New in the Latest Production Upgrade
-- **Modality Collapse Prevention**: Added mathematical `Dropout` layers to force the network to utilize both speech and environmental features equally.
-- **Robust Hallucination Suppression**: Whisper's tendency to loop text on empty audio is instantly caught and sanitized using dynamic VAD energy thresholding.
-- **Dynamic Loss Weighting**: Implemented inverse-frequency weighting in `CrossEntropyLoss` to eliminate dataset biases.
-- **Synthetic Silence Class**: Expanded the classifier with a distinct "Silence/Unknown" category for graceful handling of dead air.
-- **Live Stream Smoothing**: Added a `collections.deque` rolling buffer to prevent UI flickering during live microphone transcription.
+## 🚀 What's New in ALM v4.0 (Master Architecture Rewrite)
+- **Cross-Attention Fusion**: Replaced basic MLP with a Transformer-based `nn.MultiheadAttention` fusion layer.
+- **Sliding-Window Temporal Pipeline**: Analyzes audio in 5-second overlapping chunks to generate an exact timeline of acoustic events.
+- **Silero VAD Frontend**: Completely eliminates Whisper hallucinations by slicing audio into strictly validated speech chunks before transcription.
+- **Multi-Label Expansion**: Upgraded to 20 classes using independent Sigmoid outputs and `BCEWithLogitsLoss`, accurately detecting mixed environments.
+- **Next-Gen CASRE**: The reasoning engine now computes Risk Scores, detects Media Playback (Movies/TV), and prevents semantic contradictions.
+
+
 - **Premium Glassmorphic UI**: Redesigned Gradio dashboard with dark slate themes, CSS backdrop filters, and modern Inter typography.
 
 ## Setup & Installation
@@ -62,7 +64,7 @@ alm-project/
 │   ├── feature_extractor.py   # Whisper + CLAP feature extractors
 │   ├── fusion_layer.py        # Fusion neural network
 │   ├── scene_network.py       # Scene classification network
-│   ├── context_builder.py     # Context-Aware Smart Response Engine (CASRE)
+│   ├── casre_engine.py     # Context-Aware Smart Response Engine (CASRE)
 │   └── inference_pipeline.py  # Full inference pipeline
 ├── models/                    # Model checkpoints
 │   └── scene_model.pt         # Trained fusion+scene weights

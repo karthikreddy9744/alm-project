@@ -6,6 +6,7 @@ from transformers import (
     ClapModel,
     ClapProcessor
 )
+from core.audio_utils import SileroVADWrapper
 
 class WhisperFeatureExtractor:
     def __init__(self, model_size='base'):
@@ -32,13 +33,46 @@ class WhisperFeatureExtractor:
             chunk_length_s=30,
             device=self.device,
             generate_kwargs={
-                "task": "transcribe"
+                "task": "transcribe",
+                "condition_on_prev_tokens": False,
+                "repetition_penalty": 1.5,
+                "no_repeat_ngram_size": 3
             }
         )
+        
+        # Initialize Silero VAD
+        self.vad = SileroVADWrapper(threshold=0.3)
 
     @torch.inference_mode()
     def extract(self, audio: np.ndarray, sr: int = 16000):
-        transcript = self.transcriber(audio)['text'].strip()
+        # 1. Voice Activity Detection (VAD)
+        timestamps = self.vad.get_timestamps(audio, sr)
+        
+        transcript_parts = []
+        # 2. VAD-Guided Transcription with Repetition Suppression
+        if len(timestamps) > 0:
+            for t in timestamps:
+                start_sample = t['start']
+                end_sample = t['end']
+                
+                if (end_sample - start_sample) / sr > 0.2:
+                    speech_chunk = audio[start_sample:end_sample]
+                    text = self.transcriber(speech_chunk)['text'].strip()
+                    
+                    # 3. Hallucination Post-Filtering
+                    if text:
+                        words = text.lower().split()
+                        if len(words) > 0:
+                            unique_words = set(words)
+                            rep_ratio = len(unique_words) / len(words)
+                            # Suppress pathological loops (like "AHHHH AHHHH")
+                            if rep_ratio > 0.3 or len(words) < 5:
+                                # Truncate absurdly long continuous spam
+                                if len(text) > 200 and rep_ratio < 0.5:
+                                    text = text[:200] + "..."
+                                transcript_parts.append(text)
+        
+        transcript = " ".join(transcript_parts).strip()
         
         # Extract embeddings using only the encoder
         inputs = self.processor(audio, sampling_rate=sr, return_tensors='pt')

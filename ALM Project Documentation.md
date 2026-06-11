@@ -4,7 +4,7 @@ School of Engineering
 
 Venkatapur (V), Ghatkesar (M), Medchal Dist – 500088, Telangana
 
-**MINI PROJECT DOCUMENTATION — VERSION 3.0**
+**MINI PROJECT DOCUMENTATION — VERSION 4.0**
 
 Mini Project (2 Credits) — IV Year B.Tech I Semester
 
@@ -14,7 +14,7 @@ Listen • Think • Understand
 
 **Revision Note:**
 
-Version 3.0 represents a comprehensive production-grade architectural and robustness upgrade, featuring an 11-phase rewrite of the internal mechanisms. Key upgrades include mathematically weighted `CrossEntropyLoss` for class balancing, `Dropout(0.3)` layers added to the Fusion and Scene networks to prevent modality collapse, dynamic Voice Activity Detection (VAD) and RMS energy thresholding for hallucination suppression, and an expanded 15-class Scene Context Network that includes a synthetic 'Silence' category. The UI was fully redesigned with a Glassmorphic responsive interface.
+Version 4.0 represents a massive architectural overhaul architectural and robustness upgrade, featuring a 13-phase rewrite of the internal mechanisms. Key upgrades include mathematically `BCEWithLogitsLoss` for true multi-label capabilities for class balancing, `Dropout(0.3)` layers added to the Fusion and Scene networks to prevent modality collapse, dynamic Voice Activity Detection (VAD) and RMS energy thresholding for hallucination suppression, and an expanded 20-class Multi-Label Scene Context Network that includes a synthetic 'Silence' category. The UI was fully redesigned with a Glassmorphic responsive interface.
 
 All core deep learning components (Whisper + CLAP + Fusion + Scene Network) remain intact, but their resilience, mathematical fairness, and deployment stability have been substantially elevated.
 
@@ -31,9 +31,7 @@ All core deep learning components (Whisper + CLAP + Fusion + Scene Network) rema
 | **Version** | **Date** | **Changes** |
 | 1.0 | June 2026 | Initial documentation — full pipeline including Phi-2 LLM as reasoning engine. |
 | 2.0 | June 2026 | Replaced Phi-2 with Context-Aware Smart Response Engine (CASRE) for deployment stability. |
-| 3.0 | June 2026 | Expanded the scene classification classes from 5 to 15 highly granular categories. Adjusted data mapping and retraining strategies for 15 classes. |
-
-**📌 This is a planned engineering revision, not a downgrade. Replacing a large LLM with a purpose-built response engine is standard practice in production ML systems where reliability takes priority over model complexity.**
+| 3.0 | June 2026 | Expanded the scene classification classes from 5 to 15 highly granular categories. |\n| 4.0 | June 2026 | v4.0 Master Rewrite: Silero VAD, Cross-Attention Fusion, Multi-Label BCEWithLogitsLoss, Sliding-Window Temporal Timeline, and Next-Gen CASRE. |
 
 # **Abstract**
 
@@ -41,7 +39,7 @@ Speech and environmental audio have traditionally been processed through entirel
 
 This project presents an Audio Language Model (ALM) — a deep learning system designed to Listen, Think, and Understand both speech and non-speech audio simultaneously. The proposed system integrates OpenAI's Whisper encoder for speech feature extraction, CLAP (Contrastive Language-Audio Pretraining) for environmental audio analysis, and a custom PyTorch fusion layer that merges both feature streams into a unified scene representation. A Context-Aware Smart Response Engine (CASRE) generates natural-language interpretations by analyzing transcript semantics, scene classification confidence, and environmental probability distributions — without dependency on large external language models.
 
-The system classifies audio scenes into 15 primary categories (including Emergency, Traffic, Weather, Water, Wildlife, Indoor, and Crowd), trained on the ESC-50 environmental sound dataset combined with LibriSpeech speech embeddings. A Gradio-based web interface provides three input modalities: live microphone recording, drag-and-drop, and file upload (.wav, .mp3, .flac, .m4a).
+The system classifies audio scenes into 20 multi-label categories (including Emergency, Traffic, Weather, Water, Wildlife, Indoor, and Crowd), trained on the ESC-50 environmental sound dataset combined with LibriSpeech speech embeddings. A Gradio-based web interface provides three input modalities: live microphone recording, drag-and-drop, and file upload (.wav, .mp3, .flac, .m4a).
 
 The architecture demonstrates genuine deep learning integration. Key contributions include: (1) a dual-encoder fusion architecture combining Whisper and CLAP embeddings, (2) a Scene Context Network trained from scratch on ESC-50, (3) a Context-Aware Smart Response Engine providing deployment-stable natural language generation, and (4) a fully deployable Gradio interface on Hugging Face Spaces with guaranteed stability on free-tier compute.
 
@@ -69,9 +67,9 @@ Phase 3: Fusion Layer Design
 
 Phase 4: Scene Context Network Training
 
-Phase 5: Context-Aware Smart Response Engine (CASRE) ← UPDATED v3.0
+Phase 5: Context-Aware Smart Response Engine (CASRE) ← UPDATED v4.0
 
-Phase 6: Inference Pipeline ← UPDATED v3.0
+Phase 6: Inference Pipeline ← UPDATED v4.0
 
 Phase 7: Gradio UI Development
 
@@ -117,8 +115,6 @@ This architectural separation is a significant limitation for real-world intelli
 | Non-speech | Environmental sound | CLAP encoder → 512-dim embedding |
 | Together | Unified understanding | Custom PyTorch fusion layer \[1024 → 256\] |
 
-**📌 v2.0 Change: 'Understand' is now fulfilled by CASRE instead of Phi-2. The requirement is fully met — the system still generates natural language understanding. Only the mechanism changed.**
-
 ## **1.3 Objectives**
 
 1.  Design and implement a multi-modal deep learning pipeline processing both speech and non-speech audio features.
@@ -148,33 +144,7 @@ ESC-50 contains 2,000 audio clips (5 seconds, 44.1kHz) across 50 environmental s
 
 Reference: Piczak, K. J. (2015). ESC: Dataset for Environmental Sound Classification. ACM Multimedia 2015.
 
-## **2.4 Design Decision: Context-Aware Smart Response Engine vs. LLM**
-
-Version 1.0 of this project planned to use Microsoft Phi-2 (2.7B parameters) as the language reasoning component, following the SALMONN architecture (Tang et al., 2023). After deployment analysis, Phi-2 was replaced with CASRE in Version 2.0.
-
-### **2.4.1 Why Not Phi-2 in Production**
-
-|     |     |     |
-| --- | --- | --- |
-| **Risk Factor** | **Phi-2 (v1.0)** | **CASRE (v2.0)** |
-| RAM Usage | ~5.5GB (fp16) — often OOM on free tier | ~0MB — pure Python logic |
-| Inference Time | 10–60s on CPU | <1ms always |
-| Cold Start | Adds 60–120s model load | Zero — no model to load |
-| Crash Risk | High on free HF Spaces | None |
-| Dependencies | transformers, accelerate | None — stdlib Python only |
-| DL Contribution | Unchanged | Unchanged |
-
-### **2.4.2 What CASRE Provides That LLM Also Provides**
-
-- Natural language output describing the detected scene.
-- Confidence-aware response tone (assertive, cautious, uncertain).
-- Transcript-semantic analysis (keyword detection in speech).
-- Cross-modal fusion logic (combining transcript + scene + probabilities).
-- Recommended action per scene class.
-
-**📌 CASRE fulfills every user-facing requirement of 'Understand' without any deployment risk. The academic contribution remains the deep learning fusion architecture — CASRE is the output formatter, not the novel contribution.**
-
-## **2.5 Related Systems Comparison**
+## **2.4 Related Systems Comparison**
 
 |     |     |     |     |
 | --- | --- | --- | --- |
@@ -182,14 +152,14 @@ Version 1.0 of this project planned to use Microsoft Phi-2 (2.7B parameters) as 
 | Whisper ASR | Yes | No  | Transcript only |
 | YAMNet / PANNs | No  | Yes | No  |
 | SALMONN (2023) | Yes | Yes | Yes (13B LLM, expensive) |
-| ALM v1.0 (Phi-2) | Yes | Yes | Yes (2.7B LLM, unstable) |
-| ALM v3.0 (CASRE) | Yes | Yes | Yes (CASRE, stable) |
+
+| ALM v4.0 (CASRE) | Yes | Yes | Yes (CASRE, stable) |
 
 # **3\. System Architecture & Design**
 
 ## **3.1 High-Level Architecture (v2.0)**
 
-The ALM v3.0 system follows a five-stage pipeline. The only change from v1.0 is Stage 5: CASRE replaces Phi-2. Stages 1–4 are identical.
+The ALM v4.0 system follows a five-stage pipeline. The only change from v1.0 is Stage 5: CASRE replaces Phi-2. Stages 1–4 are identical.
 
 ## **3.2 Architecture Diagram**
 
@@ -251,9 +221,9 @@ The ALM v3.0 system follows a five-stage pipeline. The only change from v1.0 is 
 
 │ Linear(256→128)→ReLU→Dropout → Linear(128→64)→ReLU │
 
-│ → Linear(64→15) → Softmax │
+│ → Linear(64→20) → Sigmoid (Multi-Label) │
 
-│ Output: Scene Class + Confidence Score │
+│ Output: Scene Probabilities + Temporal Timeline │
 
 └──────────────────────────┬──────────────────────────────────┘
 
@@ -320,17 +290,15 @@ The ALM v3.0 system follows a five-stage pipeline. The only change from v1.0 is 
 | Deep Learning | PyTorch | \>=2.0 | Industry standard; Colab GPU support; custom layers |
 | ASR Engine | faster-whisper | \>=0.10 | 4x faster than original Whisper, 2x less memory |
 | Audio-Language | CLAP | laion/clap-htsat-fused | SOTA audio-text alignment; open source |
-| Response Engine | CASRE (custom) | v3.0 (this project) | Zero RAM, <1ms latency, deployment-stable, no dependencies |
+| Response Engine | CASRE (custom) | v4.0 (this project) | Zero RAM, <1ms latency, deployment-stable, no dependencies |
 | Audio Processing | librosa | \>=0.10 | Industry standard; resampling; format support |
 | Transformers | transformers | \>=4.35 | Required for CLAP model loading from HF hub |
 | Training | Google Colab | T4 GPU (free) | Free GPU; sufficient for ESC-50 training |
 | Deployment | HF Spaces | Gradio SDK | Free hosting; permanent public URL; stable with CASRE |
 
-**📌 v2.0 Change: 'Language Model (Phi-2)' row removed. 'accelerate' package removed from requirements. 'transformers' kept — still required for CLAP.**
-
 ## **4.2 Updated requirements.txt**
 
-\# requirements.txt — ALM v3.0
+\# requirements.txt — ALM v4.0
 
 gradio>=3.50
 
@@ -350,8 +318,7 @@ soundfile>=0.12.0
 
 datasets>=2.14.0
 
-\# REMOVED in v2.0:
-
+\
 \# accelerate>=0.24.0 (was only needed for Phi-2)
 
 \# No LLM dependencies — CASRE is pure Python
@@ -364,7 +331,7 @@ LibriSpeech provides English speech audio for generating Whisper encoder embeddi
 
 ## **5.2 ESC-50 Class Mapping**
 
-The 50 original classes from ESC-50 are mapped into 15 highly-granular logical environmental categories:
+The 50 original classes from ESC-50 are mapped into 20 multi-label environmental categories:
 1. Emergency
 2. Traffic
 3. Weather
@@ -421,23 +388,21 @@ CASRE combines transcript keyword analysis, confidence-level tone selection, and
 The full pipeline ties together preprocessing, feature extraction, fusion, classification, and CASRE.
 
 ## **Phase 7: Gradio UI**
-A Gradio-based web interface handles microphone, upload, and drag-and-drop inputs. In v3.0, the UI was upgraded with a responsive, modern Glassmorphic design, a premium dark theme, and custom Google Inter typography to provide an enterprise-grade user experience.
+A Gradio-based web interface handles microphone, upload, and drag-and-drop inputs. In v4.0, the UI was upgraded with a responsive, modern Glassmorphic design, a premium dark theme, and custom Google Inter typography to provide an enterprise-grade user experience.
 
-## **Phase 8: Deployment — UPDATED v3.0**
+## **Phase 8: Deployment — UPDATED v4.0**
 
-### **Memory Profile Comparison**
+### **Memory Profile**
 
-|     |     |     |
-| --- | --- | --- |
-| **Component** | **v1.0 RAM** | **v3.0 RAM** |
-| Whisper base | ~150MB | ~150MB |
-| CLAP | ~600MB | ~600MB |
-| Fusion + Scene Net | ~5MB | ~5MB |
-| Phi-2 (fp16) | ~5,500MB | REMOVED |
-| CASRE | N/A | ~0MB (pure Python) |
-| TOTAL | ~6.2GB — RISKY | ~755MB — SAFE |
+| **Component** | **v4.0 RAM** |
+| --- | --- |
+| Whisper base | ~150MB |
+| CLAP | ~600MB |
+| Fusion + Scene Net | ~5MB |
+| CASRE | ~0MB (pure Python) |
+| **TOTAL** | **~755MB — SAFE** |
 
-**📌 v3.0 total RAM usage is ~755MB — well within HF Spaces free tier limit of 16GB. The app will load in under 30 seconds including cold start. No crash risk.**
+**📌 v4.0 total RAM usage is ~755MB — well within free tier limits. No crash risk.**
 
 # **7\. Code Structure & File Organization**
 
@@ -461,9 +426,9 @@ alm-project/
 
 │ ├── scene_network.py ← SceneContextNetwork \[UNCHANGED\]
 
-│ ├── context_builder.py ← CASRE engine \[UPDATED v3.0\]
+│ ├── casre_engine.py ← CASRE engine [UPDATED v4.0]
 
-│ └── inference_pipeline.py ← Full pipeline \[UPDATED v3.0\]
+│ └── inference_pipeline.py ← Full pipeline \[UPDATED v4.0\]
 
 │
 
@@ -515,9 +480,9 @@ alm-project/
 
 Training is unchanged from v1.0. Only the inference stage (Phase 5/6) was updated. The Fusion Layer and Scene Context Network training procedure, loss function, optimizer, and evaluation remain identical.
 
-## **8.1 Loss Function: CrossEntropyLoss**
+## **8.1 Loss Function: BCEWithLogitsLoss**
 
-criterion = nn.CrossEntropyLoss()
+criterion = nn.BCEWithLogitsLoss()
 
 optimizer = torch.optim.AdamW(
 
@@ -546,7 +511,7 @@ scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=50)
 
 ## **9.1 Metrics**
 
-- Accuracy, Macro F1, Per-class Precision/Recall, Confusion Matrix.
+- Micro/Macro F1-Score, Precision, Recall, Confusion Matrix.
 
 ## **9.2 Expected Performance**
 
@@ -562,19 +527,18 @@ scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=50)
 
 # **10\. Deployment Guide**
 
-## **10.1 Deployment Risk Summary (v2.0)**
+## **10.1 Deployment Risk Summary**
 
-|     |     |     |     |
-| --- | --- | --- | --- |
-| **Component** | **v1.0 Risk** | **v3.0 Risk** | **Status** |
-| Gradio UI | 1/10 | 1/10 | Unchanged — stable |
-| Fusion Layer | 1/10 | 1/10 | Unchanged — stable |
-| Scene Network | 1/10 | 1/10 | Unchanged — stable |
-| Whisper base | 3/10 | 3/10 | Unchanged — manageable |
-| CLAP | 4/10 | 4/10 | Unchanged — cached after first load |
-| HF Deployment | 5/10 | 2/10 | Dramatically improved — only 755MB total |
-| Phi-2 / CASRE | 8/10 | 0/10 | CASRE: zero risk — pure Python |
-| OVERALL | HIGH RISK | LOW RISK | Safe for free-tier permanent deployment |
+| **Component** | **Risk** | **Status** |
+| --- | --- | --- |
+| Gradio UI | 1/10 | Unchanged — stable |
+| Fusion Layer | 1/10 | Unchanged — stable |
+| Scene Network | 1/10 | Unchanged — stable |
+| Whisper base | 3/10 | Unchanged — manageable |
+| CLAP | 4/10 | Unchanged — cached after first load |
+| HF Deployment | 2/10 | Dramatically improved — only 755MB total |
+| CASRE | 0/10 | CASRE: zero risk — pure Python |
+| **OVERALL** | **LOW RISK** | **Safe for free-tier permanent deployment** |
 
 ## **10.2 Hugging Face Spaces Deployment Steps**
 
@@ -586,7 +550,7 @@ scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=50)
 
 # **11\. Viva-Voce Preparation: Questions & Answers**
 
-This chapter provides 45 comprehensive Q&A pairs. Questions 1–30 cover core concepts. Questions 31–40 cover project-specific topics. Questions 41–45 specifically cover the v2.0 architectural decision.
+This chapter provides 40 comprehensive Q&A pairs. Questions 1–30 cover core concepts. Questions 31–40 cover project-specific topics.
 
 ## **Section A: Problem & Motivation (Q1–Q8)**
 
@@ -648,9 +612,9 @@ LayerNorm normalizes activations across feature dimensions: x_norm = (x - mean(x
 
 Dropout randomly zeros a fraction of activations during training (p=0.3). This prevents co-adaptation — neurons cannot rely on specific others always being present — forcing each to learn robust independent features. Reduces overfitting on the small ESC-50 dataset (2,000 clips). Disabled automatically at inference via model.eval().
 
-### **Q15. Why CrossEntropyLoss for classification?**
+### **Q15. Why BCEWithLogitsLoss for classification?**
 
-CrossEntropyLoss = -log(p_correct_class). It directly minimizes the negative log-likelihood of the correct class, pushing maximum probability to the right class. MSELoss would treat class indices as regression targets — semantically meaningless. CrossEntropyLoss internally applies LogSoftmax for numerical stability.
+BCEWithLogitsLoss = -log(p_correct_class). It directly minimizes the negative log-likelihood of the correct class, pushing maximum probability to the right class. MSELoss would treat class indices as regression targets — semantically meaningless. BCEWithLogitsLoss internally applies LogSoftmax for numerical stability.
 
 ### **Q16. What is AdamW?**
 
@@ -688,7 +652,7 @@ During backpropagation, gradients multiply through layers and can approach zero 
 
 ### **Q24. Explain Softmax.**
 
-softmax(z_i) = exp(z_i) / Σ_j exp(z_j). Converts raw logits to a valid probability distribution: all outputs positive, sum to 1, amplifies differences. Scene confidence = max(softmax(logits)). Used in inference only — CrossEntropyLoss internally applies LogSoftmax during training for numerical stability.
+softmax(z_i) = exp(z_i) / Σ_j exp(z_j). Converts raw logits to a valid probability distribution: all outputs positive, sum to 1, amplifies differences. Scene confidence = max(softmax(logits)). Used in inference only — BCEWithLogitsLoss internally applies LogSoftmax during training for numerical stability.
 
 ### **Q25. How do you prevent overfitting?**
 
@@ -722,11 +686,11 @@ Whisper returns empty transcript. \_analyze_transcript() returns type='empty'. C
 
 ### **Q32. Computational requirements for inference?**
 
-v3.0 on CPU (HF Spaces): Whisper ~150ms, CLAP ~200ms, Fusion+Scene ~1ms, CASRE <1ms. Total: ~350ms per clip. On GPU (Colab T4): ~50–100ms total. Memory: Whisper ~150MB + CLAP ~600MB + custom models ~5MB + CASRE 0MB = ~755MB total.
+v4.0 on CPU (HF Spaces): Whisper ~150ms, CLAP ~200ms, Fusion+Scene ~1ms, CASRE <1ms. Total: ~350ms per clip. On GPU (Colab T4): ~50–100ms total. Memory: Whisper ~150MB + CLAP ~600MB + custom models ~5MB + CASRE 0MB = ~755MB total.
 
 ### **Q33. How does HF Spaces deployment work?**
 
-Create Space → select Gradio SDK → push app.py + requirements.txt + core/ + models/. HF Spaces detects app.py as entry point, auto-installs requirements, runs in Docker container. In v3.0 with no LLM, startup time is ~25-30 seconds including CLAP model download (cached after first start). Public URL is permanent.
+Create Space → select Gradio SDK → push app.py + requirements.txt + core/ + models/. HF Spaces detects app.py as entry point, auto-installs requirements, runs in Docker container. In v4.0 with no LLM, startup time is ~25-30 seconds including CLAP model download (cached after first start). Public URL is permanent.
 
 ### **Q34. What is the circular from Anurag University about?**
 
@@ -755,78 +719,3 @@ Error handling (try/except throughout), input validation (file size, format, len
 ### **Q40. Summarize the novel contribution.**
 
 Novel contributions: (1) Dual-encoder heterogeneous fusion — custom PyTorch architecture combining Whisper speech embeddings \[512d\] + CLAP environmental embeddings \[512d\] through a learned MLP fusion layer; (2) First mini-project-scale implementation of speech+non-speech joint understanding; (3) CASRE — a purpose-built cross-modal reasoning engine that combines transcript semantics, confidence levels, and scene classifications into structured natural language; (4) Full production-stable deployment pipeline on free infrastructure.
-
-## **Section E: Architecture Decision Questions (Q41–Q45) — v3.0 Specific**
-
-### **Q41. Why did you remove Phi-2 from your system?**
-
-Phi-2 (2.7B parameters) requires approximately 5.5GB RAM in fp16 precision. Combined with Whisper (~150MB) and CLAP (~600MB), the total v1.0 memory footprint was ~6.2GB. On Hugging Face Spaces free tier with shared resources and 16GB limits, this regularly caused Out-of-Memory crashes, app restarts, and 10–60 second inference delays. Phi-2 inference on CPU alone takes 30–60 seconds — longer than any user would wait. CASRE achieves the same user-facing 'Understand' requirement with zero RAM overhead and sub-millisecond response time.
-
-### **Q42. Does removing Phi-2 reduce the deep learning contribution?**
-
-No. The deep learning contribution of this project is the dual-encoder fusion architecture: Whisper encoder + CLAP encoder + custom Fusion Layer + Scene Context Network. These four components are entirely unchanged. Phi-2 was the output formatter — a frozen, non-trainable component that simply generated text from a prompt. The novel deep learning work was always in the fusion and classification stages, not in prompting a pretrained LLM. CASRE is a more sophisticated output formatter that happens to be more reliable.
-
-### **Q43. How does CASRE demonstrate 'Understand' without an LLM?**
-
-CASRE demonstrates understanding through three mechanisms that mirror what an LLM does: (1) Semantic analysis — it reads the transcript and detects meaning (distress, question, calm, neutral) using keyword banks; (2) Confidence-aware reasoning — it adjusts response tone based on model certainty, producing assertive responses for high confidence and cautious responses for low confidence; (3) Cross-modal fusion logic — it detects contradictions and confirmations between speech content and environmental classification (Emergency scene + distress speech is different from Emergency scene + calm speech). These are genuine reasoning steps, not just template fill-ins.
-
-### **Q44. Is this a standard engineering practice?**
-
-Yes. Replacing a large general-purpose LLM with a purpose-built, domain-specific reasoning engine is standard practice in production ML systems. Examples: Google's on-device assistant uses rule-based NLG for many responses rather than a large LLM to meet latency requirements; production recommendation systems use structured response generation rather than GPT for speed and reliability; embedded AI systems always use the lightest model that meets the requirement. Using the simplest reliable solution for a known output format is good engineering judgment.
-
-### **Q45. If you had more compute, what would you add back?**
-
-With GPU deployment (HF Spaces T4 upgrade, ~$0.60/hour) or a paid tier: Re-introduce a small fine-tuned LLM (distilgpt2 at 82M params, or TinyLlama at 1.1B params) fine-tuned on audio scene descriptions using QLoRA. This would give more varied, contextually richer responses while fitting in ~2GB VRAM. Phi-2 could also be reconsidered on paid GPU tier where inference takes ~1-3 seconds instead of 30-60. The CASRE architecture would remain as a CPU fallback.
-
-# **12\. Seminar Presentation Guide**
-
-## **12.1 Slide Structure (15 slides, 15 minutes)**
-
-|     |     |     |     |
-| --- | --- | --- | --- |
-| **#** | **Slide Title** | **Key Content** | **Time** |
-| 1   | Title Slide | Project name, university, date | 30 sec |
-| 2   | Motivation | Why ASR alone is insufficient | 1 min |
-| 3   | Problem Statement | Keyword decomposition table | 1 min |
-| 4   | Related Work | Comparison table incl. v2.0 vs v3.0 | 1 min |
-| 5   | System Overview | 5-stage pipeline diagram | 1 min |
-| 6   | Architecture | Dual encoder + fusion detail | 2 min |
-| 7   | Feature Extraction | Whisper \[512\] + CLAP \[512\] | 1 min |
-| 8   | Fusion & Training | Fusion layer; CrossEntropyLoss | 1 min |
-| 9   | Datasets | ESC-50 mapping + LibriSpeech | 1 min |
-| 10  | CASRE Engine | 5-step logic; example output | 1 min |
-| 11  | UI Demo | Gradio 3 input modes | 1 min |
-| 12  | Live Demo / Video | Running system | 2 min |
-| 13  | Results | F1 per class; bar chart | 1 min |
-| 14  | Limitations & Future | Known limits; 3 future directions | 30 sec |
-| 15  | Conclusion & Refs | Summary; references; Q&A | 30 sec |
-
-## **12.2 How to Explain the CASRE Decision in Seminar**
-
-If asked 'why did you remove Phi-2', say exactly this:
-
-"During deployment testing we identified that Phi-2's 2.7B parameters require 5.5GB RAM — which caused Out-of-Memory failures on free infrastructure. Rather than compromise deployment stability, we engineered a purpose-built Context-Aware Smart Response Engine that delivers equivalent natural language output with zero RAM overhead. This reflects a real-world engineering decision: use the lightest solution that fully meets the requirement. The deep learning contribution — the dual-encoder fusion architecture — is entirely unchanged."
-
-# **13\. References**
-
-## **13.1 Primary Papers**
-
-1.  Radford, A., Kim, J. W., Xu, T., et al. (2022). Robust Speech Recognition via Large-Scale Weak Supervision. arXiv:2212.04356. https://arxiv.org/abs/2212.04356
-2.  Wu, Y., Chen, K., Zhang, T., et al. (2022). Large-Scale Contrastive Language-Audio Pretraining with Feature Fusion. arXiv:2211.06687. https://arxiv.org/abs/2211.06687
-3.  Tang, C., Yu, W., Sun, G., et al. (2023). SALMONN: Towards Generic Hearing Abilities for Large Language Models. arXiv:2310.13289. https://arxiv.org/abs/2310.13289
-4.  Piczak, K. J. (2015). ESC: Dataset for Environmental Sound Classification. ACM Multimedia 2015. https://github.com/karolpiczak/ESC-50
-
-## **13.2 Foundational Papers**
-
-1.  Vaswani, A., et al. (2017). Attention Is All You Need. NeurIPS 30. https://arxiv.org/abs/1706.03762
-2.  Panayotov, V., et al. (2015). Librispeech: An ASR Corpus Based on Public Domain Audio Books. ICASSP 2015. https://openslr.org/12
-3.  Loshchilov, I., & Hutter, F. (2019). Decoupled Weight Decay Regularization. ICLR 2019. https://arxiv.org/abs/1711.05101
-
-## **13.3 Software**
-
-1.  faster-whisper: https://github.com/guillaumekln/faster-whisper
-2.  LAION CLAP: https://github.com/LAION-AI/CLAP
-3.  Gradio: https://www.gradio.app/docs
-4.  Hugging Face Transformers: https://huggingface.co/docs/transformers
-5.  PyTorch: https://pytorch.org/docs
-6.  librosa: https://librosa.org/doc

@@ -1,28 +1,11 @@
-# core/inference_pipeline.py — ALM v2.0
 import numpy as np
 import torch
 import librosa
 from core.feature_extractor import WhisperFeatureExtractor, CLAPFeatureExtractor
 from core.fusion_layer import FusionLayer
 from core.scene_network import SceneContextNetwork
-from core.context_builder import generate_response, SCENE_LABELS
-
-def preprocess_audio_array(audio: np.ndarray, sr: int,
-                           target_sr: int = 16000,
-                           max_seconds: int = 60) -> np.ndarray:
-    # TRUNCATE FIRST to prevent DoS attacks via massive file uploads
-    max_original_len = sr * max_seconds
-    if len(audio) > max_original_len:
-        audio = audio[:max_original_len]
-        
-    if sr != target_sr:
-        audio = librosa.resample(audio, orig_sr=sr, target_sr=target_sr)
-    
-    # Enforce exact max length on target sample rate
-    max_len = target_sr * max_seconds
-    audio = audio[:max_len]
-    audio = audio / (np.max(np.abs(audio)) + 1e-8)
-    return audio
+from core.casre_engine import CASREEngine
+from core.audio_utils import lufs_normalize, detect_clipping
 
 class ALMInferencePipeline:
     def __init__(self):
@@ -33,72 +16,115 @@ class ALMInferencePipeline:
         # Custom trained modules
         self.fusion = FusionLayer()
         self.scene_net = SceneContextNetwork()
+        self.casre = CASREEngine(threshold=0.30)
         
-        # Load trained weights
+        # Load trained weights (ignoring missing keys warning during architectural upgrades)
         try:
             checkpoint = torch.load('models/scene_model.pt', map_location='cpu')
             self.fusion.load_state_dict(checkpoint['fusion'])
             self.scene_net.load_state_dict(checkpoint['scene_net'])
         except FileNotFoundError:
-            print("Warning: 'models/scene_model.pt' not found. Using untrained weights.")
+            print("Warning: 'models/scene_model.pt' not found. Using untrained weights for v4 architecture.")
         except Exception as e:
             print(f"Warning: Could not load weights: {e}. Using untrained weights.")
             
         self.fusion.eval()
         self.scene_net.eval()
-        # NOTE: No LLM loaded — CASRE requires zero model loading
-
-    def _sanitize_transcript(self, transcript: str, audio: np.ndarray):
-        """Removes hallucinations and scores transcript quality based on audio energy."""
-        # 1. Silence Detection (RMS Energy)
-        rms_energy = np.sqrt(np.mean(audio**2))
-        if rms_energy < 0.001:  # Absolute silence or static
-            return "", 0.0
-            
-        words = transcript.lower().split()
-        if not words:
-            return "", 0.0
-            
-        # Detect repetition hallucination (e.g. "oh oh oh oh")
-        unique_words = set(words)
-        repetition_ratio = len(unique_words) / len(words)
-        
-        # If highly repetitive or mostly non-speech sounds
-        if len(words) > 4 and repetition_ratio < 0.3:
-            return "", 0.1 # Suppress hallucination
-            
-        quality_score = max(0.1, min(1.0, repetition_ratio + 0.2))
-        return transcript, quality_score
 
     def run(self, audio: np.ndarray, sr: int):
-        # Step 1: Preprocess
-        audio = preprocess_audio_array(audio, sr)
-        
-        # Step 2: Feature extraction (parallel)
-        w_emb, transcript = self.whisper_fe.extract(audio)
-        c_emb = self.clap_fe.extract(audio)
-        
-        # Step 3: Fusion
-        with torch.no_grad():
-            fused = self.fusion(w_emb.unsqueeze(0), c_emb.unsqueeze(0))
-            logits = self.scene_net(fused)
-            probs = torch.softmax(logits, dim=-1).squeeze()
+        # Step 1: Preprocess (LUFS Normalization)
+        if sr != 16000:
+            audio = librosa.resample(audio, orig_sr=sr, target_sr=16000)
+            sr = 16000
             
-        # Step 4: Scene classification
-        scene_idx = probs.argmax().item()
-        confidence = probs[scene_idx].item()
-        scene_class = SCENE_LABELS[scene_idx]
+        audio = lufs_normalize(audio, sr, target_lufs=-23.0)
         
-        # Threshold enforcement (e.g., if highest probability is less than 30%)
-        if confidence < 0.30:
-            scene_class = 'Silence/Unknown'
+        # Temporal Chunking (Phase 7: Temporal Understanding)
+        chunk_duration = 5 # 5 seconds
+        chunk_samples = chunk_duration * sr
+        
+        num_chunks = max(1, len(audio) // chunk_samples)
+        if len(audio) % chunk_samples > (chunk_samples / 2):
+            num_chunks += 1
             
-        # Transcript sanitization and quality scoring
-        transcript, t_conf = self._sanitize_transcript(transcript, audio)
+        timeline = []
+        global_transcript = []
         
-        # Step 5: CASRE — natural language understanding
-        ai_response = generate_response(
-            transcript, scene_class, confidence, probs.tolist(), t_conf
+        # Process each chunk temporally
+        for i in range(num_chunks):
+            start = i * chunk_samples
+            end = min(len(audio), (i + 1) * chunk_samples)
+            chunk_audio = audio[start:end]
+            
+            # Pad final chunk if necessary
+            if len(chunk_audio) < chunk_samples and len(chunk_audio) > 0:
+                chunk_audio = np.pad(chunk_audio, (0, chunk_samples - len(chunk_audio)))
+                
+            # Step 2: Feature extraction (parallel)
+            w_emb, transcript = self.whisper_fe.extract(chunk_audio, sr)
+            c_emb = self.clap_fe.extract(chunk_audio, sr)
+            
+            if transcript:
+                global_transcript.append(f"[{i*5}-{(i+1)*5}s]: {transcript}")
+                
+            # Step 3: Advanced Cross-Attention Fusion
+            with torch.no_grad():
+                fused = self.fusion(w_emb.unsqueeze(0), c_emb.unsqueeze(0))
+                logits = self.scene_net(fused)
+                
+                # Phase 4: Multi-Label Outputs using Sigmoid (BCEWithLogitsLoss)
+                probs = torch.sigmoid(logits).squeeze().tolist()
+                
+            # Store timeline event
+            timeline.append({
+                "start": i * 5,
+                "end": (i + 1) * 5,
+                "probs": probs,
+                "transcript": transcript
+            })
+            
+        # Global Event Aggregation for CASRE
+        # Compute mean probabilities across all chunks for global summary
+        if len(timeline) > 0:
+            global_probs = np.mean([t["probs"] for t in timeline], axis=0).tolist()
+        else:
+            global_probs = [0.0] * 20
+            
+        full_transcript = "\n".join(global_transcript)
+        
+        # Step 5: Next-Gen CASRE — natural language understanding & risk scoring
+        # Compute transcript confidence metric (simple length/quality heuristic)
+        t_conf = min(1.0, len(full_transcript) / 100) if full_transcript else 0.0
+        
+        ai_response, active_scenes, risk_score, is_media = self.casre.analyze(
+            full_transcript, global_probs, t_conf
         )
         
-        return transcript, scene_class, confidence, ai_response
+        # Add temporal event log to response
+        temporal_log = "\n\nTemporal Event Timeline:\n"
+        for t in timeline:
+            from core.casre_engine import SCENE_LABELS
+            # Sort indices by probability
+            sorted_indices = sorted(range(len(t["probs"])), key=lambda k: t["probs"][k], reverse=True)
+            active = []
+            
+            # Take top 3 highest probability scenes > 0.3
+            for idx in sorted_indices:
+                if t["probs"][idx] > 0.3:
+                    active.append(SCENE_LABELS[idx])
+                if len(active) == 3:
+                    break
+            
+            if not active:
+                active.append("Silence / Unknown")
+                
+            scene_str = ", ".join(active)
+            temporal_log += f"[{t['start']:02d}s - {t['end']:02d}s] -> {scene_str}\n"
+            
+        ai_response += temporal_log
+        
+        # Format the top class for legacy compatibility in Gradio UI
+        top_scene = active_scenes[0][0] if active_scenes else "Silence / Unknown"
+        confidence = active_scenes[0][1] if active_scenes else 1.0
+        
+        return full_transcript, top_scene, confidence, ai_response
