@@ -1,68 +1,88 @@
+import torch
 import numpy as np
-from faster_whisper import WhisperModel
-import librosa
+from transformers import (
+    WhisperProcessor,
+    WhisperModel,
+    ClapModel,
+    ClapProcessor
+)
 
 class WhisperFeatureExtractor:
-
-    def __init__(
-        self,
-        model_size="base",
-        device="cpu",
-        compute_type="int8"
-    ):
-
-        self.model = WhisperModel(
-            model_size,
-            device=device,
-            compute_type=compute_type
-        )
-
-    def extract_features(self, audio_path):
-
-        # ---------- Transcript ----------
-        segments, info = self.model.transcribe(
-            audio_path,
-            beam_size=5
-        )
-
-        transcript = " ".join(
-            segment.text.strip()
-            for segment in segments
-        )
-
-        # ---------- Audio Features ----------
-        audio, sr = librosa.load(audio_path,sr=16000,mono=True)
-        audio_features = self.model.feature_extractor(audio)
-
-        encoder_output = self.model.encode(audio_features)
-
-        encoder_output = np.array(encoder_output)
-
-        embedding = encoder_output.mean(axis=1).squeeze(0)
-
-        return {
-            "language": info.language,
-            "transcript": transcript,
-            "embedding": embedding
+    def __init__(self, model_size='base'):
+        model_name = f'openai/whisper-{model_size}'
+        from transformers import WhisperForConditionalGeneration
+        self.processor = WhisperProcessor.from_pretrained(model_name)
+        self.model = WhisperForConditionalGeneration.from_pretrained(model_name)
+        self.model.eval()
+        
+        if torch.backends.mps.is_available():
+            self.device = torch.device('mps')
+        else:
+            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            
+        self.model.to(self.device)
+        
+        # Initialize transcription pipeline once using the SAME model instance to save memory
+        from transformers import pipeline
+        self.transcriber = pipeline(
+            'automatic-speech-recognition',
+            model=self.model,
+            tokenizer=self.processor.tokenizer,
+            feature_extractor=self.processor.feature_extractor,
+            chunk_length_s=30,
+            device=self.device,
+            generate_kwargs={
+                "task": "transcribe"
             }
+        )
 
+    @torch.inference_mode()
+    def extract(self, audio: np.ndarray, sr: int = 16000):
+        transcript = self.transcriber(audio)['text'].strip()
+        
+        # Extract embeddings using only the encoder
+        inputs = self.processor(audio, sampling_rate=sr, return_tensors='pt')
+        input_features = inputs.input_features.to(self.device)
+        
+        with torch.no_grad():
+            encoder_output = self.model.get_encoder()(input_features)
+        
+        # Get encoder last hidden state and mean pool
+        encoder_last_hidden = encoder_output.last_hidden_state
+        embedding = encoder_last_hidden.mean(dim=1).squeeze(0).cpu() # [512]
+        
+        return embedding, transcript
 
-if __name__ == "__main__":
+class CLAPFeatureExtractor:
+    def __init__(self):
+        model_name = 'laion/clap-htsat-fused'
+        self.processor = ClapProcessor.from_pretrained(model_name)
+        self.model = ClapModel.from_pretrained(model_name)
+        self.model.eval()
+        
+        if torch.backends.mps.is_available():
+            self.device = torch.device('mps')
+        else:
+            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            
+        self.model.to(self.device)
 
-    extractor = WhisperFeatureExtractor()
-
-    result = extractor.extract_features(
-        "samples/test.wav"
-    )
-
-    print("\nLanguage:")
-    print(result["language"])
-
-    print("\nTranscript:")
-    print(result["transcript"])
-
-    print("\nEmbedding Shape:")
-    print(result["embedding"].shape)
-
-    print("\nFirst 10 Values:")
-    print(result["embedding"][:10])
+    @torch.inference_mode()
+    def extract(self, audio: np.ndarray, sr: int = 16000):
+        if sr != 48000:
+            import librosa
+            audio = librosa.resample(audio, orig_sr=sr, target_sr=48000)
+            sr = 48000
+        inputs = self.processor(audio=audio, sampling_rate=sr, return_tensors='pt')
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
+        
+        with torch.no_grad():
+            output = self.model.get_audio_features(**inputs)
+            if hasattr(output, 'pooler_output'):
+                embedding = output.pooler_output
+            elif isinstance(output, tuple):
+                embedding = output[0]
+            else:
+                embedding = output
+        
+        return embedding.squeeze(0).cpu() # [512]
