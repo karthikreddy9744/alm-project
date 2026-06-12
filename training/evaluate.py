@@ -3,34 +3,34 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from sklearn.metrics import accuracy_score, f1_score, classification_report, confusion_matrix
+from sklearn.metrics import f1_score, precision_score, recall_score, classification_report
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 from core.fusion_layer import FusionLayer
 from core.scene_network import SceneContextNetwork
-from training.train import ALMDataset, load_processed_data
+from training.train import ALMMultiLabelDataset, load_processed_data
 from core.casre_engine import SCENE_LABELS
 
 def evaluate_model(data_path: str = "data/processed",
                    model_path: str = "models/scene_model.pt",
                    output_path: str = "data/evaluation"):
     """
-    Evaluate trained model and generate metrics.
+    Evaluate trained multi-label model on real embeddings and generate metrics.
     """
     os.makedirs(output_path, exist_ok=True)
     
-    # Load data
+    print(f"Loading real multi-label embeddings from {data_path} for evaluation...")
     embeddings, labels = load_processed_data(data_path)
     
     # Create dataset and dataloader
-    dataset = ALMDataset(embeddings, labels)
+    dataset = ALMMultiLabelDataset(embeddings, labels)
     dataloader = DataLoader(dataset, batch_size=32, shuffle=False)
     
     # Load trained models
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     fusion = FusionLayer().to(device)
-    scene_net = SceneContextNetwork().to(device)
+    scene_net = SceneContextNetwork(num_classes=20).to(device)
     
     checkpoint = torch.load(model_path, map_location=device)
     fusion.load_state_dict(checkpoint["fusion"])
@@ -44,46 +44,48 @@ def evaluate_model(data_path: str = "data/processed",
     all_labels = []
     
     with torch.no_grad():
-        for w_emb, c_emb, labels in dataloader:
-            w_emb, c_emb, labels = w_emb.to(device), c_emb.to(device), labels.to(device)
+        for w_emb, c_emb, batch_labels in dataloader:
+            w_emb, c_emb, batch_labels = w_emb.to(device), c_emb.to(device), batch_labels.to(device)
             fused = fusion(w_emb, c_emb)
             logits = scene_net(fused)
-            _, preds = torch.max(logits, 1)
-            all_preds.extend(preds.cpu().numpy())
-            all_labels.extend(labels.cpu().numpy())
+            
+            probs = torch.sigmoid(logits)
+            preds = (probs > 0.30).float()
+            
+            all_preds.append(preds.cpu().numpy())
+            all_labels.append(batch_labels.cpu().numpy())
+            
+    all_preds = np.vstack(all_preds)
+    all_labels = np.vstack(all_labels)
     
     # Calculate metrics
-    accuracy = accuracy_score(all_labels, all_preds)
-    f1_macro = f1_score(all_labels, all_preds, average='macro', labels=range(len(SCENE_LABELS)), zero_division=0)
-    report = classification_report(all_labels, all_preds, target_names=SCENE_LABELS, labels=range(len(SCENE_LABELS)), zero_division=0)
-    cm = confusion_matrix(all_labels, all_preds, labels=range(len(SCENE_LABELS)))
+    f1_micro = f1_score(all_labels, all_preds, average='micro', zero_division=0)
+    f1_macro = f1_score(all_labels, all_preds, average='macro', zero_division=0)
+    prec = precision_score(all_labels, all_preds, average='micro', zero_division=0)
+    rec = recall_score(all_labels, all_preds, average='micro', zero_division=0)
+    report = classification_report(all_labels, all_preds, target_names=SCENE_LABELS, zero_division=0)
     
     # Print metrics
     print("=== Evaluation Results ===")
-    print(f"Accuracy: {accuracy:.4f}")
+    print(f"Micro F1: {f1_micro:.4f}")
     print(f"Macro F1: {f1_macro:.4f}")
+    print(f"Precision (Micro): {prec:.4f}")
+    print(f"Recall (Micro): {rec:.4f}")
     print("\nClassification Report:")
     print(report)
     
     # Save metrics
     with open(os.path.join(output_path, "metrics.txt"), "w") as f:
-        f.write(f"Accuracy: {accuracy:.4f}\n")
-        f.write(f"Macro F1: {f1_macro:.4f}\n\n")
+        f.write(f"Micro F1: {f1_micro:.4f}\n")
+        f.write(f"Macro F1: {f1_macro:.4f}\n")
+        f.write(f"Precision (Micro): {prec:.4f}\n")
+        f.write(f"Recall (Micro): {rec:.4f}\n\n")
         f.write("Classification Report:\n")
         f.write(report)
     
-    # Plot confusion matrix
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
-                xticklabels=SCENE_LABELS, yticklabels=SCENE_LABELS)
-    plt.title('Confusion Matrix')
-    plt.ylabel('True Label')
-    plt.xlabel('Predicted Label')
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_path, "confusion_matrix.png"))
-    print(f"Confusion matrix saved to {os.path.join(output_path, 'confusion_matrix.png')}")
+    print(f"Metrics saved to {os.path.join(output_path, 'metrics.txt')}")
     
-    return accuracy, f1_macro, report, cm
+    return f1_micro, f1_macro, report
 
 if __name__ == "__main__":
     import argparse

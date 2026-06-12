@@ -21,60 +21,50 @@ class ALMMultiLabelDataset(Dataset):
     
     def __getitem__(self, idx):
         w_emb, c_emb = self.embeddings[idx]
-        # multi-hot encoding
-        return torch.tensor(w_emb, dtype=torch.float32), torch.tensor(c_emb, dtype=torch.float32), torch.tensor(self.labels[idx], dtype=torch.float32)
+        # Explicitly cast to float32 numpy arrays to fix object_ dtype issues
+        w_emb = np.array(w_emb, dtype=np.float32)
+        c_emb = np.array(c_emb, dtype=np.float32)
+        label = np.array(self.labels[idx], dtype=np.float32)
+        return torch.tensor(w_emb), torch.tensor(c_emb), torch.tensor(label)
 
-def generate_simulated_multilabel_data(num_samples=2000, num_classes=20):
-    """
-    Simulates multi-label dataset for v4.0 architecture training.
-    Real deployment would mix AudioSet, LibriSpeech, and ESC-50 here.
-    """
-    embeddings = []
-    labels = []
-    for _ in range(num_samples):
-        # random Whisper/CLAP embeddings
-        w = np.random.randn(512)
-        c = np.random.randn(512)
-        embeddings.append((w, c))
+def load_processed_data(data_path="data/processed"):
+    """Loads pre-extracted embeddings from dataset_builder.py"""
+    embeddings_path = os.path.join(data_path, "embeddings.npy")
+    labels_path = os.path.join(data_path, "labels.npy")
+    
+    if not os.path.exists(embeddings_path) or not os.path.exists(labels_path):
+        raise FileNotFoundError(f"Processed data not found at {data_path}. Run dataset_builder.py first.")
         
-        # 1-3 active labels per audio clip
-        multi_hot = np.zeros(num_classes)
-        active_indices = np.random.choice(num_classes, size=np.random.randint(1, 4), replace=False)
-        multi_hot[active_indices] = 1.0
-        labels.append(multi_hot)
-        
-    return embeddings, np.array(labels)
+    embeddings = np.load(embeddings_path, allow_pickle=True)
+    labels = np.load(labels_path, allow_pickle=True)
+    return embeddings, labels
 
-def train_model(save_path: str = "models/scene_model.pt",
+def train_model(data_path: str = "data/processed",
+                save_path: str = "models/scene_model.pt",
                 batch_size: int = 32,
                 epochs: int = 50,
-                lr: float = 1e-4, # lower LR for attention
+                lr: float = 1e-4,
                 weight_decay: float = 1e-4):
     """
-    Train the v4.0 Cross-Attention Fusion layer and Scene Context Network using BCEWithLogitsLoss.
+    Train the v4.0 Cross-Attention Fusion layer and Scene Context Network.
     """
-    # 1. Load Data (Simulated for architecture upgrade proof of concept)
-    print("Generating simulated multi-label dataset mixtures...")
-    embeddings, labels = generate_simulated_multilabel_data(num_samples=5000, num_classes=20)
+    print(f"Loading real multi-label embeddings from {data_path}...")
+    embeddings, labels = load_processed_data(data_path)
     X_train, X_val, y_train, y_val = train_test_split(embeddings, labels, test_size=0.2, random_state=42)
     
-    # Create datasets and dataloaders
     train_dataset = ALMMultiLabelDataset(X_train, y_train)
     val_dataset = ALMMultiLabelDataset(X_val, y_val)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
-    # 2. Initialize models
     device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
     fusion = FusionLayer().to(device)
     scene_net = SceneContextNetwork(num_classes=20).to(device)
     
-    # Multi-label loss
     criterion = nn.BCEWithLogitsLoss()
     optimizer = optim.AdamW(list(fusion.parameters()) + list(scene_net.parameters()), lr=lr, weight_decay=weight_decay)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
     
-    # Training loop
     best_f1 = 0.0
     patience = 10
     patience_counter = 0
@@ -100,7 +90,6 @@ def train_model(save_path: str = "models/scene_model.pt",
             
         scheduler.step()
         
-        # Validation
         fusion.eval()
         scene_net.eval()
         val_loss = 0.0
@@ -121,20 +110,18 @@ def train_model(save_path: str = "models/scene_model.pt",
                 all_preds.append(preds.cpu().numpy())
                 all_labels.append(batch_labels.cpu().numpy())
         
-        # Calculate metrics
         train_loss /= len(train_dataset)
         val_loss /= len(val_dataset)
         
         all_preds = np.vstack(all_preds)
         all_labels = np.vstack(all_labels)
         
-        f1 = f1_score(all_labels, all_preds, average='micro')
+        f1 = f1_score(all_labels, all_preds, average='micro', zero_division=0)
         prec = precision_score(all_labels, all_preds, average='micro', zero_division=0)
         rec = recall_score(all_labels, all_preds, average='micro', zero_division=0)
         
         print(f"Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | F1: {f1:.4f} | Prec: {prec:.4f} | Rec: {rec:.4f}")
         
-        # Save best model
         if f1 > best_f1:
             best_f1 = f1
             patience_counter = 0
@@ -157,10 +144,11 @@ def train_model(save_path: str = "models/scene_model.pt",
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
+    parser.add_argument("--data_path", type=str, default="data/processed", help="Path to processed data")
     parser.add_argument("--save_path", type=str, default="models/scene_model.pt", help="Path to save trained v4 model")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size")
     parser.add_argument("--epochs", type=int, default=50, help="Number of epochs")
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate")
     parser.add_argument("--weight_decay", type=float, default=1e-4, help="Weight decay")
     args = parser.parse_args()
-    train_model(args.save_path, args.batch_size, args.epochs, args.lr, args.weight_decay)
+    train_model(args.data_path, args.save_path, args.batch_size, args.epochs, args.lr, args.weight_decay)

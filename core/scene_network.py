@@ -24,4 +24,4 @@ class SceneContextNetwork(nn.Module):
                     nn.init.zeros_(m.bias)
 
     def forward(self, x):
-        return self.classifier(x) # logits [B, 15]
+        return self.classifier(x) # logits [B, num_classes]
