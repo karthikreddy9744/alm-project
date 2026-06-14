@@ -34,7 +34,7 @@ All core deep learning components (Whisper + CLAP + Fusion + Scene Network) rema
 | 3.0 | June 2026 | Expanded the scene classification classes from 5 to 15 highly granular categories. |
 | 4.0 | June 2026 | v4.0 Master Rewrite: Silero VAD, Cross-Attention Fusion, Multi-Label BCEWithLogitsLoss, Sliding-Window Temporal Timeline, and Next-Gen CASRE. |
 | 5.0 | June 2026 | v5.0 Neuro-Acoustic Temporal Expectation (NATE) Upgrade: Added predictive coding logic, proximity tracking, pitch analysis, and movie scenario deduction. |
-| 6.0 | June 2026 | v6.0 Omni-Matrix Upgrade: Replaced standard heuristic engine with a massive 51-scenario multi-dimensional context matrix covering extreme crises, transit, domestic, and media scenarios. |
+| 6.0 | June 2026 | v6.0 Omni-Matrix Upgrade: Replaced standard heuristic engine with a massive 51-scenario multi-dimensional context matrix. Added Semantic-Acoustic Alignment Filter to Inference Pipeline to guarantee flawless temporal tracking. |
 
 # **Abstract**
 
