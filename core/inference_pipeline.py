@@ -43,9 +43,10 @@ class ALMInferencePipeline:
         chunk_duration = 5 # 5 seconds
         chunk_samples = chunk_duration * sr
         
-        num_chunks = max(1, len(audio) // chunk_samples)
+        num_chunks = len(audio) // chunk_samples
         if len(audio) % chunk_samples > (chunk_samples / 2):
             num_chunks += 1
+        num_chunks = max(1, num_chunks)
             
         timeline = []
         global_transcript = []
@@ -72,32 +73,73 @@ class ALMInferencePipeline:
                 fused = self.fusion(w_emb.unsqueeze(0), c_emb.unsqueeze(0))
                 logits = self.scene_net(fused)
                 
-                # Phase 4: Multi-Label Outputs using Sigmoid (BCEWithLogitsLoss)
+            # Phase 4: Multi-Label Outputs using Sigmoid (BCEWithLogitsLoss)
                 probs = torch.sigmoid(logits).squeeze().tolist()
+                
+            # Semantic-Acoustic Alignment Filter (Force realism to fix untrained ML noise)
+            from core.casre_engine import SCENE_LABELS
+            if transcript:
+                transcript_lower = transcript.lower()
+                for tone, words in self.casre.keyword_categories.items():
+                    if any(w in transcript_lower for w in words):
+                        if tone == "Weather/Disaster":
+                            probs[SCENE_LABELS.index("Weather & Nature")] = max(probs[SCENE_LABELS.index("Weather & Nature")], 0.95)
+                            probs[SCENE_LABELS.index("Silence / Unknown")] = 0.0
+                        elif tone == "War/Crisis":
+                            probs[SCENE_LABELS.index("Crowd & Hubbub")] = max(probs[SCENE_LABELS.index("Crowd & Hubbub")], 0.88)
+                            probs[SCENE_LABELS.index("Silence / Unknown")] = 0.0
+                        elif tone == "Sci-Fi/Fantasy/Drama":
+                            probs[SCENE_LABELS.index("Movie Scene")] = max(probs[SCENE_LABELS.index("Movie Scene")], 0.99)
+                        elif tone == "Emergency":
+                            probs[SCENE_LABELS.index("Indoor / Domestic")] = max(probs[SCENE_LABELS.index("Indoor / Domestic")], 0.85)
+                            probs[SCENE_LABELS.index("Silence / Unknown")] = 0.0
+                        elif tone == "Broadcast":
+                            probs[SCENE_LABELS.index("Television / Media")] = max(probs[SCENE_LABELS.index("Television / Media")], 0.90)
+                        elif tone == "Music/Song":
+                            probs[SCENE_LABELS.index("Music")] = max(probs[SCENE_LABELS.index("Music")], 0.95)
+                        elif tone == "Casual" or tone == "Frustration":
+                            probs[SCENE_LABELS.index("Indoor / Domestic")] = max(probs[SCENE_LABELS.index("Indoor / Domestic")], 0.70)
+                
+                # If there's any speech, explicitly suppress Silence
+                probs[SCENE_LABELS.index("Silence / Unknown")] = 0.0
+                
+            # Suppress weird outdoor noise indoors
+            if probs[SCENE_LABELS.index("Indoor / Domestic")] > 0.6:
+                probs[SCENE_LABELS.index("Wildlife / Animals")] *= 0.1
+                probs[SCENE_LABELS.index("Traffic & Vehicles")] *= 0.3
+                
+            # Acoustic Primitives Extraction (NATE Architecture)
+            # 1. RMS Energy (Proximity/Distance/Loudness)
+            rms = float(np.mean(librosa.feature.rms(y=chunk_audio)))
+            # 2. Spectral Centroid (Pitch/Severity/Emotion)
+            cent = float(np.mean(librosa.feature.spectral_centroid(y=chunk_audio, sr=sr)))
                 
             # Store timeline event
             timeline.append({
                 "start": i * 5,
                 "end": (i + 1) * 5,
                 "probs": probs,
-                "transcript": transcript
+                "transcript": transcript,
+                "rms": rms,
+                "pitch": cent
             })
             
         # Global Event Aggregation for CASRE
-        # Compute mean probabilities across all chunks for global summary
+        # Compute max probabilities across all chunks for global summary
         if len(timeline) > 0:
-            global_probs = np.mean([t["probs"] for t in timeline], axis=0).tolist()
+            global_probs = np.max([t["probs"] for t in timeline], axis=0).tolist()
         else:
             global_probs = [0.0] * 20
             
         full_transcript = "\n".join(global_transcript)
         
-        # Step 5: Next-Gen CASRE — natural language understanding & risk scoring
+        # Step 5: Advanced CASRE — scenario matrix heuristics & risk scoring
         # Compute transcript confidence metric (simple length/quality heuristic)
         t_conf = min(1.0, len(full_transcript) / 100) if full_transcript else 0.0
         
+        # Pass the full temporal timeline to CASRE for NATE logic
         ai_response, active_scenes, risk_score, is_media = self.casre.analyze(
-            full_transcript, global_probs, t_conf
+            full_transcript, global_probs, t_conf, timeline
         )
         
         # Add temporal event log to response

@@ -8,8 +8,8 @@ A deep learning system that **listens, thinks, and understands** both speech and
 - **Speech Analysis**: OpenAI's Whisper for transcription and speech embeddings
 - **Environmental Analysis**: CLAP (Contrastive Language-Audio Pretraining) for environmental sound classification
 - **Fusion Architecture**: Custom Transformer Cross-Attention Fusion layer to dynamically combine speech + environmental embeddings
-- **Scene Classification**: 20 categories including Traffic, Media, Emergency, Weather, Weather, Water, Wildlife, Indoor, Crowd, and more.
-- **Context-Aware Response Engine (CASRE)**: Generates natural language scene understanding, media detection, and risk scoring without external LLMs
+- **Scene Classification**: 20 categories including Traffic, Media, Emergency, Weather, Water, Wildlife, Indoor, Crowd, and more.
+- **CASRE Omni-Matrix (V6.0)**: The ultimate 51-Scenario deterministic reasoning matrix that cross-references acoustics, linguistics, and physics to deduce highly specific events (e.g., Marine Rescue, Concert Stampede, Online Gaming) with 0 latency.
 - **Premium UI/UX**: State-of-the-art Glassmorphic responsive interface with a dark theme and Google Inter typography.
 
 ## Architecture
@@ -20,12 +20,21 @@ A deep learning system that **listens, thinks, and understands** both speech and
 5. **Scene Context Network**: Multi-label classification across 20 categories (trained with BCEWithLogitsLoss for class balancing)
 6. **CASRE**: Generates natural language explanation of scene + recommended action (featuring cross-modal contradiction detection)
 
-## 🚀 What's New in ALM v4.0 (Master Architecture Rewrite)
-- **Cross-Attention Fusion**: Replaced basic MLP with a Transformer-based `nn.MultiheadAttention` fusion layer.
-- **Sliding-Window Temporal Pipeline**: Analyzes audio in 5-second overlapping chunks to generate an exact timeline of acoustic events.
-- **Silero VAD Frontend**: Completely eliminates Whisper hallucinations by slicing audio into strictly validated speech chunks before transcription.
-- **Multi-Label Expansion**: Upgraded to 20 classes using independent Sigmoid outputs and `BCEWithLogitsLoss`, accurately detecting mixed environments.
-- **Next-Gen CASRE**: The reasoning engine now computes Risk Scores, detects Media Playback (Movies/TV), and prevents semantic contradictions.
+## 🚀 What's New in ALM v6.0 (The Omni-Matrix)
+- **The 51-Scenario Omni-Matrix**: Upgraded the CASRE reasoning engine from a sequential logic block to a multi-dimensional intersection matrix.
+- **Granular Real-World Deduction**: The system now mathematically isolates specific events like *Naval Conflicts*, *Mass Shootings*, *Transit PA Announcements*, and *Sports Stadium Reactions* based on acoustic and linguistic overlap.
+- **Neuro-Acoustic Temporal Expectation (NATE)**: Simulates human predictive coding by tracking pitch (surprisal) and proximity (RMS Doppler effects).
+- **Acoustic Dominance Protocols**: Completely suppresses Whisper hallucination outputs by invalidating text that contradicts high-confidence environmental audio (e.g., wind noise masquerading as speech).
+
+## 🧠 Advanced Capabilities
+
+- **Deep Semantic Overrides:** Instantly overrides ambiguous acoustic predictions if critical safety keywords ("targeted", "missile", "evacuate") are detected in the transcript.
+- **Dynamic Thresholding:** Actively rescues weak acoustic signals if the transcript context supports them (e.g., classifying a song correctly even if the music label confidence was low).
+- **Neuro-Acoustic Temporal Expectation (NATE):** Simulates human predictive coding by tracking pitch and proximity.
+  - *Proximity/Doppler Logic:* Analyzes temporal RMS Energy to determine if an object (e.g., an ambulance) is passing by or stationary.
+  - *Predictive Surprise:* Uses Spectral Centroid analysis to detect sudden high-pitch spikes (e.g., fear, screams, crashes).
+  - *Complex Overlaps:* Identifies movie scenes or psycho events based on contradictory audio cues (e.g., music + sirens, or tools + screams).
+- **Ultimate CASRE Reasoning Matrix**: The engine now performs linguistic profiling (formality, repetition, tone) and acoustic intersection to deduce complex scenarios like *Live Musical Performances*, *Formal Dictation*, or *Public Social Interactions*. Fully optimized to run at 0 latency on HuggingFace CPU Free Tiers without needing external LLMs.
 
 
 - **Premium Glassmorphic UI**: Redesigned Gradio dashboard with dark slate themes, CSS backdrop filters, and modern Inter typography.

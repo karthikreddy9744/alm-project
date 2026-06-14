@@ -4,7 +4,7 @@ School of Engineering
 
 Venkatapur (V), Ghatkesar (M), Medchal Dist – 500088, Telangana
 
-**MINI PROJECT DOCUMENTATION — VERSION 4.0**
+**MINI PROJECT DOCUMENTATION — VERSION 6.0**
 
 Mini Project (2 Credits) — IV Year B.Tech I Semester
 
@@ -14,7 +14,7 @@ Listen • Think • Understand
 
 **Revision Note:**
 
-Version 4.0 represents a massive architectural overhaul architectural and robustness upgrade, featuring a 13-phase rewrite of the internal mechanisms. Key upgrades include mathematically `BCEWithLogitsLoss` for true multi-label capabilities for class balancing, `Dropout(0.3)` layers added to the Fusion and Scene networks to prevent modality collapse, dynamic Voice Activity Detection (VAD) and RMS energy thresholding for hallucination suppression, and an expanded 20-class Multi-Label Scene Context Network that includes a synthetic 'Silence' category. The UI was fully redesigned with a Glassmorphic responsive interface.
+Version 6.0 introduces the **CASRE 51-Scenario Omni-Matrix**. The engine now operates on a massive multi-dimensional intersection algorithm, checking Acoustic Scenes × Linguistic Tones × Audio Physics to instantly deduce highly specific, real-world events (e.g., Marine Rescues, Transit Hijackings, Online Gaming, Bar Fights) without relying on an external LLM.
 
 All core deep learning components (Whisper + CLAP + Fusion + Scene Network) remain intact, but their resilience, mathematical fairness, and deployment stability have been substantially elevated.
 
@@ -31,7 +31,10 @@ All core deep learning components (Whisper + CLAP + Fusion + Scene Network) rema
 | **Version** | **Date** | **Changes** |
 | 1.0 | June 2026 | Initial documentation — full pipeline including Phi-2 LLM as reasoning engine. |
 | 2.0 | June 2026 | Replaced Phi-2 with Context-Aware Smart Response Engine (CASRE) for deployment stability. |
-| 3.0 | June 2026 | Expanded the scene classification classes from 5 to 15 highly granular categories. |\n| 4.0 | June 2026 | v4.0 Master Rewrite: Silero VAD, Cross-Attention Fusion, Multi-Label BCEWithLogitsLoss, Sliding-Window Temporal Timeline, and Next-Gen CASRE. |
+| 3.0 | June 2026 | Expanded the scene classification classes from 5 to 15 highly granular categories. |
+| 4.0 | June 2026 | v4.0 Master Rewrite: Silero VAD, Cross-Attention Fusion, Multi-Label BCEWithLogitsLoss, Sliding-Window Temporal Timeline, and Next-Gen CASRE. |
+| 5.0 | June 2026 | v5.0 Neuro-Acoustic Temporal Expectation (NATE) Upgrade: Added predictive coding logic, proximity tracking, pitch analysis, and movie scenario deduction. |
+| 6.0 | June 2026 | v6.0 Omni-Matrix Upgrade: Replaced standard heuristic engine with a massive 51-scenario multi-dimensional context matrix covering extreme crises, transit, domestic, and media scenarios. |
 
 # **Abstract**
 
@@ -144,7 +147,17 @@ ESC-50 contains 2,000 audio clips (5 seconds, 44.1kHz) across 50 environmental s
 
 Reference: Piczak, K. J. (2015). ESC: Dataset for Environmental Sound Classification. ACM Multimedia 2015.
 
-## **2.4 Related Systems Comparison**
+## **2.4 Theoretical Neuro-Acoustics**
+
+### **Predictive Coding (Heilbron & Chait, 2018)**
+The system simulates predictive coding by tracking the temporal expectations of sounds. A sudden high-pitch acoustic spike indicates acute alarm or distress (surprisal), while continuous sounds represent adaptation.
+*Reference: Heilbron, M., & Chait, M. (2018). Great Expectations: Is there Evidence for Predictive Coding in Auditory Cortex? Neuroscience, 389, 54–73.*
+
+### **Human Influence Factors (Walton & Evans, 2018)**
+The system applies human-like heuristic overrides based on psycho-acoustics. For example, detecting "Chainsaw" alongside "Emergency" triggers a "Psycho Event" override, mimicking human emotional reaction to specific overlapping sound sources.
+*Reference: Walton, T., & Evans, M. (2018). The role of human influence factors on overall listening experience. Quality and User Experience, 3(1).*
+
+## **2.5 Related Systems Comparison**
 
 |     |     |     |     |
 | --- | --- | --- | --- |
@@ -235,7 +248,7 @@ The ALM v4.0 system follows a five-stage pipeline. The only change from v1.0 is 
 
 │ ┌─────────────────────────────────────────────────────┐ │
 
-│ │ Input: transcript + scene + confidence + probs │ │
+│ │ Input: transcript + scene + confidence + probs + timeline │ │
 
 │ │ │ │
 
@@ -245,9 +258,14 @@ The ALM v4.0 system follows a five-stage pipeline. The only change from v1.0 is 
 
 │ │ Step 3: Scene-Speech Cross-Modal Fusion Logic │ │
 
-│ │ Step 4: Response Template Assembly │ │
+│ │ Step 4: Neuro-Acoustic Temporal Expectation (NATE) │ │
+│ │         - Doppler/Proximity (RMS Tracking)        │ │
+│ │         - Predictive Surprise (Pitch Tracking)    │ │
+│ │         - Movie/Multi-Scenario Overlaps           │ │
 
-│ │ Step 5: Recommended Action Generation │ │
+│ │ Step 5: Response Template Assembly │ │
+
+│ │ Step 6: Recommended Action Generation │ │
 
 │ └─────────────────────────────────────────────────────┘ │
 
@@ -382,7 +400,7 @@ A custom neural network layer fuses the Whisper and CLAP embeddings.
 A classification network outputs the probability distribution across the 15 environmental categories.
 
 ## **Phase 5: Context-Aware Smart Response Engine**
-CASRE combines transcript keyword analysis, confidence-level tone selection, and scene-speech cross-modal reasoning to generate intelligent natural language output.
+CASRE performs advanced linguistic profiling (vocabulary richness, average word length, repetitiveness) and cross-modal heuristic reasoning to mathematically deduce fine-grained scenarios (e.g. Songs, News Broadcasts, Casual Conversations, Live Speeches).
 
 ## **Phase 6: Inference Pipeline**
 The full pipeline ties together preprocessing, feature extraction, fusion, classification, and CASRE.

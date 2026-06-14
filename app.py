@@ -1,5 +1,7 @@
 import gradio as gr
 import numpy as np
+import traceback
+import torch
 from collections import deque
 from core.inference_pipeline import ALMInferencePipeline
 
@@ -29,9 +31,18 @@ def analyze_audio(audio_input):
         smoothed_scene = scene
         
     except Exception as e:
-        return (f"Error during transcription: {str(e)}", 
+        print("Pipeline Error:")
+        traceback.print_exc()
+        
+        # Free up GPU/MPS memory to prevent the app from freezing on subsequent runs
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        elif torch.backends.mps.is_available():
+            torch.mps.empty_cache()
+            
+        return (f"Error during analysis: {str(e)}\n\n(System memory was automatically cleared to prevent crashing.)", 
                 "Error", 
-                "The pipeline encountered a critical failure. Please try a different audio file.")
+                "The pipeline encountered a critical failure. The system memory has been reset safely. Please try a different audio file.")
     
     return (
         f'{transcript}' if transcript else '[No speech detected]',
