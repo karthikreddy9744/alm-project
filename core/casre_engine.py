@@ -185,13 +185,240 @@ class CASREEngine:
         tone_str = ", ".join(detected_tones) if detected_tones else "Neutral"
         return style, tone_str, detected_tones
 
+    def _evaluate_evidence_strength(self, has_speech, detected_tones, active_scenes, t_conf, timeline, is_media):
+        speech_strength = "Absent"
+        if has_speech:
+            if t_conf > 0.7 and detected_tones and detected_tones != ["Neutral"]:
+                speech_strength = "Strong"
+            elif t_conf > 0.4 or detected_tones:
+                speech_strength = "Moderate"
+            else:
+                speech_strength = "Weak"
+                
+        env_strength = "Absent"
+        if active_scenes and active_scenes[0][0] != "Silence / Unknown":
+            if active_scenes[0][1] > 0.75:
+                env_strength = "Strong"
+            elif active_scenes[0][1] > 0.4:
+                env_strength = "Moderate"
+            else:
+                env_strength = "Weak"
+                
+        temporal_strength = "Absent"
+        if timeline and len(timeline) > 1:
+            rms_values = [t.get("rms", 0) for t in timeline]
+            if max(rms_values) > min(rms_values) * 2:
+                temporal_strength = "Strong"
+            elif max(rms_values) > min(rms_values) * 1.2:
+                temporal_strength = "Moderate"
+            else:
+                temporal_strength = "Weak"
+                
+        media_strength = "Absent"
+        if is_media:
+            media_strength = "Strong"
+            
+        strength_scores = {"Strong": 3, "Moderate": 2, "Weak": 1, "Absent": 0}
+        total = strength_scores[speech_strength] + strength_scores[env_strength] + strength_scores[temporal_strength]
+        if is_media: total += 3
+        
+        overall = "Weak"
+        if total >= 6: overall = "Strong"
+        elif total >= 3: overall = "Moderate"
+        
+        return {
+            "Speech Evidence": speech_strength,
+            "Environmental Evidence": env_strength,
+            "Temporal Evidence": temporal_strength,
+            "Media Evidence": media_strength,
+            "Overall Evidence Strength": overall
+        }
+
+    def _generate_specific_observations(self, transcript, active_scenes, timeline_active, is_media, detected_tones):
+        obs = []
+        if transcript.strip():
+            phrase_snippet = " ".join(transcript.split()[:5])
+            if "Help" in transcript or "help" in transcript:
+                obs.append("Transcript contains repeated requests for assistance.")
+                obs.append("The phrase 'help' is present.")
+            else:
+                obs.append(f"Speech detected, beginning with '{phrase_snippet}...'")
+        else:
+            obs.append("No speech markers detected in the transcript.")
+            
+        if active_scenes and active_scenes[0][0] != "Silence / Unknown":
+            obs.append(f"Acoustic classification indicates {active_scenes[0][0]} at {active_scenes[0][1]*100:.0f}% confidence.")
+        else:
+            obs.append("Environmental acoustics fall below detection thresholds.")
+            
+        if timeline_active:
+            obs.append("Acoustic energy exhibits distinct transient variations over the observation window.")
+            
+        if is_media:
+            obs.append("Features highly characteristic of broadcast, television, or recorded music are present.")
+            
+        return obs
+
+    def _evaluate_relationship(self, detected_tones, scene_names, is_media, transcript_style):
+        if is_media:
+            return "Independent", "Media playback is dominating. Speech and acoustic features are artifacts of the broadcast rather than live physical events."
+        
+        if not detected_tones or detected_tones == ["Neutral"]:
+            if "Siren & Alarm" in scene_names or "Scream/Yell" in scene_names:
+                return "Independent", "The acoustic event appears unrelated to the speaker's activity. Speech remains casual or neutral while the environment is active."
+            return "Ambiguous", "No significant relationship between speech and environment is evident."
+            
+        crisis_tones = {"War/Crisis", "Emergency", "Weather/Disaster", "Action/Combat", "Scream/Yell"}
+        crisis_scenes = {"Siren & Alarm"}
+        
+        has_crisis_tone = bool(set(detected_tones).intersection(crisis_tones))
+        has_crisis_scene = bool(set(scene_names).intersection(crisis_scenes))
+        
+        if has_crisis_tone and has_crisis_scene:
+            if "Siren & Alarm" in scene_names and scene_names.index("Siren & Alarm") == 0:
+                return "Strong Reinforcement", "Both modalities strongly support the interpretation of an acute event, with environmental cues dominating."
+            return "Moderate Reinforcement", "Speech and environmental modalities support an overlapping semantic interpretation."
+            
+        if has_crisis_tone and not has_crisis_scene and "Silence / Unknown" in scene_names:
+             return "Contradictory", "Speech indicates a crisis or extreme event, but the acoustic environment is completely silent or calm."
+             
+        if not has_crisis_tone and has_crisis_scene:
+            return "Contradictory", "The environment contains crisis markers, but the speech directly conflicts, remaining casual or calm."
+            
+        if transcript_style == "Highly Repetitive (Potential Lyrics/Chant)" and "Music" not in scene_names:
+            return "Weak Support", "Speech patterns suggest a performance, but no acoustic music is detected to confirm."
+            
+        if has_crisis_tone:
+            return "Weak Support", "Speech indicates concern, but the environment lacks strong acoustic confirmation."
+            
+        return "Moderate Reinforcement", "Speech and environment generally align without major contradictions."
+
+    def _interpret_environment(self, scene_names, active_scenes, env):
+        if not scene_names or scene_names[0] == "Silence / Unknown":
+            return "Acoustic characteristics are indistinct, providing no clear environmental context."
+            
+        primary = active_scenes[0]
+        interpretation = f"The environment is dominated by {primary[0]} acoustic characteristics."
+        
+        if len(active_scenes) > 1:
+            secondary = active_scenes[1]
+            if primary[1] - secondary[1] < 0.2:
+                interpretation += f" However, {secondary[0]} signals are also strongly present, suggesting a mixed or complex acoustic space."
+            else:
+                interpretation += f" Secondary signatures of {secondary[0]} are present but non-dominant."
+                
+        if "Siren & Alarm" in scene_names:
+            interpretation += " Emergency-related signals are highly relevant and cut through the baseline environmental noise."
+            
+        return interpretation
+
+    def _generate_alternative(self, scenario, is_media, env):
+        if is_media:
+            return "Movie scene, podcast recording, news broadcast, or recorded media playback."
+        if "Emergency" in scenario or "Crisis" in scenario:
+            return "Roleplay, acting rehearsal, training exercise, emergency simulation, or an intense gaming session."
+        if "Music" in scenario or "Performance" in scenario:
+            return "Karaoke, live public performance, or loud song playback."
+        if env == "Domestic" or env == "Home":
+            return "Practicing lines, dramatic media playing, or loud domestic disagreement."
+        if env == "Professional" or env == "Office":
+            return "Team-building exercise, simulation, or standard industrial operations."
+        if env == "Public/Social":
+            return "Flash mob, prank, street performance, or loud public gathering."
+        return "Testing scenario, practice drill, or misinterpreted acoustic artifact."
+
+    def _generate_uncertainty(self, t_conf, is_media, active_scenes, has_speech):
+        unc = []
+        unc.append("Visual evidence unavailable.")
+        unc.append("Speaker identity and intent cannot be verified.")
+        if is_media:
+            unc.append("Audio source is likely indirect (recorded media).")
+        else:
+            unc.append("Media playback cannot be entirely excluded without secondary sensors.")
+            
+        if t_conf < 0.5 and has_speech:
+            unc.append("Transcript confidence is limited, which constrains semantic analysis.")
+            
+        if not active_scenes or active_scenes[0][1] < 0.5:
+            unc.append("Environmental acoustic signals are ambiguous.")
+            
+        return unc
+
+    def _calculate_confidence(self, strength, rel_type):
+        drivers = []
+        limitations = []
+        score = "Moderate"
+        
+        # Drivers based strictly on rules
+        if strength["Speech Evidence"] == "Strong": drivers.append("Strong semantic clarity in speech")
+        if strength["Environmental Evidence"] == "Strong": drivers.append("Stable primary scene classification")
+        if strength["Temporal Evidence"] == "Strong": drivers.append("Consistent temporal variance")
+        
+        if "Reinforcement" in rel_type:
+            drivers.append("Speech and environment cross-modally agree")
+            
+        # Limitations
+        if strength["Speech Evidence"] == "Weak": limitations.append("Poor acoustic speech clarity")
+        if strength["Environmental Evidence"] == "Weak": limitations.append("Weak acoustic scene probabilities")
+        if strength["Overall Evidence Strength"] == "Weak": limitations.append("Overall lack of distinct evidence markers")
+        
+        if rel_type == "Contradictory":
+            limitations.append("Speech and environmental modalities conflict")
+            score = "Low"
+            
+        # Confidence calculation
+        if strength["Overall Evidence Strength"] == "Strong" and rel_type not in ["Contradictory", "Independent"]:
+            score = "High"
+        elif strength["Overall Evidence Strength"] == "Weak":
+            score = "Low"
+            
+        if not limitations:
+            limitations.append("Source verification remains unconfirmed")
+            
+        if not drivers:
+            drivers.append("None")
+            
+        return score, drivers, limitations
+
+    def _calculate_risk(self, scenario, has_crisis_tone, has_crisis_scene, rel_type, is_media):
+        if is_media:
+            return "Low"
+            
+        if "Emergency" in scenario or "Crisis" in scenario or "Attack" in scenario:
+            if has_crisis_tone and has_crisis_scene and rel_type in ["Strong Reinforcement", "Moderate Reinforcement"]:
+                return "Very High"
+            return "High"
+            
+        if has_crisis_tone or has_crisis_scene:
+            return "Moderate"
+            
+        return "Low"
+        
+    def _generate_analyst_conclusion(self, rel_type, strength, scenario, is_media):
+        conclusion = ""
+        if is_media:
+            conclusion = "The evidence strongly points to media playback rather than a live event. The acoustic profile aligns with broadcast or recorded content, mitigating potential physical risk."
+            return conclusion
+            
+        if "Reinforcement" in rel_type and strength["Overall Evidence Strength"] in ["Strong", "Moderate"]:
+            conclusion = f"Both speech semantics and environmental acoustics point toward a {scenario.lower()}. The consistent pattern across multiple modalities strengthens the assessment."
+        elif rel_type == "Contradictory":
+            conclusion = f"There is a stark contradiction between the detected environment and the speech. While one modality suggests {scenario.lower()}, the other does not align. This limits interpretability."
+        elif rel_type == "Independent":
+            conclusion = f"Acoustic events are occurring independently of the detected speech. The {scenario.lower()} appears to be a backdrop to unrelated human activity."
+        else:
+            conclusion = f"The overall pattern suggests a {scenario.lower()}, though the evidence is {strength['Overall Evidence Strength'].lower()}."
+            
+        conclusion += " Additional verification through secondary sensors or visual feeds is recommended to definitively confirm the situation."
+        return conclusion
+
     def analyze(self, transcript: str, scene_probs: list, t_conf: float, timeline: list = None):
         transcript_style, tone_str, detected_tones = self._linguistic_analysis(transcript)
         has_speech = len(transcript.strip()) > 0
         
         active_scenes = []
-        music_prob = scene_probs[SCENE_LABELS.index("Music")]
-        media_prob = scene_probs[SCENE_LABELS.index("Television / Media")]
+        music_prob = scene_probs[SCENE_LABELS.index("Music")] if scene_probs is not None and len(scene_probs) > 0 else 0
+        media_prob = scene_probs[SCENE_LABELS.index("Television / Media")] if scene_probs is not None and len(scene_probs) > 0 else 0
         
         for i, prob in enumerate(scene_probs):
             if prob > self.threshold:
@@ -216,7 +443,7 @@ class CASREEngine:
         detected_media = [label for label in scene_names if label in media_labels]
         is_media = len(detected_media) > 0
         
-        # OMNI-MATRIX EVALUATION (WITH EXCLUDE_TONES LOGIC)
+        # OMNI-MATRIX EVALUATION
         matched_scenario = None
         for rule in self.omni_matrix:
             scene_match = True
@@ -240,16 +467,10 @@ class CASREEngine:
                 
         if matched_scenario:
             scenario = matched_scenario["scenario"]
-            reasoning = [matched_scenario["reasoning"]]
-            risk_score = matched_scenario["risk"]
-            urgency = matched_scenario["urgency"]
             if matched_scenario["media"]:
                 is_media = True
         else:
             scenario = "Ambiguous Environment"
-            reasoning = []
-            risk_score = 1
-            urgency = "Low"
             
             is_speech_reliable = has_speech and (t_conf >= 0.50 or len(detected_tones) > 0)
             top_scene_name = active_scenes[0][0] if active_scenes else None
@@ -258,80 +479,154 @@ class CASREEngine:
             if is_speech_reliable:
                 if "Music" in scene_names:
                     scenario = "Media Playback (Music & Voice)"
-                    reasoning.append("Music detected alongside speech, indicating a podcast or media clip.")
                 elif is_media:
                     scenario = "Television Show / Movie Clip"
-                    reasoning.append("Media sounds detected alongside speech, pointing to a standard TV show.")
                 elif "Crowd & Hubbub" in scene_names:
                     scenario = "Public Social Interaction"
-                    reasoning.append("Crowd present with speech, indicating a public space.")
                 else:
                     scenario = f"Human Activity ({env})"
-                    reasoning.append("Speech is the primary activity detected in the environment.")
             else:
                 if top_scene_prob > 0.80 and top_scene_name not in ["Silence / Unknown", "Indoor / Domestic"]:
                     scenario = f"Acoustic Event: {top_scene_name}"
-                    reasoning.append(f"A strong {top_scene_name.lower()} signal is the primary acoustic event.")
                 else:
                     scenario = f"Pure Environmental Noise ({env})"
-                    reasoning.append(f"Entirely driven by ambient environmental sounds from a {env.lower()} setting.")
 
-        # NATE (Physics) Overrides
-        nate_insights = []
+        # Temporal Awareness
+        temporal_evidence = "No distinct temporal variance detected."
+        timeline_active = False
         if timeline and len(timeline) > 1:
             rms_values = [t.get("rms", 0) for t in timeline]
             pitch_values = [t.get("pitch", 0) for t in timeline]
             
             avg_rms = np.mean(rms_values)
-            max_rms = np.max(rms_values)
-            avg_pitch = np.mean(pitch_values)
             max_pitch = np.max(pitch_values)
+            avg_pitch = np.mean(pitch_values)
             
             if len(rms_values) >= 3:
                 first, mid, last = rms_values[0], max(rms_values), rms_values[-1]
                 if mid > first * 1.5 and mid > last * 1.5:
-                    nate_insights.append("Dynamic Proximity: The primary sound source is passing by (Doppler-like fade in/out).")
+                    temporal_evidence = "Transient event passing by the sensor."
+                    timeline_active = True
                 elif min(rms_values) > 0.1:
-                    nate_insights.append("Static Proximity: The sound source is stationary and in immediate proximity.")
+                    temporal_evidence = "Continuous, stable proximity event."
                     
             if max_pitch > avg_pitch * 2 and max_pitch > 3000:
                 if "Siren & Alarm" in scene_names or "Emergency" in detected_tones:
-                    nate_insights.append("Predictive Surprise: Sudden high-pitch acoustic spike indicates acute alarm or distress.")
-                    risk_score = min(10, risk_score + 2)
-                    urgency = "Elevated (High-Pitch Startle/Fear Detected)"
+                    temporal_evidence += " Sudden high-pitch acoustic spike detected."
+                    timeline_active = True
                     
             if scenario == "Crisis / Conflict Zone (War/Attack)" and avg_rms < 0.05:
                 scenario = "Covert Military / Stealth Operation"
-                nate_insights.append("PHYSICS OVERRIDE: Despite war terminology, the environment is exceptionally quiet (Low RMS), indicating stealth or covert activity rather than an active firefight.")
+                temporal_evidence += " Exceptionally low energy indicating stealth."
                 
             if scenario in ["Emergency / Distress Situation", "Home Invasion / Armed Burglary"] and avg_rms < 0.05:
                 scenario = "Covert Emergency / Hiding"
-                nate_insights.append("PHYSICS OVERRIDE: Emergency terminology delivered at very low volume indicates the speaker is hiding or in a covert distress situation.")
+                temporal_evidence += " Extremely quiet speech dynamics implying concealment."
 
-            if nate_insights:
-                reasoning.append(" | ".join(nate_insights))
+        # Analytical Framework 18-Stage Execution
+        strength = self._evaluate_evidence_strength(has_speech, detected_tones, active_scenes, t_conf, timeline, is_media)
+        observations = self._generate_specific_observations(transcript, active_scenes, timeline_active, is_media, detected_tones)
+        rel_type, rel_explanation = self._evaluate_relationship(detected_tones, scene_names, is_media, transcript_style)
+        env_interpretation = self._interpret_environment(scene_names, active_scenes, env)
+        alt_interpretation = self._generate_alternative(scenario, is_media, env)
+        uncertainty = self._generate_uncertainty(t_conf, is_media, active_scenes, has_speech)
+        conf_score, conf_drivers, conf_limitations = self._calculate_confidence(strength, rel_type)
         
-        contextual_reasoning = " ".join(reasoning)
+        crisis_tones = {"War/Crisis", "Emergency", "Weather/Disaster", "Action/Combat"}
+        has_crisis_tone = bool(set(detected_tones).intersection(crisis_tones))
+        has_crisis_scene = bool(set(scene_names).intersection({"Siren & Alarm"}))
+        calculated_risk = self._calculate_risk(scenario, has_crisis_tone, has_crisis_scene, rel_type, is_media)
         
-        response = "CASRE Omni-Matrix Analysis:\n"
-        response += "=======================\n"
-        response += f"Predicted Scenario: {scenario}\n"
-        response += f"Contextual Reasoning: {contextual_reasoning}\n\n"
+        analyst_conclusion = self._generate_analyst_conclusion(rel_type, strength, scenario, is_media)
+
+        rec_response = "Monitoring recommended."
+        if calculated_risk == "Very High":
+            rec_response = "Escalation recommended."
+        elif calculated_risk == "High":
+            rec_response = "Immediate attention recommended."
+        elif calculated_risk == "Moderate":
+            rec_response = "Further verification advised."
+
+        # Assembly
+        response = "CASRE SITUATIONAL ASSESSMENT\n\n"
         
-        response += "Technical Breakdown:\n"
-        response += "-----------------------\n"
-        top_3_scenes = active_scenes[:3]
-        response += f"Multi-Label Scene: {', '.join([f'{s[0]} ({min(s[1], 1.0)*100:.0f}%)' for s in top_3_scenes])}\n"
+        response += "Executive Summary\n"
+        response += "⸻\n"
         
-        media_str = f"Positive ({', '.join(detected_media)})" if is_media else "Negative (Live Environment)"
-        response += f"Media Detection:   {media_str}\n"
-        response += f"Risk / Urgency:    {risk_score}/10 | {urgency}\n"
+        response += "Evidence Strength Overview\n"
+        response += f"Speech Evidence: {strength['Speech Evidence']}\n"
+        response += f"Environmental Evidence: {strength['Environmental Evidence']}\n"
+        response += f"Temporal Evidence: {strength['Temporal Evidence']}\n"
+        response += f"Media Evidence: {strength['Media Evidence']}\n"
+        response += f"Overall Evidence Strength: {strength['Overall Evidence Strength']}\n"
+        response += "⸻\n"
+
+        response += "Observations\n"
+        for obs in observations: response += f"* {obs}\n"
+        response += "⸻\n"
         
-        if has_speech:
-            response += f"Extracted Topics:  {tone_str}\n"
-            response += f"Speech Style:      {transcript_style}\n"
-            response += f"Transcript:        '{transcript}' (Conf: {t_conf:.2f})\n"
-        else:
-            response += "Speech Content:    None detected.\n"
+        response += "Evidence Analysis\n"
+        response += "⸻\n"
+        
+        response += "Speech Evidence\n"
+        response += f"Transcript: {transcript if transcript.strip() else 'None'}\n"
+        response += f"Style: {transcript_style}\n"
+        response += f"Topics: {tone_str}\n"
+        response += "⸻\n"
+        
+        response += "Environmental Evidence\n"
+        response += f"Primary Environment: {env}\n"
+        response += f"Scenes: {', '.join([f'{s[0]} ({s[1]*100:.0f}%)' for s in active_scenes])}\n"
+        response += "⸻\n"
+        
+        response += "Temporal Evidence\n"
+        response += f"{temporal_evidence}\n"
+        response += "⸻\n"
+        
+        response += "Media Evidence\n"
+        response += f"{'Media signals detected.' if is_media else 'No media signals detected.'}\n"
+        response += "⸻\n"
+        
+        response += "Cross-Modal Relationship\n"
+        response += f"{rel_type}\n"
+        response += f"{rel_explanation}\n"
+        response += "⸻\n"
+        
+        response += "Situation Assessment\n"
+        response += f"Most Likely Interpretation: {scenario}\n"
+        response += "⸻\n"
+        
+        response += "Environmental Interpretation\n"
+        response += f"{env_interpretation}\n"
+        response += "⸻\n"
+        
+        response += "Alternative Explanations\n"
+        response += f"{alt_interpretation}\n"
+        response += "⸻\n"
+        
+        response += "Uncertainty Analysis\n"
+        for unc in uncertainty: response += f"* {unc}\n"
+        response += "⸻\n"
+        
+        response += "Confidence Drivers\n"
+        for cd in conf_drivers: response += f"✓ {cd}\n"
+        response += "⸻\n"
             
-        return response, active_scenes, risk_score, is_media
+        response += "Confidence Limitations\n"
+        for cl in conf_limitations: response += f"✗ {cl}\n"
+        response += "⸻\n"
+        
+        response += "Risk Assessment\n"
+        response += f"{calculated_risk}\n"
+        response += "⸻\n"
+        
+        response += "Recommended Response\n"
+        response += f"{rec_response}\n"
+        response += "⸻\n"
+        
+        response += "Analyst Conclusion\n"
+        response += f"{analyst_conclusion}\n"
+        
+        # Hack to inject the confidence so the UI parser can still find it (if we want, or UI parser can be fully updated)
+        # We will add it strictly for the return tuple since the engine doesn't return conf_score directly.
+        return response, active_scenes, 0, is_media
