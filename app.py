@@ -13,48 +13,44 @@ def format_casre_html(ai_text):
     if not ai_text or "CASRE SITUATIONAL ASSESSMENT" not in ai_text:
         return f"<div style='padding:1rem; color:#e2e8f0;'>{ai_text}</div>"
         
-    sections_raw = ai_text.split("⸻\n")
+    sections = {}
+    current_header = None
+    current_content = []
     
-    # 0 = Header
-    # 1 = Evidence Strength Overview
-    # 2 = Observations
-    # 3 = Evidence Analysis Header
-    # 4 = Speech Evidence
-    # 5 = Environmental Evidence
-    # 6 = Temporal Evidence
-    # 7 = Media Evidence
-    # 8 = Cross-Modal Relationship
-    # 9 = Situation Assessment
-    # 10 = Environmental Interpretation
-    # 11 = Alternative Explanations
-    # 12 = Uncertainty Analysis
-    # 13 = Confidence Drivers
-    # 14 = Confidence Limitations
-    # 15 = Risk Assessment
-    # 16 = Recommended Response
-    # 17 = Analyst Conclusion
+    for line in ai_text.split('\n'):
+        line = line.strip()
+        if line == "⸻":
+            if current_header:
+                sections[current_header] = "\n".join(current_content).strip()
+            current_header = None
+            current_content = []
+        elif not current_header and line and line != "CASRE SITUATIONAL ASSESSMENT":
+            current_header = line
+        elif current_header:
+            current_content.append(line)
+            
+    if current_header and current_content:
+        sections[current_header] = "\n".join(current_content).strip()
+        
+    def get_sec(name):
+        return sections.get(name, "")
 
-    def get_section(idx):
-        return sections_raw[idx] if len(sections_raw) > idx else ""
-
-    exec_summary = get_section(0)
-    ev_strength = get_section(1)
-    observations = get_section(2)
+    ev_strength = get_sec("Evidence Strength Overview")
+    observations = get_sec("Observations")
+    nate_text = get_sec("Neuro-Acoustic Temporal Expectation (NATE)")
+    hif_text = get_sec("Human Influence Factors (HIF)")
+    alignment_text = get_sec("Semantic-Acoustic Alignment")
     
-    sp_ev = get_section(4).replace("Speech Evidence\n", "").strip()
-    en_ev = get_section(5).replace("Environmental Evidence\n", "").strip()
-    tm_ev = get_section(6).replace("Temporal Evidence\n", "").strip()
-    
-    cross_modal = get_section(8).replace("Cross-Modal Relationship\n", "").strip()
-    sit_assessment = get_section(9).replace("Situation Assessment\n", "").strip()
-    env_interp = get_section(10).replace("Environmental Interpretation\n", "").strip()
-    alt_exp = get_section(11).replace("Alternative Explanations\n", "").strip()
-    uncertainty = get_section(12).replace("Uncertainty Analysis\n", "").strip()
-    conf_drivers = get_section(13).replace("Confidence Drivers\n", "").strip()
-    conf_limits = get_section(14).replace("Confidence Limitations\n", "").strip()
-    risk_assessment = get_section(15).replace("Risk Assessment\n", "").strip()
-    recommended = get_section(16).replace("Recommended Response\n", "").strip()
-    analyst_conc = get_section(17).replace("Analyst Conclusion\n", "").strip()
+    sp_ev = get_sec("Speech Evidence")
+    cross_modal = get_sec("Cross-Modal Relationship")
+    sit_assessment = get_sec("Situation Assessment")
+    env_interp = get_sec("Environmental Interpretation")
+    unc_text = get_sec("Uncertainty Analysis")
+    conf_drivers = get_sec("Confidence Drivers")
+    conf_limits = get_sec("Confidence Limitations")
+    risk_assessment = get_sec("Risk Assessment")
+    recommended = get_sec("Recommended Response")
+    analyst_conc = get_sec("Analyst Conclusion")
     
     # Parse Situation
     scenario = "Unknown"
@@ -64,11 +60,10 @@ def format_casre_html(ai_text):
             
     # Determine Colors
     risk_color = "#10b981"
-    if "Very High" in risk_assessment: risk_color = "#991b1b"
-    elif "High" in risk_assessment: risk_color = "#ef4444"
+    if "Very High" in risk_assessment or "EXTREME" in risk_assessment.upper(): risk_color = "#991b1b"
+    elif "High" in risk_assessment or "CRITICAL" in risk_assessment.upper(): risk_color = "#ef4444"
     elif "Moderate" in risk_assessment: risk_color = "#f59e0b"
     
-    # Evidence Strength extraction
     overall_strength = "Unknown"
     for line in ev_strength.split('\n'):
         if line.startswith("Overall Evidence Strength:"):
@@ -101,13 +96,19 @@ def format_casre_html(ai_text):
     supp_html = build_list(conf_drivers, "✅")
     contra_html = build_list(conf_limits, "❌")
     obs_html = format_list(observations, "•")
-    unc_html = format_list(uncertainty, "⚠️")
+    unc_html = format_list(unc_text, "⚠️")
+    nate_html = format_list(nate_text, "🧠")
+    hif_html = format_list(hif_text, "👥")
 
     transcript = "None"
     for line in sp_ev.split('\n'):
         if line.startswith("Transcript:"): transcript = line.replace("Transcript:", "").strip()
-        
+
     cross_modal_text = cross_modal.replace("\n", "<br/>")
+    
+    align_color = "#3b82f6"
+    if "Low Alignment" in alignment_text: align_color = "#ef4444"
+    elif "High Alignment" in alignment_text: align_color = "#10b981"
 
     def format_raw_text(text):
         styled_lines = []
@@ -119,7 +120,7 @@ def format_casre_html(ai_text):
                 styled_lines.append("<hr style='border: none; border-top: 1px dashed #475569; margin: 0.75rem 0;'/>")
             elif line == "CASRE SITUATIONAL ASSESSMENT":
                 styled_lines.append(f"<div style='font-size: 1.1rem; font-weight: 700; color: #818cf8; margin-top: 1rem; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;'>{line}</div>")
-            elif line in ["Executive Summary", "Evidence Strength Overview", "Observations", "Evidence Analysis", "Speech Evidence", "Environmental Evidence", "Temporal Evidence", "Media Evidence", "Cross-Modal Relationship", "Situation Assessment", "Environmental Interpretation", "Alternative Explanations", "Uncertainty Analysis", "Confidence Drivers", "Confidence Limitations", "Risk Assessment", "Recommended Response", "Analyst Conclusion", "Temporal Event Timeline:"]:
+            elif line in sections.keys():
                 styled_lines.append(f"<div style='font-size: 0.95rem; font-weight: 600; color: #cbd5e1; margin-top: 0.75rem; margin-bottom: 0.25rem;'>{line}</div>")
             elif line.startswith("* "):
                 styled_lines.append(f"<div style='margin-left: 1rem; color: #94a3b8; font-size: 0.9rem; line-height: 1.4;'><span style='color:#60a5fa; margin-right:6px;'>•</span>{line[2:]}</div>")
@@ -136,7 +137,6 @@ def format_casre_html(ai_text):
         
     styled_raw_text = format_raw_text(ai_text)
 
-
     html = f'''
     <div style="font-family: 'Inter', sans-serif; color: #e2e8f0;">
         <div style="background: #0f172a; border: 1px solid #334155; border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
@@ -146,17 +146,29 @@ def format_casre_html(ai_text):
                 <span style="background: {get_strength_color(overall_strength)}; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">Evidence: {overall_strength}</span>
                 <span style="background: {risk_color}; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">Risk: {risk_assessment}</span>
                 <span style="background: #3b82f6; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">Action: {recommended}</span>
+                <span style="border: 1px solid {align_color}; color: {align_color}; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">{alignment_text}</span>
             </div>
             
             <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #334155;">
                 <h4 style="font-size: 0.85rem; font-weight: 600; color: #cbd5e1; margin-bottom: 0.5rem;">Evidence Strength Breakdown</h4>
-                <div style="font-size: 0.85rem; color: #94a3b8; white-space: pre-wrap; font-family: monospace;">{ev_strength.replace("Evidence Strength Overview\n", "").strip()}</div>
+                <div style="font-size: 0.85rem; color: #94a3b8; white-space: pre-wrap; font-family: monospace;">{ev_strength}</div>
             </div>
         </div>
         
         <div style="background: rgba(59, 130, 246, 0.05); border-left: 4px solid #3b82f6; padding: 1rem 1.5rem; margin-bottom: 1.5rem; border-radius: 0 12px 12px 0;">
             <h4 style="font-size: 0.9rem; font-weight: 700; color: #60a5fa; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">Analyst Conclusion</h4>
             <p style="color: #e2e8f0; font-size: 1rem; line-height: 1.6;">{analyst_conc}</p>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+            <div style="background: linear-gradient(145deg, #1e1b4b, #312e81); border: 1px solid #4338ca; border-radius: 12px; padding: 1rem; box-shadow: 0 4px 15px rgba(67, 56, 202, 0.2);">
+                <h4 style="font-size: 0.85rem; font-weight: 600; color: #a5b4fc; margin-bottom: 0.5rem; text-transform: uppercase;">Neuro-Acoustic Expectation (NATE)</h4>
+                {nate_html}
+            </div>
+            <div style="background: linear-gradient(145deg, #064e3b, #065f46); border: 1px solid #059669; border-radius: 12px; padding: 1rem; box-shadow: 0 4px 15px rgba(5, 150, 105, 0.2);">
+                <h4 style="font-size: 0.85rem; font-weight: 600; color: #6ee7b7; margin-bottom: 0.5rem; text-transform: uppercase;">Human Influence Factors (HIF)</h4>
+                {hif_html}
+            </div>
         </div>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
