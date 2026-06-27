@@ -39,6 +39,8 @@ _Anurag University | School of Engineering | Hyderabad_
 | 5.0         | June 2026 | Neuro-Acoustic Temporal Expectation (NATE) Upgrade: predictive coding logic, proximity tracking, pitch analysis, movie scenario deduction.                                                              |
 | 6.0         | June 2026 | Omni-Matrix Upgrade: 51-scenario multi-dimensional context matrix. Semantic-Acoustic Alignment Filter added.                                                                                            |
 | 7.0         | June 2026 | Architectural Consistency Upgrade: Multimodal Dataset Builder (MDB), Multilingual Speech Normalization Layer (MSNL), true multimodal supervised training pipeline. Full documentation consistency pass. |
+| 7.1         | June 2026 | CASRE Engine Upgrade: 51-Scenario Omni-Matrix, improved Boolean logic (`any_tones`, `all_tones`, `exclude_tones`), and full phrase matching in linguistic parsing using word boundaries. |
+| 7.2         | June 2026 | Dual-Whisper Architecture: `whisper-base` for acoustic embeddings and `whisper-small` for pure text processing. Streamlined MSNL bypassing `langdetect` and `Helsinki-NLP`, natively extracting language and translations. Validated footprint ~1.2GB total RAM for HF free tier deployment. |
 
 # **Abstract**
 
@@ -46,7 +48,7 @@ Speech and environmental audio have traditionally been processed through entirel
 
 This project presents an Audio Language Model (ALM) - a deep learning system designed to Listen, Think, and Understand both speech and non-speech audio simultaneously. The core architectural contribution is a multimodal supervised training pipeline that combines LibriSpeech speech data with ESC-50 environmental audio through a purpose-built Multimodal Dataset Builder (MDB), producing dynamically mixed training samples at controlled signal-to-noise ratios. The system integrates OpenAI's Whisper encoder (frozen) for speech feature extraction and CLAP (Contrastive Language-Audio Pretraining, frozen) for environmental audio analysis. A custom trainable Fusion Layer merges the two 512-dimensional embedding streams into a joint contextual representation, and a Scene Context Network classifies audio into 40 scene categories.
 
-A Multilingual Speech Normalization Layer (MSNL) unifies multilingual Whisper transcripts into English-normalized semantic text before reasoning. The Context-Aware Smart Response Engine (CASRE) - a deterministic cross-modal reasoning engine - generates structured natural-language situational assessments without dependency on any external language model.
+A Multilingual Speech Normalization Layer (MSNL) unifies multilingual transcripts into English-normalized semantic text. In v7.2, the pipeline introduces a Dual-Whisper Architecture: `whisper-base` calculates robust 512-dimensional acoustic embeddings, while a parallel `whisper-small` engine seamlessly provides high-fidelity, multilingual text translation without intermediate models. The Context-Aware Smart Response Engine (CASRE) - a deterministic cross-modal reasoning engine leveraging a 51-scenario Omni-Matrix - generates structured natural-language situational assessments without dependency on any external language model.
 
 The system is fully deployable on Hugging Face Spaces (free tier) with a Gradio-based web interface supporting microphone, drag-and-drop, and file-upload input modalities.
 
@@ -264,11 +266,8 @@ Audio Input
 ▼ ▼
 
 ┌─────────────────┐ ┌──────────────────────┐
-
-│ Whisper Encoder │ │ CLAP Encoder │
-
-│ (FROZEN) │ │ (FROZEN) │
-
+│ Dual-Whisper    │ │ CLAP Encoder         │
+│ base + small    │ │ (FROZEN)             │
 └────────┬────────┘ └──────────┬───────────┘
 
 │ │
@@ -285,11 +284,11 @@ Transcript + Speech Emb Env. Embedding \[512\]
 
 │ Normalization Layer (MSNL) │ │
 
-│ • Language Detection │ │
-
-│ • Translation to English │ │
-
-│ • Confidence Estimation │ │
+│ • Direct English Translation │ │
+│   (from Whisper-small)       │ │
+│ • Language Identification    │ │
+│   (natively extracted)       │ │
+│ • Confidence Estimation      │ │
 
 └──────────────┬──────────────┘ │
 
@@ -506,9 +505,7 @@ soundfile>=0.12.0
 
 datasets>=2.14.0
 
-langdetect>=1.0.9 # MSNL: language identification
-
-\# No LLM dependencies - CASRE is pure Python deterministic engine
+# No LLM dependencies - CASRE is pure Python deterministic engine
 
 # **6\. Dataset Description**
 
@@ -662,39 +659,35 @@ The Multilingual Speech Normalization Layer (MSNL) is introduced to bridge this 
 
 ├────────────────────────────────────────────────────────────┤
 
-│ Input: Whisper transcript (any language) + detected lang │
+│ Input: Dual-Whisper output (English transcript, lang, conf)│
 
 │ │
 
-│ Step 1: Language Identification │
+│ Step 1: Language Extraction │
 
-│ → langdetect.detect(transcript) │
-
-│ → Supported language verification │
+│ → Natively extracted from whisper-small generation task    │
 
 │ │
 
-│ Step 2: Conditional Translation │
+│ Step 2: Semantic English Transcript Assembly │
 
-│ if lang == 'en': pass through │
+│ → whisper-small is run in "task": "translate" mode,        │
 
-│ else: Helsinki-NLP/opus-mt → English │
+│   directly outputting high-fidelity English text.          │
 
 │ │
 
 │ Step 3: Confidence Estimation │
 
-│ → Translation confidence score \[0.0-1.0\] │
-
-│ → Original transcript preserved for display │
+│ → Translation confidence score \[0.0-1.0\] preserved         │
 
 │ │
 
-│ Step 4: Validation & Error Handling │
+│ Step 4: Output Structuring │
 
-│ if translation fails: scene classification │
+│ → Returns dictionary containing semantic transcript and    │
 
-│ continues; semantic reasoning skipped gracefully │
+│   language metadata for CASRE reasoning.                   │
 
 │ │
 
@@ -704,13 +697,12 @@ The Multilingual Speech Normalization Layer (MSNL) is introduced to bridge this 
 
 ## **8.3 MSNL Responsibilities**
 
-- Language detection using langdetect or Whisper's own language_id output
-- Supported language verification (99 Whisper-supported languages)
-- Automatic translation to English using Helsinki-NLP/opus-mt translation models when source language is non-English
-- Translation confidence estimation (returned to UI for transparency)
-- Preservation of original transcript for user display
-- Generation of reasoning transcript in English for CASRE
-- Graceful error handling: if translation fails, scene classification continues but semantic reasoning is skipped - the pipeline never terminates
+- Language detection natively using Whisper-small's token outputs.
+- High-fidelity English translation natively driven by Whisper-small's `"task": "translate"`.
+- Bypassing slow or deprecated external translation APIs (e.g. Helsinki-NLP, langdetect).
+- Preservation of language metadata for UI display.
+- Generation of reasoning transcript in English for CASRE.
+- Graceful error handling: if extraction fails, scene classification continues but semantic reasoning is skipped - the pipeline never terminates.
 
 ## **8.4 MSNL Output to UI**
 

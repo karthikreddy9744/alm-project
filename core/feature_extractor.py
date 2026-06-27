@@ -33,7 +33,7 @@ class WhisperFeatureExtractor:
             chunk_length_s=30,
             device=self.device,
             generate_kwargs={
-                "task": "transcribe",
+                "task": "translate",
                 "condition_on_prev_tokens": False,
                 "repetition_penalty": 1.5,
                 "no_repeat_ngram_size": 3
@@ -44,20 +44,24 @@ class WhisperFeatureExtractor:
         self.vad = SileroVADWrapper(threshold=0.3)
 
     @torch.inference_mode()
-    def extract(self, audio: np.ndarray, sr: int = 16000):
+    def extract(self, audio: np.ndarray, sr: int = 16000, extract_text: bool = True, extract_emb: bool = True):
         # 1. Voice Activity Detection (VAD)
         timestamps = self.vad.get_timestamps(audio, sr)
         
         transcript_parts = []
+        detected_languages = []
         # 2. VAD-Guided Transcription with Repetition Suppression
-        if len(timestamps) > 0:
+        if extract_text and len(timestamps) > 0:
             for t in timestamps:
                 start_sample = t['start']
                 end_sample = t['end']
                 
                 if (end_sample - start_sample) / sr > 0.2:
                     speech_chunk = audio[start_sample:end_sample]
-                    text = self.transcriber(speech_chunk)['text'].strip()
+                    out = self.transcriber(speech_chunk, return_language=True)
+                    text = out['text'].strip()
+                    if 'chunks' in out and len(out['chunks']) > 0 and 'language' in out['chunks'][0]:
+                        detected_languages.append(out['chunks'][0]['language'])
                     
                     # 3. Hallucination Post-Filtering
                     if text:
@@ -72,20 +76,22 @@ class WhisperFeatureExtractor:
                                     text = text[:200] + "..."
                                 transcript_parts.append(text)
         
-        transcript = " ".join(transcript_parts).strip()
+        transcript = " ".join(transcript_parts) if extract_text else ""
         
-        # Extract embeddings using only the encoder
-        inputs = self.processor(audio, sampling_rate=sr, return_tensors='pt')
-        input_features = inputs.input_features.to(self.device)
+        # 4. Extract Acoustic Embeddings
+        embedding = None
+        if extract_emb:
+            inputs = self.processor(audio, sampling_rate=sr, return_tensors="pt")
+            input_features = inputs.input_features.to(self.device)
+            encoder_output = self.transcriber.model.model.encoder(input_features)
+            encoder_last_hidden = encoder_output.last_hidden_state
+            embedding = encoder_last_hidden.mean(dim=1).squeeze(0).cpu() # [512]
         
-        with torch.no_grad():
-            encoder_output = self.model.get_encoder()(input_features)
+        dominant_lang = "en"
+        if detected_languages:
+            dominant_lang = max(set(detected_languages), key=detected_languages.count)
         
-        # Get encoder last hidden state and mean pool
-        encoder_last_hidden = encoder_output.last_hidden_state
-        embedding = encoder_last_hidden.mean(dim=1).squeeze(0).cpu() # [512]
-        
-        return embedding, transcript
+        return embedding, transcript, dominant_lang
 
 class CLAPFeatureExtractor:
     def __init__(self):

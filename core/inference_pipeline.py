@@ -11,7 +11,8 @@ from core.audio_utils import lufs_normalize, detect_clipping
 class ALMInferencePipeline:
     def __init__(self):
         # Feature extractors
-        self.whisper_fe = WhisperFeatureExtractor('base')
+        self.whisper_acoustic = WhisperFeatureExtractor('base')
+        self.whisper_linguistic = WhisperFeatureExtractor('small')
         self.clap_fe = CLAPFeatureExtractor()
         
         # Custom trained modules
@@ -52,6 +53,7 @@ class ALMInferencePipeline:
             
         timeline = []
         global_transcript = []
+        global_langs = []
         
         def safe_boost(label, val):
             if label in SCENE_LABELS:
@@ -73,8 +75,15 @@ class ALMInferencePipeline:
             if len(chunk_audio) < chunk_samples and len(chunk_audio) > 0:
                 chunk_audio = np.pad(chunk_audio, (0, chunk_samples - len(chunk_audio)))
                 
-            # Step 2: Feature extraction (parallel)
-            w_emb, transcript = self.whisper_fe.extract(chunk_audio, sr)
+            # Step 2: Feature extraction (parallel conceptually)
+            # Acoustic features (fast, no text generation)
+            w_emb, _, _ = self.whisper_acoustic.extract(chunk_audio, sr, extract_text=False)
+            
+            # Linguistic features (slower, high quality translation)
+            _, transcript, chunk_lang = self.whisper_linguistic.extract(chunk_audio, sr, extract_emb=False)
+            
+            if chunk_lang:
+                global_langs.append(chunk_lang)
             c_emb = self.clap_fe.extract(chunk_audio, sr)
             
             if transcript:
@@ -144,8 +153,10 @@ class ALMInferencePipeline:
             
         full_transcript = "\n".join(global_transcript)
         
+        dominant_lang = max(set(global_langs), key=global_langs.count) if global_langs else "en"
+        
         # Step 4.5: MSNL Processing
-        msnl_out = self.msnl.normalize(full_transcript)
+        msnl_out = self.msnl.normalize(full_transcript, dominant_lang)
         semantic_transcript = msnl_out["semantic_transcript"]
         
         # Step 5: Advanced CASRE — scenario matrix heuristics & risk scoring
