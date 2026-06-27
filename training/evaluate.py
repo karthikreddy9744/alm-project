@@ -30,7 +30,7 @@ def evaluate_model(data_path: str = "data/processed",
     # Load trained models
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     fusion = FusionLayer().to(device)
-    scene_net = SceneContextNetwork(num_classes=20).to(device)
+    scene_net = SceneContextNetwork(num_classes=40).to(device)
     
     checkpoint = torch.load(model_path, map_location=device)
     fusion.load_state_dict(checkpoint["fusion"])

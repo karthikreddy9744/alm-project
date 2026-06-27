@@ -2,10 +2,14 @@ import numpy as np
 import re
 
 SCENE_LABELS = [
-    "Traffic & Vehicles", "Siren & Alarm", "Crowd & Hubbub", "Weather & Nature",
-    "Water", "Indoor / Domestic", "Office", "Construction", "Wildlife / Animals",
-    "Music", "Television / Media", "Movie Scene", "Public Transport", "Airport",
-    "Sports Event", "Restaurant / Cafe", "Mall", "Home", "Footsteps", "Silence / Unknown"
+    "Dog", "Poultry", "Pig", "Cow", "Frog",
+    "Cat", "Insects", "Sheep", "Crow", "Rain & Thunder",
+    "Sea & Water", "Crackling fire", "Crickets", "Chirping birds", "Water drops",
+    "Wind", "Toilet flush", "Crying baby", "Coughing & Sneezing", "Clapping",
+    "Breathing", "Footsteps", "Laughing", "Personal Care", "Snoring",
+    "Door sounds", "Office", "Can opening", "Washing machine", "Vacuum cleaner",
+    "Clock", "Glass breaking", "Aviation", "Saws", "Siren",
+    "Cars/Traffic", "Train", "Church bells", "Fireworks", "Silence / Unknown"
 ]
 
 class CASREEngine:
@@ -13,11 +17,11 @@ class CASREEngine:
         self.threshold = threshold
         
         self.env_map = {
-            "Domestic": {"Home", "Indoor / Domestic"},
-            "Public/Social": {"Restaurant / Cafe", "Mall", "Sports Event", "Crowd & Hubbub"},
-            "Professional": {"Office", "Construction"},
-            "Nature/Outdoors": {"Weather & Nature", "Wildlife / Animals", "Water"},
-            "Transit": {"Public Transport", "Airport", "Traffic & Vehicles"}
+            "Domestic": {"Toilet flush", "Crying baby", "Personal Care", "Snoring", "Door sounds", "Can opening", "Washing machine", "Vacuum cleaner", "Clock", "Glass breaking"},
+            "Public/Social": {"Clapping", "Laughing", "Church bells"},
+            "Professional": {"Office", "Saws"},
+            "Nature/Outdoors": {"Dog", "Poultry", "Pig", "Cow", "Frog", "Cat", "Insects", "Sheep", "Crow", "Rain & Thunder", "Sea & Water", "Crackling fire", "Crickets", "Chirping birds", "Water drops", "Wind"},
+            "Transit": {"Aviation", "Cars/Traffic", "Train"}
         }
 
         self.keyword_categories = {
@@ -50,71 +54,70 @@ class CASREEngine:
             {"tones": ["Weather/Disaster"], "scenario": "Natural Disaster / Severe Weather Event", "reasoning": "CRITICAL SEMANTIC OVERRIDE: Transcript explicitly discusses severe weather, flooding, winds, or structural damage. This completely changes the context to a disaster event.", "risk": 9, "urgency": "CRITICAL", "media": False},
             {"tones": ["War/Crisis"], "scenario": "Crisis / Conflict Zone (War/Attack)", "reasoning": "CRITICAL SEMANTIC OVERRIDE: Transcript explicitly contains extreme crisis/war terminology. This strongly overrides baseline heuristics.", "risk": 10, "urgency": "EXTREME", "media": False},
             {"tones": ["Emergency"], "scenario": "Emergency / Distress Situation", "reasoning": "SEMANTIC OVERRIDE: Transcript contains explicit calls for help, emergency services, or distress markers, overriding standard environmental noise.", "risk": 8, "urgency": "High", "media": False},
-            {"scenes": ["Siren & Alarm"], "tones": ["War/Crisis"], "scenario": "Air Raid Siren / Nuclear Alarm", "reasoning": "Siren acoustics combined with war terminology explicitly points to an air raid or nuclear alarm.", "risk": 10, "urgency": "EXTREME", "media": False},
-            {"scenes": ["Siren & Alarm"], "tones": ["Silence / Unknown", "Indoor / Domestic"], "scenario": "Building Security Alarm", "reasoning": "Siren acoustics in a quiet/indoor environment imply a localized security or fire alarm.", "risk": 5, "urgency": "Moderate", "media": False},
+            {"scenes": ["Siren"], "tones": ["War/Crisis"], "scenario": "Air Raid Siren / Nuclear Alarm", "reasoning": "Siren acoustics combined with war terminology explicitly points to an air raid or nuclear alarm.", "risk": 10, "urgency": "EXTREME", "media": False},
+            {"scenes": ["Siren"], "tones": ["Silence / Unknown", "Domestic"], "scenario": "Building Security Alarm", "reasoning": "Siren acoustics in a quiet/indoor environment imply a localized security or fire alarm.", "risk": 5, "urgency": "Moderate", "media": False},
 
             # --- PRIORITY 2: MEDIA, FICTION & ENTERTAINMENT ---
             {"tones": ["Sci-Fi/Fantasy/Drama"], "scenario": "Sci-Fi / Fantasy Movie Scene", "reasoning": "Transcript contains explicit fictional, superhero, or fantasy terminology, confirming an entertainment/movie context.", "risk": 1, "urgency": "Low", "media": True},
             {"tones": ["Action/Combat", "Scream/Yell", "Casual"], "scenario": "Action Sequence / Movie Scene", "reasoning": "Contradictory mix of casual dialogue, action keywords, and extreme screaming is a hallmark of acted media or action movies.", "risk": 2, "urgency": "Low", "media": True},
-            {"scenes": ["Movie Scene"], "tones": ["War/Crisis", "Scream/Yell", "Action/Combat"], "scenario": "Action / War Film", "reasoning": "Screams and war terminology detected inside a confirmed movie acoustic environment.", "risk": 1, "urgency": "Low", "media": True},
+            {"scenes": ["Television / Media"], "tones": ["War/Crisis", "Scream/Yell", "Action/Combat"], "scenario": "Action / War Film", "reasoning": "Screams and war terminology detected inside a confirmed media acoustic environment.", "risk": 1, "urgency": "Low", "media": True},
             {"scenes": ["Television / Media", "Broadcast"], "tones": ["War/Crisis"], "scenario": "Live News Report (Warzone)", "reasoning": "War terminology mapped to broadcast/media acoustics implies a televised warzone report.", "risk": 1, "urgency": "Low", "media": True},
             {"scenes": ["Television / Media", "Broadcast"], "tones": ["Weather/Disaster"], "scenario": "Live News Report (Weather)", "reasoning": "Disaster terminology mapped to broadcast/media acoustics implies a televised weather emergency report.", "risk": 1, "urgency": "Low", "media": True},
-            {"scenes": ["Sports Event"], "tones": ["Television / Media", "Broadcast"], "scenario": "Televised Sports Game", "reasoning": "Sports acoustics combined with broadcast/media signals indicate a televised match.", "risk": 1, "urgency": "Low", "media": True},
-            {"scenes": ["Sports Event", "Crowd & Hubbub"], "tones": ["Frustration", "Casual"], "exclude_tones": ["War/Crisis", "Emergency"], "scenario": "Live Stadium / Fan Reaction", "reasoning": "Crowd noise mixed with passionate casual/frustration tones without formal broadcast markers points to an in-person stadium crowd.", "risk": 1, "urgency": "Low", "media": False},
+            {"scenes": ["Clapping", "Laughing"], "tones": ["Frustration", "Casual"], "exclude_tones": ["War/Crisis", "Emergency"], "scenario": "Live Stadium / Fan Reaction", "reasoning": "Crowd noise mixed with passionate casual/frustration tones without formal broadcast markers points to an in-person stadium crowd.", "risk": 1, "urgency": "Low", "media": False},
             {"scenes": ["Television / Media"], "tones": ["Music", "Casual"], "scenario": "Music Video / MTV", "reasoning": "Music and casual tones detected on media/TV imply a music video or pop culture broadcast.", "risk": 1, "urgency": "Low", "media": True},
-            {"scenes": ["Television / Media"], "tones": ["Wildlife / Animals", "Broadcast"], "scenario": "Nature Documentary (Media)", "reasoning": "Wildlife acoustics combined with media/broadcast markers explicitly points to a nature documentary.", "risk": 1, "urgency": "Low", "media": True},
+            {"scenes": ["Television / Media"], "tones": ["Broadcast"], "scenario": "Nature Documentary (Media)", "reasoning": "Wildlife acoustics combined with media/broadcast markers explicitly points to a nature documentary.", "risk": 1, "urgency": "Low", "media": True},
 
             # --- PRIORITY 3: SPECIFIC REAL-WORLD ENVIRONMENTS ---
             # 1. WATER & MARINE
-            {"scenes": ["Water"], "tones": ["Emergency", "Scream/Yell"], "scenario": "Marine Rescue / Drowning", "reasoning": "Distress markers or screaming in a marine environment indicate a severe drowning or water rescue crisis.", "risk": 10, "urgency": "EXTREME", "media": False},
-            {"scenes": ["Water"], "tones": ["Weather/Disaster", "Siren & Alarm"], "scenario": "Marine Storm / Tsunami", "reasoning": "Severe weather keywords combined with aquatic acoustics indicate a dangerous marine storm or tsunami.", "risk": 10, "urgency": "CRITICAL", "media": False},
-            {"scenes": ["Water"], "tones": ["Music", "Casual"], "exclude_tones": ["Scream/Yell", "Emergency"], "scenario": "Pool Party / Beach Hangout", "reasoning": "Music and casual tones near water suggest a recreational pool or beach gathering.", "risk": 1, "urgency": "Low", "media": False},
-            {"scenes": ["Water"], "tones": ["Silence / Unknown", "Casual"], "exclude_tones": ["Scream/Yell", "Emergency", "War/Crisis"], "scenario": "Quiet Fishing / Sailing", "reasoning": "Calm water acoustics with no extreme tones imply peaceful fishing or sailing.", "risk": 1, "urgency": "Low", "media": False},
+            {"scenes": ["Sea & Water", "Water drops"], "tones": ["Emergency", "Scream/Yell"], "scenario": "Marine Rescue / Drowning", "reasoning": "Distress markers or screaming in a marine environment indicate a severe drowning or water rescue crisis.", "risk": 10, "urgency": "EXTREME", "media": False},
+            {"scenes": ["Sea & Water", "Water drops"], "tones": ["Weather/Disaster", "Siren"], "scenario": "Marine Storm / Tsunami", "reasoning": "Severe weather keywords combined with aquatic acoustics indicate a dangerous marine storm or tsunami.", "risk": 10, "urgency": "CRITICAL", "media": False},
+            {"scenes": ["Sea & Water", "Water drops"], "tones": ["Music", "Casual"], "exclude_tones": ["Scream/Yell", "Emergency"], "scenario": "Pool Party / Beach Hangout", "reasoning": "Music and casual tones near water suggest a recreational pool or beach gathering.", "risk": 1, "urgency": "Low", "media": False},
+            {"scenes": ["Sea & Water", "Water drops"], "tones": ["Silence / Unknown", "Casual"], "exclude_tones": ["Scream/Yell", "Emergency", "War/Crisis"], "scenario": "Quiet Fishing / Sailing", "reasoning": "Calm water acoustics with no extreme tones imply peaceful fishing or sailing.", "risk": 1, "urgency": "Low", "media": False},
             
             # 2. TRANSIT, VEHICLES & ROADWAYS
-            {"scenes": ["Traffic & Vehicles"], "tones": ["Emergency", "Siren & Alarm"], "scenario": "Car Crash / Major Collision", "reasoning": "Emergency calls in a heavy traffic environment strongly point to a vehicular accident.", "risk": 9, "urgency": "CRITICAL", "media": False},
-            {"scenes": ["Traffic & Vehicles"], "tones": ["Frustration", "Scream/Yell"], "scenario": "Severe Road Rage", "reasoning": "Screaming and frustration in traffic acoustics are clear markers of a severe road rage incident.", "risk": 6, "urgency": "Moderate", "media": False},
-            {"scenes": ["Public Transport", "Airport"], "tones": ["War/Crisis"], "scenario": "Transit Hijacking / Terror Crisis", "reasoning": "War and crisis terminology in a transit hub implies a severe hijacking or terror event.", "risk": 10, "urgency": "EXTREME", "media": False},
-            {"scenes": ["Public Transport"], "tones": ["Frustration", "Scream/Yell"], "scenario": "Subway / Transit Brawl", "reasoning": "Frustration and screaming inside public transit strongly indicates a physical altercation or brawl.", "risk": 6, "urgency": "Moderate", "media": False},
-            {"scenes": ["Airport", "Public Transport"], "tones": ["Broadcast"], "exclude_tones": ["War/Crisis", "Emergency"], "scenario": "Transit PA Announcement", "reasoning": "Formal broadcast speech in a transit environment is highly characteristic of overhead PA announcements.", "risk": 1, "urgency": "Low", "media": False},
-            {"scenes": ["Public Transport", "Airport"], "tones": ["Silence / Unknown"], "exclude_tones": ["War/Crisis", "Emergency", "Scream/Yell"], "scenario": "Quiet Train / Flight Ride", "reasoning": "Public transit acoustics with silence indicates a peaceful commute.", "risk": 1, "urgency": "Low", "media": False},
-            {"scenes": ["Traffic & Vehicles"], "tones": ["Silence / Unknown", "Frustration"], "exclude_tones": ["War/Crisis", "Emergency", "Scream/Yell"], "scenario": "Traffic Jam / Idling", "reasoning": "Vehicular acoustics with no crisis or mild frustration implies idling or a traffic jam.", "risk": 2, "urgency": "Low", "media": False},
-            {"scenes": ["Traffic & Vehicles"], "tones": ["Action/Combat", "Siren & Alarm"], "scenario": "Police Chase / Pursuit", "reasoning": "Action/Combat sounds mixed with traffic and sirens indicate a high-speed police pursuit.", "risk": 8, "urgency": "High", "media": False},
+            {"scenes": ["Cars/Traffic"], "tones": ["Emergency", "Siren"], "scenario": "Car Crash / Major Collision", "reasoning": "Emergency calls in a heavy traffic environment strongly point to a vehicular accident.", "risk": 9, "urgency": "CRITICAL", "media": False},
+            {"scenes": ["Cars/Traffic"], "tones": ["Frustration", "Scream/Yell"], "scenario": "Severe Road Rage", "reasoning": "Screaming and frustration in traffic acoustics are clear markers of a severe road rage incident.", "risk": 6, "urgency": "Moderate", "media": False},
+            {"scenes": ["Train", "Aviation"], "tones": ["War/Crisis"], "scenario": "Transit Hijacking / Terror Crisis", "reasoning": "War and crisis terminology in a transit hub implies a severe hijacking or terror event.", "risk": 10, "urgency": "EXTREME", "media": False},
+            {"scenes": ["Train"], "tones": ["Frustration", "Scream/Yell"], "scenario": "Subway / Transit Brawl", "reasoning": "Frustration and screaming inside public transit strongly indicates a physical altercation or brawl.", "risk": 6, "urgency": "Moderate", "media": False},
+            {"scenes": ["Aviation", "Train"], "tones": ["Broadcast"], "exclude_tones": ["War/Crisis", "Emergency"], "scenario": "Transit PA Announcement", "reasoning": "Formal broadcast speech in a transit environment is highly characteristic of overhead PA announcements.", "risk": 1, "urgency": "Low", "media": False},
+            {"scenes": ["Train", "Aviation"], "tones": ["Silence / Unknown"], "exclude_tones": ["War/Crisis", "Emergency", "Scream/Yell"], "scenario": "Quiet Train / Flight Ride", "reasoning": "Public transit acoustics with silence indicates a peaceful commute.", "risk": 1, "urgency": "Low", "media": False},
+            {"scenes": ["Cars/Traffic"], "tones": ["Silence / Unknown", "Frustration"], "exclude_tones": ["War/Crisis", "Emergency", "Scream/Yell"], "scenario": "Traffic Jam / Idling", "reasoning": "Vehicular acoustics with no crisis or mild frustration implies idling or a traffic jam.", "risk": 2, "urgency": "Low", "media": False},
+            {"scenes": ["Cars/Traffic"], "tones": ["Action/Combat", "Siren"], "scenario": "Police Chase / Pursuit", "reasoning": "Action/Combat sounds mixed with traffic and sirens indicate a high-speed police pursuit.", "risk": 8, "urgency": "High", "media": False},
 
             # 3. PUBLIC SPACES & CROWDS
-            {"scenes": ["Mall", "Crowd & Hubbub"], "tones": ["War/Crisis", "Scream/Yell"], "scenario": "Mass Shooting / Terror Attack", "reasoning": "Screaming and war/crisis terms in a crowded public space are explicit markers of an active shooter or terror attack.", "risk": 10, "urgency": "EXTREME", "media": False},
-            {"scenes": ["Music", "Crowd & Hubbub"], "tones": ["Emergency", "Scream/Yell"], "scenario": "Concert Stampede / Panic", "reasoning": "Distress and screaming overlaying music indicates a severe crowd crush or stampede at a live event.", "risk": 10, "urgency": "EXTREME", "media": False},
-            {"scenes": ["Crowd & Hubbub", "Traffic & Vehicles"], "tones": ["Scream/Yell", "Frustration"], "scenario": "Violent Riot / Civil Unrest", "reasoning": "Crowds, traffic, frustration, and screaming characterize a violent street riot or civil unrest.", "risk": 8, "urgency": "High", "media": False},
-            {"scenes": ["Crowd & Hubbub", "Traffic & Vehicles"], "tones": ["Broadcast"], "exclude_tones": ["War/Crisis"], "scenario": "Political Rally / Organized Protest", "reasoning": "Formal/Broadcast speech directed at a crowd in a public space indicates a political rally or organized protest.", "risk": 3, "urgency": "Low", "media": False},
-            {"scenes": ["Crowd & Hubbub", "Music"], "tones": ["Casual"], "exclude_tones": ["Scream/Yell", "War/Crisis", "Emergency"], "scenario": "Flash Mob / Public Performance", "reasoning": "Music and casual crowd interaction without distress markers suggests a flash mob or public performance.", "risk": 1, "urgency": "Low", "media": False},
-            {"scenes": ["Restaurant / Cafe"], "tones": ["Frustration", "Scream/Yell"], "scenario": "Bar Brawl / Public Altercation", "reasoning": "Screaming and frustration in a dining or cafe environment indicates a physical altercation or bar fight.", "risk": 7, "urgency": "High", "media": False},
-            {"scenes": ["Restaurant / Cafe", "Crowd & Hubbub"], "tones": ["Broadcast"], "exclude_tones": ["War/Crisis", "Emergency"], "scenario": "Stand-up Comedy / Live Show", "reasoning": "Broadcast-style speech directed at a relaxed crowd in a cafe/restaurant setting suggests a comedy or live show.", "risk": 1, "urgency": "Low", "media": False},
-            {"scenes": ["Restaurant / Cafe"], "tones": ["Music", "Casual"], "exclude_tones": ["War/Crisis", "Emergency", "Scream/Yell"], "scenario": "Dining / Background Music", "reasoning": "Casual tones and background music in a cafe implies a standard dining environment.", "risk": 1, "urgency": "Low", "media": False},
+            {"scenes": ["Clapping", "Laughing"], "tones": ["War/Crisis", "Scream/Yell"], "scenario": "Mass Shooting / Terror Attack", "reasoning": "Screaming and war/crisis terms in a crowded public space are explicit markers of an active shooter or terror attack.", "risk": 10, "urgency": "EXTREME", "media": False},
+            {"scenes": ["Music", "Clapping"], "tones": ["Emergency", "Scream/Yell"], "scenario": "Concert Stampede / Panic", "reasoning": "Distress and screaming overlaying music indicates a severe crowd crush or stampede at a live event.", "risk": 10, "urgency": "EXTREME", "media": False},
+            {"scenes": ["Clapping", "Cars/Traffic"], "tones": ["Scream/Yell", "Frustration"], "scenario": "Violent Riot / Civil Unrest", "reasoning": "Crowds, traffic, frustration, and screaming characterize a violent street riot or civil unrest.", "risk": 8, "urgency": "High", "media": False},
+            {"scenes": ["Clapping", "Cars/Traffic"], "tones": ["Broadcast"], "exclude_tones": ["War/Crisis"], "scenario": "Political Rally / Organized Protest", "reasoning": "Formal/Broadcast speech directed at a crowd in a public space indicates a political rally or organized protest.", "risk": 3, "urgency": "Low", "media": False},
+            {"scenes": ["Clapping", "Music"], "tones": ["Casual"], "exclude_tones": ["Scream/Yell", "War/Crisis", "Emergency"], "scenario": "Flash Mob / Public Performance", "reasoning": "Music and casual crowd interaction without distress markers suggests a flash mob or public performance.", "risk": 1, "urgency": "Low", "media": False},
+            {"scenes": ["Glass breaking", "Laughing"], "tones": ["Frustration", "Scream/Yell"], "scenario": "Bar Brawl / Public Altercation", "reasoning": "Screaming and frustration in a dining or cafe environment indicates a physical altercation or bar fight.", "risk": 7, "urgency": "High", "media": False},
+            {"scenes": ["Laughing"], "tones": ["Broadcast"], "exclude_tones": ["War/Crisis", "Emergency"], "scenario": "Stand-up Comedy / Live Show", "reasoning": "Broadcast-style speech directed at a relaxed crowd in a cafe/restaurant setting suggests a comedy or live show.", "risk": 1, "urgency": "Low", "media": False},
+            {"scenes": ["Glass breaking", "Laughing"], "tones": ["Music", "Casual"], "exclude_tones": ["War/Crisis", "Emergency", "Scream/Yell"], "scenario": "Dining / Background Music", "reasoning": "Casual tones and background music in a cafe implies a standard dining environment.", "risk": 1, "urgency": "Low", "media": False},
 
             # 4. OFFICE & PROFESSIONAL
             {"scenes": ["Office"], "tones": ["War/Crisis", "Scream/Yell"], "scenario": "Office Active Shooter", "reasoning": "Screaming and crisis keywords in an office environment point to an active shooter or workplace attack.", "risk": 10, "urgency": "EXTREME", "media": False},
-            {"scenes": ["Office"], "tones": ["Emergency", "Siren & Alarm"], "scenario": "Workplace Fire / Evacuation", "reasoning": "Sirens and emergency terminology in an office dictate a fire alarm or emergency evacuation.", "risk": 9, "urgency": "CRITICAL", "media": False},
+            {"scenes": ["Office"], "tones": ["Emergency", "Siren"], "scenario": "Workplace Fire / Evacuation", "reasoning": "Sirens and emergency terminology in an office dictate a fire alarm or emergency evacuation.", "risk": 9, "urgency": "CRITICAL", "media": False},
             {"scenes": ["Office"], "tones": ["Professional", "Broadcast"], "exclude_tones": ["War/Crisis", "Emergency"], "scenario": "Corporate Presentation", "reasoning": "Formal/Broadcast speech mixed with professional keywords in an office indicates a structured corporate presentation.", "risk": 1, "urgency": "Low", "media": False},
             {"scenes": ["Office"], "tones": ["Professional", "Frustration"], "scenario": "Workplace Dispute / Firing", "reasoning": "Professional terminology mixed with frustration indicates a severe workplace dispute or termination.", "risk": 4, "urgency": "Moderate", "media": False},
             {"scenes": ["Office"], "tones": ["Footsteps", "Silence / Unknown"], "exclude_tones": ["War/Crisis", "Emergency", "Scream/Yell"], "scenario": "Solo Office Working (After Hours)", "reasoning": "Silence and footsteps in an office indicates solo working after hours.", "risk": 1, "urgency": "Low", "media": False},
 
             # 5. DOMESTIC & HOME
-            {"scenes": ["Home", "Indoor / Domestic"], "tones": ["War/Crisis", "Scream/Yell"], "scenario": "Home Invasion / Armed Burglary", "reasoning": "Screaming and crisis keywords inside a home environment strongly indicate an armed home invasion.", "risk": 10, "urgency": "EXTREME", "media": False},
-            {"scenes": ["Home", "Indoor / Domestic"], "tones": ["Frustration", "Scream/Yell"], "exclude_tones": ["War/Crisis", "Action/Combat", "Sci-Fi/Fantasy/Drama"], "scenario": "Domestic Abuse / Violent Dispute", "reasoning": "Screaming and frustration in a domestic environment are markers of severe domestic violence or a heated dispute.", "risk": 8, "urgency": "High", "media": False},
-            {"scenes": ["Home", "Indoor / Domestic"], "tones": ["Emergency", "Siren & Alarm"], "scenario": "Domestic Medical Emergency", "reasoning": "Emergency keywords and sirens in a home environment point to an acute medical crisis or fire at a residence.", "risk": 9, "urgency": "CRITICAL", "media": False},
-            {"scenes": ["Home", "Indoor / Domestic"], "tones": ["Casual", "Frustration"], "exclude_tones": ["Scream/Yell", "Emergency", "War/Crisis"], "scenario": "Online Gaming / eSports LAN", "reasoning": "Casual tones mixed with sporadic frustration in a home setting strongly characterize online gaming or an eSports session.", "risk": 1, "urgency": "Low", "media": False},
-            {"scenes": ["Home", "Indoor / Domestic"], "tones": ["Crowd & Hubbub", "Casual"], "exclude_tones": ["Scream/Yell", "Emergency", "War/Crisis"], "scenario": "Dinner Party / Family Gathering", "reasoning": "A crowd of casual speakers inside a home indicates a dinner party or family gathering.", "risk": 1, "urgency": "Low", "media": False},
+            {"scenes": ["Door sounds", "Vacuum cleaner", "Washing machine"], "tones": ["War/Crisis", "Scream/Yell"], "scenario": "Home Invasion / Armed Burglary", "reasoning": "Screaming and crisis keywords inside a home environment strongly indicate an armed home invasion.", "risk": 10, "urgency": "EXTREME", "media": False},
+            {"scenes": ["Door sounds", "Glass breaking"], "tones": ["Frustration", "Scream/Yell"], "exclude_tones": ["War/Crisis", "Action/Combat", "Sci-Fi/Fantasy/Drama"], "scenario": "Domestic Abuse / Violent Dispute", "reasoning": "Screaming and frustration in a domestic environment are markers of severe domestic violence or a heated dispute.", "risk": 8, "urgency": "High", "media": False},
+            {"scenes": ["Door sounds", "Vacuum cleaner"], "tones": ["Emergency", "Siren"], "scenario": "Domestic Medical Emergency", "reasoning": "Emergency keywords and sirens in a home environment point to an acute medical crisis or fire at a residence.", "risk": 9, "urgency": "CRITICAL", "media": False},
+            {"scenes": ["Door sounds", "Can opening"], "tones": ["Casual", "Frustration"], "exclude_tones": ["Scream/Yell", "Emergency", "War/Crisis"], "scenario": "Online Gaming / eSports LAN", "reasoning": "Casual tones mixed with sporadic frustration in a home setting strongly characterize online gaming or an eSports session.", "risk": 1, "urgency": "Low", "media": False},
+            {"scenes": ["Door sounds", "Laughing"], "tones": ["Clapping", "Casual"], "exclude_tones": ["Scream/Yell", "Emergency", "War/Crisis"], "scenario": "Dinner Party / Family Gathering", "reasoning": "A crowd of casual speakers inside a home indicates a dinner party or family gathering.", "risk": 1, "urgency": "Low", "media": False},
 
             # 6. NATURE & WILDLIFE
-            {"scenes": ["Wildlife / Animals"], "tones": ["Emergency", "Scream/Yell"], "scenario": "Animal Attack / Predator Threat", "reasoning": "Screaming and emergency tones alongside prominent wildlife acoustics indicate a severe animal attack.", "risk": 10, "urgency": "EXTREME", "media": False},
-            {"scenes": ["Wildlife / Animals"], "tones": ["War/Crisis", "Action/Combat"], "scenario": "Hunting / Gunshots Outdoors", "reasoning": "War/Combat keywords (like 'shoot') alongside wildlife acoustics imply a hunting environment.", "risk": 6, "urgency": "Moderate", "media": False},
-            {"scenes": ["Weather & Nature"], "tones": ["Emergency"], "scenario": "Lost / Hiking Distress", "reasoning": "Emergency calls isolated in a natural environment imply a lost hiker or outdoor distress situation.", "risk": 8, "urgency": "High", "media": False},
-            {"scenes": ["Weather & Nature"], "tones": ["Silence / Unknown", "Casual"], "exclude_tones": ["Scream/Yell", "Emergency", "War/Crisis"], "scenario": "Nature Relaxation / Camping", "reasoning": "Peaceful nature acoustics with casual or no speech indicate camping or outdoor relaxation.", "risk": 1, "urgency": "Low", "media": False},
+            {"scenes": ["Dog", "Cow", "Pig", "Sheep", "Cat", "Insects", "Crow"], "tones": ["Emergency", "Scream/Yell"], "scenario": "Animal Attack / Predator Threat", "reasoning": "Screaming and emergency tones alongside prominent wildlife acoustics indicate a severe animal attack.", "risk": 10, "urgency": "EXTREME", "media": False},
+            {"scenes": ["Dog", "Crow", "Insects"], "tones": ["War/Crisis", "Action/Combat"], "scenario": "Hunting / Gunshots Outdoors", "reasoning": "War/Combat keywords (like 'shoot') alongside wildlife acoustics imply a hunting environment.", "risk": 6, "urgency": "Moderate", "media": False},
+            {"scenes": ["Rain & Thunder", "Wind"], "tones": ["Emergency"], "scenario": "Lost / Hiking Distress", "reasoning": "Emergency calls isolated in a natural environment imply a lost hiker or outdoor distress situation.", "risk": 8, "urgency": "High", "media": False},
+            {"scenes": ["Rain & Thunder", "Wind"], "tones": ["Silence / Unknown", "Casual"], "exclude_tones": ["Scream/Yell", "Emergency", "War/Crisis"], "scenario": "Nature Relaxation / Camping", "reasoning": "Peaceful nature acoustics with casual or no speech indicate camping or outdoor relaxation.", "risk": 1, "urgency": "Low", "media": False},
 
             # 7. INDUSTRIAL & CONSTRUCTION
-            {"scenes": ["Construction"], "tones": ["Emergency", "Siren & Alarm"], "scenario": "Industrial Accident / Machinery Failure", "reasoning": "Sirens and emergency calls in a construction zone strongly point to a severe industrial or machinery accident.", "risk": 10, "urgency": "EXTREME", "media": False},
-            {"scenes": ["Construction"], "tones": ["War/Crisis"], "scenario": "Active Demolition", "reasoning": "Crisis/Blast keywords in a construction environment likely indicate a planned active demolition.", "risk": 5, "urgency": "Moderate", "media": False},
-            {"scenes": ["Construction"], "tones": ["Professional"], "exclude_tones": ["Scream/Yell", "Emergency", "War/Crisis"], "scenario": "Standard Construction / Tool Use", "reasoning": "Professional terminology mixed with construction acoustics indicates normal tool operation.", "risk": 2, "urgency": "Low", "media": False},
+            {"scenes": ["Saws"], "tones": ["Emergency", "Siren"], "scenario": "Industrial Accident / Machinery Failure", "reasoning": "Sirens and emergency calls in a construction zone strongly point to a severe industrial or machinery accident.", "risk": 10, "urgency": "EXTREME", "media": False},
+            {"scenes": ["Saws"], "tones": ["War/Crisis"], "scenario": "Active Demolition", "reasoning": "Crisis/Blast keywords in a construction environment likely indicate a planned active demolition.", "risk": 5, "urgency": "Moderate", "media": False},
+            {"scenes": ["Saws"], "tones": ["Professional"], "exclude_tones": ["Scream/Yell", "Emergency", "War/Crisis"], "scenario": "Standard Construction / Tool Use", "reasoning": "Professional terminology mixed with construction acoustics indicates normal tool operation.", "risk": 2, "urgency": "Low", "media": False},
         ]
 
     def _infer_environment(self, scene_names):
@@ -269,13 +272,13 @@ class CASREEngine:
             return "Ambiguous", "No significant relationship between speech and environment is evident."
             
         crisis_tones = {"War/Crisis", "Emergency", "Weather/Disaster", "Action/Combat", "Scream/Yell"}
-        crisis_scenes = {"Siren & Alarm"}
+        crisis_scenes = {"Siren"}
         
         has_crisis_tone = bool(set(detected_tones).intersection(crisis_tones))
         has_crisis_scene = bool(set(scene_names).intersection(crisis_scenes))
         
         if has_crisis_tone and has_crisis_scene:
-            if "Siren & Alarm" in scene_names and scene_names.index("Siren & Alarm") == 0:
+            if "Siren" in scene_names and scene_names.index("Siren") == 0:
                 return "Strong Reinforcement", "Both modalities strongly support the interpretation of an acute event, with environmental cues dominating."
             return "Moderate Reinforcement", "Speech and environmental modalities support an overlapping semantic interpretation."
             
@@ -307,7 +310,7 @@ class CASREEngine:
             else:
                 interpretation += f" Secondary signatures of {secondary[0]} are present but non-dominant."
                 
-        if "Siren & Alarm" in scene_names:
+        if "Siren" in scene_names:
             interpretation += " Emergency-related signals are highly relevant and cut through the baseline environmental noise."
             
         return interpretation
@@ -417,20 +420,20 @@ class CASREEngine:
         has_speech = len(transcript.strip()) > 0
         
         active_scenes = []
-        music_prob = scene_probs[SCENE_LABELS.index("Music")] if scene_probs is not None and len(scene_probs) > 0 else 0
-        media_prob = scene_probs[SCENE_LABELS.index("Television / Media")] if scene_probs is not None and len(scene_probs) > 0 else 0
+        music_prob = scene_probs[SCENE_LABELS.index("Music")] if "Music" in SCENE_LABELS else 0 if scene_probs is not None and len(scene_probs) > 0 else 0
+        media_prob = scene_probs[SCENE_LABELS.index("Television / Media")] if "Television / Media" in SCENE_LABELS else 0 if scene_probs is not None and len(scene_probs) > 0 else 0
         
         for i, prob in enumerate(scene_probs):
             if prob > self.threshold:
                 active_scenes.append((SCENE_LABELS[i], prob))
         
         if has_speech and ("Highly Repetitive" in transcript_style or "Music/Song" in detected_tones):
-            if music_prob > 0.10 and "Music" not in [s[0] for s in active_scenes]:
-                active_scenes.append(("Music", music_prob + 0.30))
+            if "Music" not in [s[0] for s in active_scenes]:
+                active_scenes.append(("Music", 0.50))
                 
         if has_speech and "Broadcast" in detected_tones:
-            if media_prob > 0.10 and "Television / Media" not in [s[0] for s in active_scenes]:
-                active_scenes.append(("Television / Media", media_prob + 0.30))
+            if "Television / Media" not in [s[0] for s in active_scenes]:
+                active_scenes.append(("Television / Media", 0.50))
         
         active_scenes.sort(key=lambda x: x[1], reverse=True)
         if not active_scenes:
@@ -511,7 +514,7 @@ class CASREEngine:
                     temporal_evidence = "Continuous, stable proximity event."
                     
             if max_pitch > avg_pitch * 2 and max_pitch > 3000:
-                if "Siren & Alarm" in scene_names or "Emergency" in detected_tones:
+                if "Siren" in scene_names or "Emergency" in detected_tones:
                     temporal_evidence += " Sudden high-pitch acoustic spike detected."
                     timeline_active = True
                     
@@ -534,7 +537,7 @@ class CASREEngine:
         
         crisis_tones = {"War/Crisis", "Emergency", "Weather/Disaster", "Action/Combat"}
         has_crisis_tone = bool(set(detected_tones).intersection(crisis_tones))
-        has_crisis_scene = bool(set(scene_names).intersection({"Siren & Alarm"}))
+        has_crisis_scene = bool(set(scene_names).intersection({"Siren"}))
         calculated_risk = self._calculate_risk(scenario, has_crisis_tone, has_crisis_scene, rel_type, is_media)
         
         analyst_conclusion = self._generate_analyst_conclusion(rel_type, strength, scenario, is_media)

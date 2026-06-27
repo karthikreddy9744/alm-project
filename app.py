@@ -219,7 +219,8 @@ def analyze_audio(audio_input):
         audio = audio.mean(axis=1)
         
     try:
-        transcript, scene, conf, ai_text = pipeline.run(audio, sr)
+        msnl_out, scene, conf, ai_text = pipeline.run(audio, sr)
+        transcript = msnl_out["original_transcript"]
         
         # Live Smoothing Logic (Removed for full timeline analysis in v4.0)
         smoothed_scene = scene
@@ -241,7 +242,10 @@ def analyze_audio(audio_input):
     return (
         f'{transcript}' if transcript else '[No speech detected]',
         f'{smoothed_scene} ({conf*100:.1f}% Max Confidence)',
-        format_casre_html(ai_text)
+        format_casre_html(ai_text),
+        msnl_out.get("detected_language", "en"),
+        msnl_out.get("semantic_transcript", ""),
+        f'{msnl_out.get("translation_confidence", 1.0):.2f}'
     )
 
 # Premium Custom Theme setup
@@ -284,16 +288,20 @@ with gr.Blocks(title='ALM — Audio Language Model') as demo:
                 with gr.TabItem("Live Analysis"):
                     with gr.Row():
                         scene_out = gr.Textbox(label='Predicted Environment', lines=1)
-                        transcript_out = gr.Textbox(label='Audio Transcript', lines=1)
+                        transcript_out = gr.Textbox(label='Audio Transcript (Original)', lines=1)
+                    with gr.Row():
+                        msnl_lang_out = gr.Textbox(label='Detected Language', lines=1)
+                        msnl_semantic_out = gr.Textbox(label='Semantic Transcript (En)', lines=1)
+                        msnl_conf_out = gr.Textbox(label='Translation Confidence', lines=1)
                     ai_out = gr.HTML(label='Situational Assessment')
                 
                 with gr.TabItem("System Information"):
-                    gr.Markdown("### ALM v4.0 Architecture\n1. **Audio Frontend:** Silero VAD + LUFS Normalization.\n2. **Whisper Encoder:** VAD-guided transcript extraction.\n3. **CLAP Encoder:** 512-D environmental feature extraction.\n4. **Fusion Layer:** Advanced Cross-Attention Fusion (Transformer-based).\n5. **Scene Network:** Multi-label environment prediction (20 categories).\n6. **CASRE Engine:** Media playback detection, risk scoring, and timeline reasoning.")
+                    gr.Markdown("### ALM v7.0 Architecture\\n1. **Audio Frontend:** Silero VAD + LUFS Normalization.\\n2. **Whisper Encoder:** VAD-guided transcript extraction.\\n3. **CLAP Encoder:** 512-D environmental feature extraction.\\n4. **Fusion Layer:** V7.0 MLP Layer.\\n5. **Scene Network:** Multi-label environment prediction (40 categories).\\n6. **MSNL:** Multilingual Speech Normalization Layer for translation to English.\\n7. **CASRE Engine:** Media playback detection, risk scoring, and timeline reasoning.")
     
     analyze_btn.click(
         analyze_audio,
         inputs=audio_input,
-        outputs=[transcript_out, scene_out, ai_out]
+        outputs=[transcript_out, scene_out, ai_out, msnl_lang_out, msnl_semantic_out, msnl_conf_out]
     )
 
 demo.queue(default_concurrency_limit=1)

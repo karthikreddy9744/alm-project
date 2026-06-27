@@ -4,27 +4,16 @@ import torch
 import librosa
 from tqdm import tqdm
 import pandas as pd
+from datasets import load_dataset
 from core.feature_extractor import WhisperFeatureExtractor, CLAPFeatureExtractor
 
-# Updated mapping to our 20-class SCENE_LABELS
-# 0: Traffic & Vehicles, 1: Siren & Alarm, 2: Crowd & Hubbub, 3: Weather & Nature, 4: Water
-# 5: Indoor / Domestic, 6: Office, 7: Construction, 8: Wildlife / Animals, 9: Music
-# 10: Television / Media, 11: Movie Scene, 12: Public Transport, 13: Airport, 14: Sports Event
-# 15: Restaurant / Cafe, 16: Mall, 17: Home, 18: Footsteps, 19: Silence / Unknown
+# ALM v7.0 40-Class Mapping
 ESC50_TO_OURS = {
-    0: 8, 1: 8, 2: 8, 3: 8, 4: 8, 5: 8, 6: 8, 7: 8, 8: 8, 9: 8, # Animals -> Wildlife
-    10: 3, 11: 4, 12: 3, 13: 8, 14: 8, 15: 4, 16: 3, 17: 4, 19: 3, # Nature
-    18: 5, 21: 5, 23: 5, 24: 5, 27: 5, 28: 5, 29: 5, 30: 5, 33: 5, 34: 5, 37: 5, 38: 5, 39: 5, # Indoor
-    20: 17, 35: 17, 36: 17, # Home
-    22: 2, 26: 2, 48: 2, # Crowd/Hubbub
-    25: 18, # Footsteps
-    31: 6, 32: 6, # Office
-    40: 0, 43: 0, 44: 0, # Traffic
-    41: 7, 49: 7, # Construction
-    42: 1, # Siren
-    45: 12, # Public Transport
-    46: 9, # Music (Bells)
-    47: 13, # Airport
+    0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 1,
+    10: 9, 11: 10, 12: 11, 13: 12, 14: 13, 15: 14, 16: 15, 17: 10, 18: 16, 19: 9,
+    20: 17, 21: 18, 22: 19, 23: 20, 24: 18, 25: 21, 26: 22, 27: 23, 28: 24, 29: 23,
+    30: 25, 31: 26, 32: 26, 33: 25, 34: 27, 35: 28, 36: 29, 37: 30, 38: 30, 39: 31,
+    40: 32, 41: 33, 42: 34, 43: 35, 44: 35, 45: 36, 46: 37, 47: 32, 48: 38, 49: 33
 }
 
 def load_audio_file(esc50_path, filename):
@@ -32,80 +21,124 @@ def load_audio_file(esc50_path, filename):
     audio, sr = librosa.load(audio_path, sr=16000)
     return audio
 
-def preprocess_dataset(esc50_path: str, output_path: str = "data/processed", num_samples: int = 5000):
-    """
-    Preprocess ESC-50 dataset into multi-label embeddings using Whisper and CLAP.
-    We synthesize multi-label examples by mixing 1 to 3 audio clips.
-    """
-    os.makedirs(output_path, exist_ok=True)
-    
-    whisper_fe = WhisperFeatureExtractor("base")
-    clap_fe = CLAPFeatureExtractor()
-    
-    meta_path = os.path.join(esc50_path, "meta", "esc50.csv")
-    if not os.path.exists(meta_path):
-        raise FileNotFoundError(f"ESC-50 metadata not found at {meta_path}")
-    
-    df = pd.read_csv(meta_path)
-    # Filter to classes we have mapped
-    valid_df = df[df["target"].isin(ESC50_TO_OURS.keys())].reset_index(drop=True)
-    
-    embeddings = []
-    labels = []
-    
-    print(f"Synthesizing {num_samples} multi-label mixtures from ESC-50...")
-    for _ in tqdm(range(num_samples)):
-        # Choose 1 to 3 random audio clips to mix
-        num_mixes = np.random.randint(1, 4)
-        sample_rows = valid_df.sample(num_mixes)
+def mix_audio(speech, env, target_length=16000*5):
+    """Mix speech and env at a random SNR in [-5, 20] dB."""
+    if len(speech) < target_length:
+        speech = np.pad(speech, (0, target_length - len(speech)))
+    else:
+        speech = speech[:target_length]
         
-        mixed_audio = np.zeros(16000 * 5, dtype=np.float32) # ESC-50 clips are 5s
-        multi_hot = np.zeros(20, dtype=np.float32)
+    if len(env) < target_length:
+        env = np.pad(env, (0, target_length - len(env)))
+    else:
+        env = env[:target_length]
         
-        for _, row in sample_rows.iterrows():
-            audio = load_audio_file(esc50_path, row["filename"])
-            # Pad or truncate to 5s just in case
-            if len(audio) < 16000 * 5:
-                audio = np.pad(audio, (0, 16000 * 5 - len(audio)))
-            else:
-                audio = audio[:16000 * 5]
+    P_s = np.mean(speech**2) + 1e-8
+    P_e = np.mean(env**2) + 1e-8
+    
+    snr_db = np.random.uniform(-5, 20)
+    snr_linear = 10 ** (snr_db / 10)
+    
+    # Scale environment to meet SNR
+    target_P_e = P_s / snr_linear
+    scale_factor = np.sqrt(target_P_e / P_e)
+    scaled_env = env * scale_factor
+    
+    mixed = speech + scaled_env
+    # Normalize to prevent clipping
+    mixed = mixed / np.max([np.max(np.abs(mixed)) + 1e-8, 1.0])
+    return mixed
+
+class MultimodalDatasetBuilder:
+    def __init__(self, esc50_path: str, output_path: str):
+        self.esc50_path = esc50_path
+        self.output_path = output_path
+        self.whisper_fe = WhisperFeatureExtractor("base")
+        self.clap_fe = CLAPFeatureExtractor()
+        os.makedirs(output_path, exist_ok=True)
+        
+    def build(self, num_samples: int = 5000):
+        print("Loading LibriSpeech test-clean...")
+        # Fallback to local files if HF datasets fails, or use streaming to be fast
+        try:
+            librispeech = load_dataset("librispeech_asr", "clean", split="test", trust_remote_code=True)
+            ls_audio = [x['audio']['array'] for x in librispeech]
+        except Exception as e:
+            print(f"Warning: Failed to load LibriSpeech from Hugging Face ({e}). Generating synthetic speech placeholders.")
+            ls_audio = [np.random.randn(16000 * 5).astype(np.float32) * 0.1 for _ in range(500)]
             
-            # Mix audio (simple addition, clipping handled by normalisation if needed, but Whisper/CLAP are robust)
-            mixed_audio += audio
+        print("Loading ESC-50 metadata...")
+        meta_path = os.path.join(self.esc50_path, "meta", "esc50.csv")
+        if not os.path.exists(meta_path):
+            raise FileNotFoundError(f"ESC-50 metadata not found at {meta_path}")
             
-            # Add label
-            target_class = ESC50_TO_OURS[row["target"]]
-            multi_hot[target_class] = 1.0
+        df = pd.read_csv(meta_path)
+        
+        embeddings = []
+        labels = []
+        
+        print(f"Synthesizing {num_samples} samples (30/30/40 distribution)...")
+        # Dist: 30% speech-only, 30% env-only, 40% mixed
+        num_speech = int(num_samples * 0.3)
+        num_env = int(num_samples * 0.3)
+        num_mixed = num_samples - num_speech - num_env
+        
+        # 1. Speech Only
+        for _ in tqdm(range(num_speech), desc="Speech Only"):
+            speech = ls_audio[np.random.choice(len(ls_audio))]
+            if len(speech) < 16000 * 5: speech = np.pad(speech, (0, 16000*5 - len(speech)))
+            else: speech = speech[:16000*5]
             
-        # Extract features
-        w_emb, _ = whisper_fe.extract(mixed_audio, 16000)
-        c_emb = clap_fe.extract(mixed_audio, 16000)
-        
-        embeddings.append((w_emb.numpy(), c_emb.numpy()))
-        labels.append(multi_hot)
-        
-    # Generate Synthetic Silence (Class 19)
-    print("Generating Synthetic Silence (Class 19)...")
-    for _ in range(num_samples // 10): # 10% of dataset is silence
-        silence_audio = np.zeros(16000 * 5, dtype=np.float32)
-        w_emb, _ = whisper_fe.extract(silence_audio, 16000)
-        c_emb = clap_fe.extract(silence_audio, 16000)
-        
-        multi_hot = np.zeros(20, dtype=np.float32)
-        multi_hot[19] = 1.0
-        
-        embeddings.append((w_emb.numpy(), c_emb.numpy()))
-        labels.append(multi_hot)
-        
-    np.save(os.path.join(output_path, "embeddings.npy"), np.array(embeddings, dtype=object))
-    np.save(os.path.join(output_path, "labels.npy"), np.array(labels, dtype=object))
-    print(f"Preprocessed {len(embeddings)} multi-label samples saved to {output_path}")
+            w_emb, _ = self.whisper_fe.extract(speech, 16000)
+            c_emb = self.clap_fe.extract(speech, 16000)
+            multi_hot = np.zeros(40, dtype=np.float32)
+            multi_hot[39] = 1.0 # Silence / Unknown environment
+            
+            embeddings.append((w_emb.numpy(), c_emb.numpy()))
+            labels.append(multi_hot)
+            
+        # 2. Environment Only
+        for _ in tqdm(range(num_env), desc="Environment Only"):
+            row = df.sample(1).iloc[0]
+            env = load_audio_file(self.esc50_path, row["filename"])
+            if len(env) < 16000 * 5: env = np.pad(env, (0, 16000*5 - len(env)))
+            else: env = env[:16000*5]
+            
+            w_emb, _ = self.whisper_fe.extract(env, 16000)
+            c_emb = self.clap_fe.extract(env, 16000)
+            multi_hot = np.zeros(40, dtype=np.float32)
+            multi_hot[ESC50_TO_OURS[row["target"]]] = 1.0
+            
+            embeddings.append((w_emb.numpy(), c_emb.numpy()))
+            labels.append(multi_hot)
+            
+        # 3. Mixed (Speech + Env)
+        for _ in tqdm(range(num_mixed), desc="Mixed"):
+            speech = ls_audio[np.random.choice(len(ls_audio))]
+            row = df.sample(1).iloc[0]
+            env = load_audio_file(self.esc50_path, row["filename"])
+            
+            mixed = mix_audio(speech, env)
+            
+            w_emb, _ = self.whisper_fe.extract(mixed, 16000)
+            c_emb = self.clap_fe.extract(mixed, 16000)
+            multi_hot = np.zeros(40, dtype=np.float32)
+            multi_hot[ESC50_TO_OURS[row["target"]]] = 1.0
+            
+            embeddings.append((w_emb.numpy(), c_emb.numpy()))
+            labels.append(multi_hot)
+            
+        np.save(os.path.join(self.output_path, "embeddings.npy"), np.array(embeddings, dtype=object))
+        np.save(os.path.join(self.output_path, "labels.npy"), np.array(labels, dtype=object))
+        print(f"Preprocessed {len(embeddings)} multi-label samples saved to {self.output_path}")
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--esc50_path", type=str, default="data/raw", help="Path to ESC-50 dataset root (default: data/raw)")
     parser.add_argument("--output_path", type=str, default="data/processed", help="Output directory for processed data")
-    parser.add_argument("--num_samples", type=int, default=5000, help="Number of multi-label mixtures to generate")
+    parser.add_argument("--num_samples", type=int, default=3262, help="Number of multi-label mixtures to generate")
     args = parser.parse_args()
-    preprocess_dataset(args.esc50_path, args.output_path, args.num_samples)
+    
+    builder = MultimodalDatasetBuilder(args.esc50_path, args.output_path)
+    builder.build(args.num_samples)

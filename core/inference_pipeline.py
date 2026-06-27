@@ -4,7 +4,8 @@ import librosa
 from core.feature_extractor import WhisperFeatureExtractor, CLAPFeatureExtractor
 from core.fusion_layer import FusionLayer
 from core.scene_network import SceneContextNetwork
-from core.casre_engine import CASREEngine
+from core.casre_engine import CASREEngine, SCENE_LABELS
+from core.msnl import MultilingualSpeechNormalizationLayer
 from core.audio_utils import lufs_normalize, detect_clipping
 
 class ALMInferencePipeline:
@@ -17,6 +18,7 @@ class ALMInferencePipeline:
         self.fusion = FusionLayer()
         self.scene_net = SceneContextNetwork()
         self.casre = CASREEngine(threshold=0.30)
+        self.msnl = MultilingualSpeechNormalizationLayer()
         
         # Load trained weights (ignoring missing keys warning during architectural upgrades)
         try:
@@ -24,7 +26,7 @@ class ALMInferencePipeline:
             self.fusion.load_state_dict(checkpoint['fusion'])
             self.scene_net.load_state_dict(checkpoint['scene_net'])
         except FileNotFoundError:
-            print("Warning: 'models/scene_model.pt' not found. Using untrained weights for v4 architecture.")
+            print("Warning: 'models/scene_model.pt' not found. Using untrained weights for v7 architecture.")
         except Exception as e:
             print(f"Warning: Could not load weights: {e}. Using untrained weights.")
             
@@ -51,6 +53,16 @@ class ALMInferencePipeline:
         timeline = []
         global_transcript = []
         
+        def safe_boost(label, val):
+            if label in SCENE_LABELS:
+                idx = SCENE_LABELS.index(label)
+                probs[idx] = max(probs[idx], val)
+                
+        def safe_suppress(label, val):
+            if label in SCENE_LABELS:
+                idx = SCENE_LABELS.index(label)
+                probs[idx] *= val
+
         # Process each chunk temporally
         for i in range(num_chunks):
             start = i * chunk_samples
@@ -68,7 +80,7 @@ class ALMInferencePipeline:
             if transcript:
                 global_transcript.append(f"[{i*5}-{(i+1)*5}s]: {transcript}")
                 
-            # Step 3: Advanced Cross-Attention Fusion
+            # Step 3: V7.0 MLP Fusion Layer
             with torch.no_grad():
                 fused = self.fusion(w_emb.unsqueeze(0), c_emb.unsqueeze(0))
                 logits = self.scene_net(fused)
@@ -77,41 +89,41 @@ class ALMInferencePipeline:
                 probs = torch.sigmoid(logits).squeeze().tolist()
                 
             # Semantic-Acoustic Alignment Filter (Force realism to fix untrained ML noise)
-            from core.casre_engine import SCENE_LABELS
             if transcript:
                 transcript_lower = transcript.lower()
                 for tone, words in self.casre.keyword_categories.items():
                     if any(w in transcript_lower for w in words):
                         if tone == "Weather/Disaster":
-                            probs[SCENE_LABELS.index("Weather & Nature")] = max(probs[SCENE_LABELS.index("Weather & Nature")], 0.95)
-                            probs[SCENE_LABELS.index("Silence / Unknown")] = 0.0
+                            safe_boost("Rain & Thunder", 0.95)
+                            safe_boost("Wind", 0.95)
+                            safe_suppress("Silence / Unknown", 0.0)
                         elif tone == "War/Crisis":
-                            probs[SCENE_LABELS.index("Crowd & Hubbub")] = max(probs[SCENE_LABELS.index("Crowd & Hubbub")], 0.88)
-                            probs[SCENE_LABELS.index("Silence / Unknown")] = 0.0
+                            safe_boost("Fireworks", 0.88)
+                            safe_boost("Siren", 0.88)
+                            safe_suppress("Silence / Unknown", 0.0)
                         elif tone == "Sci-Fi/Fantasy/Drama":
-                            probs[SCENE_LABELS.index("Movie Scene")] = max(probs[SCENE_LABELS.index("Movie Scene")], 0.99)
+                            safe_boost("Aviation", 0.80)
                         elif tone == "Emergency":
-                            probs[SCENE_LABELS.index("Indoor / Domestic")] = max(probs[SCENE_LABELS.index("Indoor / Domestic")], 0.85)
-                            probs[SCENE_LABELS.index("Silence / Unknown")] = 0.0
+                            safe_boost("Siren", 0.85)
+                            safe_boost("Crying baby", 0.85)
+                            safe_suppress("Silence / Unknown", 0.0)
                         elif tone == "Broadcast":
-                            probs[SCENE_LABELS.index("Television / Media")] = max(probs[SCENE_LABELS.index("Television / Media")], 0.90)
+                            safe_boost("Television / Media", 0.90)
                         elif tone == "Music/Song":
-                            probs[SCENE_LABELS.index("Music")] = max(probs[SCENE_LABELS.index("Music")], 0.95)
+                            safe_boost("Music", 0.95)
                         elif tone == "Casual" or tone == "Frustration":
-                            probs[SCENE_LABELS.index("Indoor / Domestic")] = max(probs[SCENE_LABELS.index("Indoor / Domestic")], 0.70)
+                            safe_boost("Door sounds", 0.70)
                 
                 # If there's any speech, explicitly suppress Silence
-                probs[SCENE_LABELS.index("Silence / Unknown")] = 0.0
+                safe_suppress("Silence / Unknown", 0.0)
                 
             # Suppress weird outdoor noise indoors
-            if probs[SCENE_LABELS.index("Indoor / Domestic")] > 0.6:
-                probs[SCENE_LABELS.index("Wildlife / Animals")] *= 0.1
-                probs[SCENE_LABELS.index("Traffic & Vehicles")] *= 0.3
+            if "Door sounds" in SCENE_LABELS and probs[SCENE_LABELS.index("Door sounds")] > 0.6:
+                safe_suppress("Dog", 0.1)
+                safe_suppress("Cars/Traffic", 0.3)
                 
             # Acoustic Primitives Extraction (NATE Architecture)
-            # 1. RMS Energy (Proximity/Distance/Loudness)
             rms = float(np.mean(librosa.feature.rms(y=chunk_audio)))
-            # 2. Spectral Centroid (Pitch/Severity/Emotion)
             cent = float(np.mean(librosa.feature.spectral_centroid(y=chunk_audio, sr=sr)))
                 
             # Store timeline event
@@ -125,27 +137,28 @@ class ALMInferencePipeline:
             })
             
         # Global Event Aggregation for CASRE
-        # Compute max probabilities across all chunks for global summary
         if len(timeline) > 0:
             global_probs = np.max([t["probs"] for t in timeline], axis=0).tolist()
         else:
-            global_probs = [0.0] * 20
+            global_probs = [0.0] * 40
             
         full_transcript = "\n".join(global_transcript)
         
-        # Step 5: Advanced CASRE — scenario matrix heuristics & risk scoring
-        # Compute transcript confidence metric (simple length/quality heuristic)
-        t_conf = min(1.0, len(full_transcript) / 100) if full_transcript else 0.0
+        # Step 4.5: MSNL Processing
+        msnl_out = self.msnl.normalize(full_transcript)
+        semantic_transcript = msnl_out["semantic_transcript"]
         
-        # Pass the full temporal timeline to CASRE for NATE logic
+        # Step 5: Advanced CASRE — scenario matrix heuristics & risk scoring
+        t_conf = min(1.0, len(semantic_transcript) / 100) if semantic_transcript else 0.0
+        
+        # Pass the full temporal timeline to CASRE for NATE logic, using the english semantic transcript
         ai_response, active_scenes, risk_score, is_media = self.casre.analyze(
-            full_transcript, global_probs, t_conf, timeline
+            semantic_transcript, global_probs, t_conf, timeline
         )
         
         # Add temporal event log to response
         temporal_log = "\n\nTemporal Event Timeline:\n"
         for t in timeline:
-            from core.casre_engine import SCENE_LABELS
             # Sort indices by probability
             sorted_indices = sorted(range(len(t["probs"])), key=lambda k: t["probs"][k], reverse=True)
             active = []
@@ -165,8 +178,7 @@ class ALMInferencePipeline:
             
         ai_response += temporal_log
         
-        # Format the top class for legacy compatibility in Gradio UI
         top_scene = active_scenes[0][0] if active_scenes else "Silence / Unknown"
         confidence = active_scenes[0][1] if active_scenes else 1.0
         
-        return full_transcript, top_scene, confidence, ai_response
+        return msnl_out, top_scene, confidence, ai_response

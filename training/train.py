@@ -59,7 +59,7 @@ def train_model(data_path: str = "data/processed",
     
     device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
     fusion = FusionLayer().to(device)
-    scene_net = SceneContextNetwork(num_classes=20).to(device)
+    scene_net = SceneContextNetwork(num_classes=40).to(device)
     
     criterion = nn.BCEWithLogitsLoss()
     optimizer = optim.AdamW(list(fusion.parameters()) + list(scene_net.parameters()), lr=lr, weight_decay=weight_decay)
