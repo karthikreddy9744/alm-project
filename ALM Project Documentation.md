@@ -1071,245 +1071,50 @@ alm-project/
 
 └── test_pipeline.py ← Full inference pipeline tests
 
-# **15\. Viva-Voce Preparation: Questions & Answers**
 
-This chapter provides 45 comprehensive Q&A pairs covering problem motivation, technical architecture, deep learning concepts, and project-specific topics including the new v7.0 architectural components.
 
-## **Section A: Problem & Motivation (Q1-Q8)**
 
-**Q1. What is an Audio Language Model and why is it needed?**
+# **15\. References & Project Contributions**
 
-An ALM is a deep learning system that processes audio - both speech and environmental sounds - and produces natural language understanding of the acoustic scene. Traditional systems treat ASR and environmental sound classification as completely separate problems. An ALM bridges this gap by jointly modelling both modalities, enabling applications like smart emergency response, accessible audio interfaces, and intelligent surveillance.
+- **Radford, A., Kim, J. W., Xu, T., et al. (2022). Robust Speech Recognition via Large-Scale Weak Supervision. arXiv:2212.04356.**
+  _Contribution:_ This paper introduces the Whisper architecture, which is fundamental to the ALM's speech processing capabilities. In the v7.2 Dual-Whisper engine, the frozen `whisper-base` encoder model provides robust 512-dimensional Speech Embeddings that capture rich phonetic and acoustic information, bypassing the need to train a new speech encoder from scratch. Additionally, the parallel `whisper-small` engine utilizes the architecture's inherent multilingual robustness, originally trained on 680,000 hours of diverse audio, to perform zero-shot language detection and high-fidelity translation to English text. The paper's findings on large-scale weak supervision justify the system's reliance on Whisper as an off-the-shelf, highly accurate linguistic feature extractor that functions reliably in noisy, real-world acoustic environments.
 
-**Q2. What does 'Listen, Think, Understand' mean in your system?**
+- **Wu, Y., Chen, K., Zhang, T., et al. (2022). Large-Scale Contrastive Language-Audio Pretraining. arXiv:2211.06687.**
+  _Contribution:_ This research provides the contrastive learning foundation and architecture for the CLAP model, which serves as the core environmental audio feature extractor in the ALM pipeline. By training on 4.6 million audio-text pairs, CLAP generates 512-dimensional Environmental Embeddings that inherently capture deep semantic relationships between environmental sounds and language. The ALM leverages this frozen embedding space to provide the context—such as identifying sirens, nature sounds, or traffic—necessary for the trainable Fusion Layer to combine with speech features. The paper's demonstration of CLAP's robust zero-shot audio classification capabilities directly motivates its selection over traditional audio classifiers (like YAMNet) for generating meaningful, text-aligned representations of acoustic scenes.
 
-Listen: multi-modal audio ingestion via microphone, file upload, and drag-and-drop through the Gradio interface. Think: the deep learning pipeline - frozen Whisper encoder + frozen CLAP encoder + Multimodal Dataset Builder training + trainable Fusion Layer + Scene Context Network - that reasons over acoustic evidence. Understand: MSNL language normalization + CASRE deterministic reasoning, which generates natural language situational assessments and recommended actions.
+- **Piczak, K. J. (2015). ESC-50: Dataset for Environmental Sound Classification. ACM Multimedia 2015, pp. 1015-1018.**
+  _Contribution:_ The ESC-50 dataset introduced in this paper provides the essential environmental audio component for the ALM's Multimodal Dataset Builder (MDB). Consisting of 2,000 carefully curated, 5-second environmental audio clips across 50 distinct classes, this dataset allows the ALM to learn varied acoustic contexts (e.g., domestic sounds, urban noises, animals, and nature). During the supervised multimodal training phase, the MDB dynamically mixes ESC-50 samples with speech data at varying signal-to-noise ratios. The paper's structured ontology and class definitions formed the basis for the ALM's 40-category Scene Context Network, ensuring that the model is trained to recognize a wide and ecologically valid range of background scenarios crucial for accurate cross-modal reasoning.
 
-**Q3. What is the fundamental difference between ASR and your ALM?**
+- **Panayotov, V., Chen, G., Povey, D., & Khudanpur, S. (2015). LibriSpeech: an ASR corpus based on public domain audio books. ICASSP 2015, pp. 5206-5210.**
+  _Contribution:_ The LibriSpeech corpus is a cornerstone of the ALM's training methodology, supplying the high-quality English speech audio necessary for the Multimodal Dataset Builder (MDB). The test-clean subset provides diverse, multi-speaker utterances that are dynamically mixed with environmental noise from ESC-50. This paper's extensive collection of clean speech enables the ALM's trainable Fusion Layer to learn the complex mathematical relationships between purely linguistic Speech Embeddings and purely contextual Environmental Embeddings. By providing isolated speech, LibriSpeech ensures that the network is forced to rely on the parallel CLAP embeddings to determine the environmental context, effectively teaching the model true cross-modal alignment rather than overfitting to background noise present in standard speech datasets.
 
-ASR converts speech to text - it ignores all environmental context. This ALM simultaneously processes speech through frozen Whisper (producing Speech Embeddings), environmental audio through frozen CLAP (producing Environmental Embeddings), fuses both through a trainable Fusion Layer trained on MDB-generated multimodal samples, classifies the joint scene, normalises multilingual transcripts via MSNL, and generates contextual natural language explanations through CASRE. For the same input 'Help!', ASR gives a transcript while ALM gives full situational assessment including whether that utterance occurs in an emergency acoustic context.
+- **Vaswani, A., Shazeer, N., Parmar, N., et al. (2017). Attention Is All You Need. NeurIPS 2017, Vol. 30.**
+  _Contribution:_ This landmark paper introduced the Transformer architecture and the self-attention mechanism, which fundamentally underpin the entire deep learning pipeline of the ALM project. Both the Whisper ASR model (used for speech embeddings and text extraction) and the CLAP model (used for environmental embeddings) rely entirely on the Transformer architectures detailed in this research. The paper's conceptualization of multi-head self-attention allows these foundation models to efficiently process long temporal audio sequences and capture long-range dependencies in both speech and environmental acoustics. Understanding this architecture is crucial for the ALM project, as the 512-dimensional embeddings fed into the custom Fusion Layer are direct products of the Transformer's encoder layers.
 
-**Q4. Why do you need both LibriSpeech and ESC-50?**
+- **Tang, C., Yu, W., Zhang, G., et al. (2023). SALMONN: Towards Generic Hearing Abilities for Large Language Models. arXiv:2310.13289.**
+  _Contribution:_ The SALMONN paper represents the state-of-the-art in using massive Large Language Models (LLMs) with over 13 billion parameters to process and reason over multimodal audio. In the ALM project, this paper serves as a critical baseline and architectural foil. While SALMONN achieves audio-language reasoning through immense computational scale (requiring massive VRAM and resulting in high latency), the ALM project specifically contrasts itself against this approach by introducing the Context-Aware Smart Response Engine (CASRE). CASRE provides deterministic, rules-based reasoning and scene evaluation with zero LLM dependencies, <1ms latency, and a total memory footprint of ~1.2GB. This reference validates the project's core motivation to build a deployment-stable, free-tier accessible alternative to resource-heavy LLMs.
 
-Neither dataset alone satisfies the project objective. ESC-50 provides environmental audio classification supervision but contains no speech - a model trained only on ESC-50 would never learn to integrate Speech Embeddings from Whisper. LibriSpeech provides speech data but no environmental context labels - a model trained only on LibriSpeech would have no signal to learn Environmental Embedding integration. Only their multimodal combination through the MDB, producing dynamically mixed samples at controlled SNR values, exposes the Fusion Layer to the full joint distribution of both embedding types simultaneously.
+- **Heilbron, M., & Chait, M. (2018). Great Expectations: Is there Evidence for Predictive Coding in Auditory Cortex? Neuroscience, 389, 54-73.**
+  _Contribution:_ This neuroscience paper provides the theoretical justification for the Neuro-Acoustic Temporal Expectation (NATE) module implemented within CASRE. The authors examine how the human auditory cortex operates fundamentally on predictive coding—continuously generating top-down expectations of incoming sensory data and processing primarily the "errors" or deviations from those expectations. The ALM project translates this biological concept into an algorithmic framework: NATE establishes a generative expectation of the acoustic environment (e.g., continuous rain or static office noise) and monitors incoming audio windows for temporal anomalies or proximity trajectories. By grounding the ALM's temporal reasoning logic in established neuroscience, this paper elevates the project from simple classification to a biomimetic model of auditory perception.
 
-**Q5. What is the Multimodal Dataset Builder?**
+- **Walton, T., & Evans, M. (2018). The role of human influence factors on overall listening experience. Quality and User Experience, 3(1).**
+  _Contribution:_ This research explores how subjective and psychographic variables—such as emotional state, listener competence, and cognitive load—alter human perception of audio quality and experience. The ALM project directly integrates these findings into the Human Influence Factors (HIF) assessment module of CASRE. By mapping detected acoustic scenarios and speech semantics against the factors outlined in this paper, CASRE can predict the emotional impact and cognitive load a given audio environment places on a human listener. For instance, detecting an emergency siren combined with distress keywords triggers a high cognitive load and emotional impact assessment. This paper transitions the ALM from a purely objective acoustic classifier into a system capable of human-centric situational empathy.
 
-The MDB is a training-phase-only architectural module that constructs supervised multimodal training samples by randomly pairing LibriSpeech speech clips with ESC-50 environmental clips, dynamically mixing them at random SNR values in the range \[−5, +20\] dB, applying loudness normalisation and clipping prevention, and inheriting the ESC-50 class label as the supervision signal. The MDB generates three sample types (speech-only 30%, environment-only 30%, mixed 40%) to train the Fusion Layer's Joint Multimodal Representation Learning objective.
+- **Loshchilov, I., & Hutter, F. (2019). Decoupled Weight Decay Regularization. ICLR 2019. arXiv:1711.05101.**
+  _Contribution:_ This paper introduces the AdamW optimizer, which fixes the weight decay implementation in the standard Adam optimizer by decoupling it from the gradient updates. In the ALM project, AdamW is the primary optimization algorithm used during the supervised multimodal training of the Fusion Layer and the Scene Context Network. Because the ALM trains a relatively small network (~400K parameters) on a constrained, dynamically mixed dataset of ~3,200 samples, preventing overfitting is paramount. The decoupled weight decay regularization detailed in this paper ensures that the model learns robust, generalizable cross-modal relationships rather than memorizing the specific audio mixes, leading directly to the system's strong validation F1 scores and reliable real-world inference.
 
-**Q6. What is MSNL and why is it needed?**
+- **Paszke, A., Gross, S., Massa, F., et al. (2019). PyTorch: An Imperative Style, High-Performance Deep Learning Library. NeurIPS 2019, Vol. 32.**
+  _Contribution:_ PyTorch is the foundational software ecosystem upon which the entire ALM project is built. This paper details the imperative, dynamic computational graph paradigm that allows the ALM to efficiently bridge pre-trained frozen foundation models (Whisper and CLAP) with custom, dynamically trainable layers (Fusion Layer and Scene Context Network). The ALM heavily relies on PyTorch's `nn.Module` for architectural design, `torch.utils.data` for managing the complex multimodal sample generation in the MDB, and `BCEWithLogitsLoss` for multi-label scene optimization. PyTorch's native GPU acceleration on Google Colab and seamless CPU execution on Hugging Face Spaces makes the project's rapid prototyping and stable deployment possible.
 
-The Multilingual Speech Normalization Layer is an inference-phase module that processes Whisper transcripts in any of its 99 supported languages and produces an English-normalised semantic transcript for CASRE. It is needed because CASRE's deterministic reasoning engine - keyword matching, cross-modal logic, and NATE patterns - is defined for English vocabulary. Without MSNL, a French or Mandarin transcript would produce meaningless CASRE output. MSNL performs language detection, conditional translation via Helsinki-NLP/opus-mt, confidence estimation, and graceful error handling (scene classification continues even if translation fails).
+- **Tifrea, A., et al. (2022). Helsinki-NLP/opus-mt: Machine Translation Models. HuggingFace Model Hub.**
+  _Contribution:_ This reference documents the MarianMT-based machine translation models originally integrated into the Multilingual Speech Normalization Layer (MSNL) in ALM versions prior to v7.2. These models provided the essential capability to translate non-English Whisper transcripts into English semantic text for CASRE to process. While highly effective, they were deprecated in v7.2 because the external API calls suffered from 401 Unauthorized errors and introduced unnecessary latency. However, this research was critical in establishing the original architecture's multilingual pipeline and proving the concept that normalizing all speech to English is necessary for a deterministic, rule-based reasoning engine like CASRE to function globally.
 
-**Q7. What is CASRE and why was it built instead of using an LLM?**
+- **Naous, T., et al. (2023). LangDetect: Probabilistic language detection library. PyPI.**
+  _Contribution:_ This library provided the initial probabilistic language identification capabilities for the MSNL in earlier ALM iterations. It was used to analyze the raw output from the Whisper ASR system to determine if the spoken language required translation via Helsinki-NLP. While this library was highly accurate for text-based detection, it was removed in v7.2 in favor of extracting the detected language directly from Whisper-small's generation tokens, effectively streamlining the pipeline and reducing external dependencies. Nevertheless, the integration of LangDetect was a vital stepping stone in realizing the requirement for dynamic language routing within the multimodal reasoning architecture.
 
-CASRE is a purpose-built deterministic cross-modal reasoning engine that generates natural language situational assessments without any external language model. It was built to replace Phi-2 (2.7B parameters) which posed critical deployment risks: 5.5 GB RAM requirement, 10-60 second inference time, and high crash probability on HF Spaces free tier. CASRE produces structured output through deterministic template assembly using an Omni-Matrix of 51 cross-modal scenarios, with <1 ms latency and zero RAM overhead.
-
-**Q8. How is this project novel compared to simply calling Whisper and CLAP separately?**
-
-Calling Whisper and CLAP separately gives a transcript and an environmental classification. This project's novel contributions are: (1) a Multimodal Dataset Builder that trains the system on dynamically mixed multimodal samples - teaching the Fusion Layer to jointly represent speech semantics and environmental context; (2) a trainable Fusion Layer that learns cross-modal non-linear relationships; (3) MSNL extending the system to 99 languages; (4) CASRE performing cross-modal reasoning across all evidence modalities into structured situational assessments; and (5) full production deployment stability on free-tier infrastructure.
-
-## **Section B: Technical Architecture (Q9-Q22)**
-
-**Q9. Explain the Whisper encoder architecture.**
-
-Whisper uses a Transformer encoder-decoder architecture trained on 680,000 hours of audio. The encoder processes 80-channel log-Mel spectrogram frames through 6 multi-head self-attention Transformer blocks. Output is a sequence of 512-dimensional hidden state vectors. Mean-pooling over these temporal vectors yields a single 512-dimensional Speech Embedding. The decoder is not used - only encoder embeddings are extracted, preserving maximum temporal and phonetic information.
-
-**Q10. How does the Multimodal Dataset Builder mix audio?**
-
-The MDB computes the speech signal power P_s and environmental signal power P_e, then derives a mixing coefficient α = √(P_s / (P_e · 10^(SNR/10))) to achieve the target SNR. The mixed signal m(t) = s(t) + α·e(t) is then normalised to prevent clipping: m(t) = m(t) / max(|m(t)|, 1.0). The SNR target is sampled uniformly from \[−5, +20\] dB for each sample. The ESC-50 environmental label is inherited as the supervision signal.
-
-**Q11. Why concatenate Whisper and CLAP embeddings rather than add or attend?**
-
-Concatenation preserves all information from both embedding spaces independently - the first 512 dimensions are exclusively Speech Embedding (Whisper) and the last 512 exclusively Environmental Embedding (CLAP). The Fusion Layer MLP can then discover arbitrary non-linear cross-dimensional relationships. Addition would force a linear blend that conflates the two domains, losing the ability to weight modalities independently. An attention mechanism would add parameters without clear benefit at this scale.
-
-**Q12. What is LayerNorm and why use it in the Fusion Layer?**
-
-LayerNorm normalises activations across feature dimensions: x_norm = (x − mean(x)) / (std(x) + ε) × γ + β. It prevents internal covariate shift - the changing distribution of layer inputs during training - which destabilises gradient-based optimisation. Applied after each linear transformation before ReLU in the Fusion Layer, it ensures the MLP receives consistently scaled inputs regardless of the magnitude of the incoming Speech and Environmental Embeddings.
-
-**Q13. Explain the training data distribution strategy.**
-
-The MDB generates three sample types in a 30/30/40 distribution: 30% speech-only (LibriSpeech without ESC-50 overlay), 30% environment-only (ESC-50 without speech), and 40% mixed (dynamically combined with random SNR). All three are required. Speech-only samples teach the Fusion Layer that Speech Embeddings carry independent linguistic information. Environment-only samples teach that Environmental Embeddings carry independent acoustic scene information. Mixed samples teach the core multimodal objective - integrating both simultaneously. Training on mixed samples alone would cause the model to fail on single-modality real-world inputs.
-
-**Q14. What is BCEWithLogitsLoss and why use it?**
-
-Binary Cross-Entropy with Logits Loss is appropriate for multi-label classification where multiple scene categories can be simultaneously active (e.g., Traffic and Emergency together). It applies sigmoid independently to each of the 20 output logits, computing binary cross-entropy per class and averaging. The pos_weight argument allows per-class weighting to address class imbalance across the 20 ESC-50-derived categories. Numerically, BCEWithLogitsLoss applies log-sum-exp for numerical stability.
-
-**Q15. Why are Whisper and CLAP kept frozen during training?**
-
-Both pretrained models encode representations learned from orders-of-magnitude more data than the training set. Whisper was trained on 680,000 hours; CLAP on 4.6 million audio-text pairs. Fine-tuning on ESC-50 scale data would cause catastrophic forgetting of these general representations. Keeping encoders frozen also reduces trainable parameters from ~236M to ~400K, making training feasible on free-tier hardware. The frozen encoders provide fixed, high-quality embedding spaces which are the optimal starting point for the Fusion Layer to learn from.
-
-**Q16. What is the MSNL's error handling strategy?**
-
-If language detection fails or translation fails (e.g., unsupported language or translation model error), MSNL returns the original transcript as-is and sets translation confidence to 0.0. CASRE's reasoning then operates in environment-only mode, using scene classification probabilities without transcript semantics. The pipeline never terminates. This graceful degradation strategy ensures the system remains usable even for unsupported or corrupted audio inputs.
-
-**Q17. How does AdamW differ from Adam?**
-
-AdamW decouples weight decay from the gradient scaling mechanism. Standard Adam conflates weight decay with the adaptive learning rate, causing the effective regularisation to be scaled by the gradient magnitude. AdamW separates these: weight decay is applied directly to weights (not to gradients), producing more consistent L2 regularisation. This is particularly important for Transformer-based architectures and has been shown to improve generalisation.
-
-**Q18. How does Cosine Annealing work?**
-
-LR(t) = η_min + (1/2)(η_max − η_min)(1 + cos(πt/T_max)). This smoothly decreases the learning rate from 1e-3 to 1e-5 following a cosine curve over T_max=50 epochs. It avoids abrupt learning rate drops and allows the optimiser to take larger steps early in training (exploring the loss landscape) and smaller steps as training progresses (converging precisely to a minimum).
-
-**Q19. What does CASRE actually do step by step?**
-
-Step 1 (Observation): Parse the English Semantic Transcript from MSNL for emergency, calm, distress, and question keywords. Map scene confidence score to qualitative tier (high/medium/low). Identify top-3 scene categories. Step 2 (Interpretation): Apply cross-modal reasoning - check consistency between speech semantics and scene classification. Detect contradictions (e.g., calm speech with Emergency scene). Step 3 (Assessment): Select response template from the 51-scenario Omni-Matrix. Apply NATE temporal expectation logic. Assemble structured situational assessment with recommended action.
-
-**Q20. What is the ablation study and what does it demonstrate?**
-
-The ablation study systematically disables individual components (Whisper, CLAP, Fusion Layer, MDB, MSNL, CASRE) and measures performance impact. Expected findings: removing CLAP causes the largest accuracy drop (environmental classification fails entirely); removing Whisper reduces CASRE output quality more than classification accuracy; removing the Fusion Layer's trainable MLP reduces cross-modal integration quality; training without MDB (ESC-50 only) reduces robustness to real-world mixed audio. Together, the ablation study demonstrates that each component makes an independent measurable contribution.
-
-**Q21. What is mean pooling for Whisper embeddings?**
-
-Whisper produces a sequence of T temporal hidden state vectors, one per time step. Mean pooling computes the average across the time dimension: embedding = (1/T)·Σ_t h_t, producing a single 512-dimensional Speech Embedding. This is computationally trivial and empirically effective for sentence-level scene understanding tasks. Alternatives such as attention-weighted pooling could preserve more temporal information but add learnable parameters and complexity.
-
-**Q22. Why Gradio over Flask for the user interface?**
-
-Gradio provides built-in gr.Audio(sources=\['microphone','upload'\]) handling browser mic permissions, recording, waveform display, and file upload in approximately 3 lines of Python. The Flask equivalent requires getUserMedia(), Web Audio API, MediaRecorder, AJAX callbacks, and frontend JavaScript - over 200 lines of code. Gradio is the industry standard for research demos and natively integrates with Hugging Face Spaces for one-command deployment.
-
-## **Section C: Deep Learning Concepts (Q23-Q33)**
-
-**Q23. What is a Transformer and how does Whisper use it?**
-
-A Transformer is a neural architecture based on multi-head self-attention (Vaswani et al., 2017). Each position in the input sequence attends to all others via query-key-value projections, enabling global context modelling without recurrence. Whisper uses a 6-layer Transformer encoder with 8 attention heads. It receives 80-channel log-Mel spectrogram frames and produces 512-dimensional hidden states per time step, which are mean-pooled to produce the Speech Embedding.
-
-**Q24. What is transfer learning and how does this project use it?**
-
-Transfer learning reuses representations learned from large-scale pretraining for a smaller downstream task. This project uses frozen Whisper (680K hours) and frozen CLAP (4.6M audio-text pairs) as fixed feature extractors. Only the small custom modules (Fusion Layer, Scene Context Network, ~400K parameters) are trained - leveraging hundreds of millions of pretrained parameters while maintaining computational feasibility on free-tier hardware.
-
-**Q25. What is the vanishing gradient problem and how is it addressed here?**
-
-During backpropagation, gradients can multiply through many layers and approach zero exponentially with sigmoid or tanh activations. Addressed in this architecture by: ReLU activations (gradient = 1 for positive inputs, avoiding saturation), LayerNorm (normalising activation distributions), AdamW (maintaining effective update steps via adaptive learning rates even with small gradients), and a shallow trainable network (only Fusion Layer + Scene Network, 5 total layers in the trainable path).
-
-**Q26. What is Dropout and why use it?**
-
-Dropout randomly zeroes a fraction of activations during training (p=0.3 in Fusion Layer, p=0.2 in Scene Network). This prevents co-adaptation - neurons cannot rely on specific others always being active - forcing each to learn independent, robust features. With only ~2,600 training samples, overfitting risk is high; Dropout is critical for generalisation. Disabled automatically during inference via model.eval().
-
-**Q27. What is a confusion matrix?**
-
-A 20×20 matrix where entry (i,j) = number of samples of true class i predicted as class j. The diagonal represents correct predictions. Emergency and Weather classes are expected to have high diagonal values (acoustically distinctive). Indoor/Domestic has the most off-diagonal errors (highly diverse class). Traffic-Crowd confusion is expected and acceptable given acoustic similarity. Analysis of the off-diagonal patterns guides class-specific model improvements.
-
-**Q28. Explain Precision, Recall, and F1-Score.**
-
-Precision = TP/(TP+FP): of all predicted positives, what fraction is actually correct. Recall = TP/(TP+FN): of all actual positives, what fraction was correctly detected. F1 = 2·P·R/(P+R): the harmonic mean, balancing both. For Emergency detection, high Recall is critical (missing a real emergency is worse than a false alarm). Macro F1 averages per-class F1 equally across all 20 classes, appropriate for a balanced multi-label task.
-
-**Q29. Why BCEWithLogitsLoss instead of CrossEntropyLoss?**
-
-CrossEntropyLoss applies softmax across all classes and is designed for single-label classification where exactly one class is correct. BCEWithLogitsLoss applies sigmoid independently to each logit and is designed for multi-label classification where multiple classes can be simultaneously correct (e.g., Traffic + Emergency + Rain simultaneously active in one audio clip). The ALM scene categories are not mutually exclusive, making BCEWithLogitsLoss the correct choice.
-
-**Q30. What is torch.no_grad() and when is it used?**
-
-A PyTorch context manager that disables gradient computation during inference and evaluation. Benefits: ~50% memory reduction (no gradient tensors stored), ~20% speed improvement, prevention of accidental gradient accumulation. Always paired with model.eval() which disables Dropout and switches BatchNorm to use running statistics rather than batch statistics. Used whenever the model is not being trained.
-
-**Q31. How does contrastive learning work in CLAP?**
-
-CLAP trains a dual encoder (audio encoder + text encoder) to minimise the cosine distance between embeddings of matched audio-text pairs and maximise distance between unmatched pairs, using InfoNCE loss. After training on 4.6 million pairs, the audio encoder produces Environmental Embeddings that encode semantic environmental meaning - not just acoustic features. This is why CLAP embeddings generalise well to novel environmental sounds not seen during ESC-50 training.
-
-**Q32. How would you improve this system with more compute resources?**
-
-With more compute: (1) fine-tune Whisper small encoder rather than using it frozen; (2) train on AudioSet-20K for broader environmental coverage; (3) replace CASRE with DistilGPT-2 (82M params) fine-tuned on audio scene descriptions using QLoRA; (4) implement attention-weighted pooling for Whisper temporal embeddings; (5) expand MDB to multilingual speech sources (Common Voice) for multilingual-native training rather than inference-time MSNL translation; (6) add speaker diarization for multi-speaker scenarios.
-
-**Q33. What is the significance of the ALM system for accessibility applications?**
-
-ALM has direct accessibility impact: for users with visual or situational impairments who rely on audio descriptions of their environment, a system that jointly understands speech and environmental context can provide richer, more contextually accurate descriptions than either ASR or sound classification alone. The multilingual capability via MSNL extends this accessibility benefit to speakers of 99 languages. CASRE's natural language output is directly usable as an accessibility description without post-processing.
-
-## **Section D: Project-Specific Questions (Q34-Q45)**
-
-**Q34. Summarise the novel contributions of this project.**
-
-(1) Multimodal Dataset Builder - a purpose-built training module dynamically mixing LibriSpeech and ESC-50 to create multimodal supervised training data, enabling true Joint Multimodal Representation Learning. (2) Dual-encoder fusion architecture - custom PyTorch Fusion Layer combining Whisper Speech Embeddings \[512d\] and CLAP Environmental Embeddings \[512d\] through a trainable cross-modal MLP. (3) Multilingual Speech Normalization Layer - extending the system to 99 languages for inference. (4) CASRE v7.0 - a deterministic cross-modal reasoning engine with 51-scenario Omni-Matrix, zero RAM, <1ms latency. (5) Production-stable deployment on free-tier infrastructure (~755 MB total RAM).
-
-**Q35. What is the difference between training-phase and inference-phase architecture?**
-
-Training phase: the Multimodal Dataset Builder is active, generating mixed samples from LibriSpeech and ESC-50. The Fusion Layer and Scene Network are optimised via backpropagation. Whisper and CLAP are frozen. MSNL and CASRE are not used. Inference phase: MDB is inactive. MSNL is active, normalising multilingual transcripts to English. Whisper and CLAP extract embeddings. The trained Fusion Layer and Scene Network produce scene probabilities. CASRE generates the situational assessment. No gradient computation occurs.
-
-**Q36. What happens when there is no speech in the audio?**
-
-Whisper returns an empty transcript or a very short low-confidence string. MSNL passes an empty English Semantic Transcript to CASRE. CASRE detects the empty transcript condition and generates an environment-only response: 'No speech was detected. Reasoning from acoustic scene context only.' The system reasons purely from CLAP Environmental Embeddings and Scene Network probabilities. The pipeline handles this gracefully without any error.
-
-**Q37. How does the system handle completely silent audio?**
-
-For silent audio: Whisper returns an empty transcript. CLAP returns low-magnitude Environmental Embeddings mapping to the Silence/Unknown category. The Scene Network outputs high probability for category 15 (Silence/Unknown). CASRE generates a 'No acoustic information detected' response. All modules handle this case explicitly - no division-by-zero or index errors occur.
-
-**Q38. What does the university evaluation circular specify?**
-
-Circular No. AU/SoE/Mini-Project-Semester&Viva-Voice/2026/134 dated 29-05-2026 from Dr. V. Vijaya Kumar, Dean, School of Engineering, schedules Mini Project evaluation (Seminar and Viva-Voce) from 29-June-2026 through the first week of July 2026.
-
-**Q39. Why Whisper base and not Whisper tiny or small?**
-
-Whisper tiny (39M parameters): fast but lower accuracy. Whisper base (74M parameters): good accuracy (WER ~8% on clean English), multilingual support, 150 MB memory. Whisper small (244M parameters): better accuracy but 4x the memory at 600 MB, approaching the free-tier RAM limit when combined with CLAP. Whisper base provides the optimal accuracy-memory trade-off for a system that must fit within ~755 MB total RAM on CPU Basic hardware.
-
-**Q40. How is class imbalance handled in training?**
-
-Class imbalance is handled through two mechanisms: (1) inverse-frequency weighted sampling in the MDB dataset builder, ensuring underrepresented ESC-50 categories appear proportionally in training batches; (2) per-class positive weights in BCEWithLogitsLoss computed as the inverse class frequency - categories with fewer training examples receive proportionally higher loss weight, preventing the model from ignoring minority classes.
-
-**Q41. What is NATE and how does it work?**
-
-NATE (Neuro-Acoustic Temporal Expectation) is a predictive coding module within CASRE that tracks temporal sequences of acoustic events. Based on the neuroscience concept of predictive coding (Heilbron & Chait, 2018), it predicts the next expected acoustic state given the current temporal context. A sudden high-magnitude acoustic spike indicates surprisal (unexpected sound - potential alarm). Sustained sounds indicate habituation. NATE modifies CASRE's response tone based on whether the current acoustic state conforms to or violates temporal expectations.
-
-**Q42. How is inference latency measured and what are the expected values?**
-
-Latency is measured per-stage: Audio preprocessing (~5 ms), Whisper encoder inference (~150 ms on CPU, ~20 ms on GPU), CLAP encoder inference (~200 ms on CPU, ~30 ms on GPU), Fusion Layer + Scene Network (~1 ms), MSNL language detection (~5 ms, translation ~100 ms if required), CASRE (<1 ms). Total: ~360 ms without translation (~460 ms with translation) on CPU. On GPU (Colab T4): ~70 ms without translation.
-
-**Q43. What would a production-grade version of this system require?**
-
-Structured error handling throughout, input validation (file size, format, duration), structured logging with latency and confidence metrics, model versioning with rollback support, A/B testing infrastructure, monitoring dashboards (latency distributions, confidence histograms, error rates), asynchronous processing queue for concurrent requests, HTTPS with authentication for sensitive audio data, and GDPR-compliant audio data handling (on-device processing, no audio storage).
-
-**Q44. How does the system handle very long audio files?**
-
-Audio is trimmed to a maximum duration (60 seconds) in the preprocessing stage. For longer files, a sliding-window approach is recommended: process overlapping 10-second windows, track NATE temporal state across windows, and aggregate scene classifications over time. The current v7.0 implementation trims to target_sr × max_seconds samples in preprocess_audio_array() before any encoder processing.
-
-**Q45. What is the difference between micro and macro F1 score?**
-
-Macro F1 computes F1 independently for each of the 20 classes and averages equally, giving each class equal weight regardless of how many samples it has. This is the primary metric for this system since all 20 scene categories are equally important functionally. Micro F1 aggregates TP, FP, FN across all classes before computing F1, effectively weighting by class frequency. Micro F1 would be dominated by the most common classes and is less informative for an imbalanced multi-label classification task.
-
-# **16\. Seminar Presentation Guide**
-
-## **16.1 Recommended Slide Structure**
-
-| **Slide #** | **Title**                  | **Key Points to Cover**                                                         |
-| ----------- | -------------------------- | ------------------------------------------------------------------------------- |
-| 1           | Title Slide                | Project title, university, department, academic year, team details              |
-| 2           | Problem Statement          | 'Listen, Think, Understand' - the gap between ASR and environmental AI          |
-| 3           | Motivation & Use Cases     | Smart emergency response, surveillance, accessibility, audio analytics          |
-| 4           | Related Work               | Whisper, CLAP, ESC-50, LibriSpeech, SALMONN - why existing solutions fall short |
-| 5           | System Overview v7.0       | Training vs inference architecture separation; two new components               |
-| 6           | Multimodal Dataset Builder | Why both datasets? MDB mixing procedure, SNR range, 3 sample types              |
-| 7           | Fusion Architecture        | Frozen encoders → Speech/Env Embeddings → Fusion Layer → Joint Representation   |
-| 8           | MSNL                       | Multilingual pipeline: language detection, translation, English normalization   |
-| 9           | CASRE Design               | Why not an LLM? Observation → Interpretation → Assessment. Zero RAM, <1ms.      |
-| 10          | Training Strategy          | MDB 30/30/40 distribution, BCEWithLogitsLoss, AdamW, Cosine Annealing           |
-| 11          | Evaluation & Ablation      | Expected F1 per class, ablation table, SNR robustness results                   |
-| 12          | Deployment                 | HF Spaces, 755 MB total, deployment risk table, live demo link                  |
-| 13          | Demo                       | Live walkthrough - microphone input, file upload, CASRE+MSNL output             |
-| 14          | Discussion & Future Work   | Limitations, MDB assumptions, LLM replacement, AudioSet expansion               |
-
-## **16.2 Presentation Tips**
-
-- Prepare a 15-minute presentation and leave 5 minutes for questions.
-- Lead with the architectural consistency message: v7.0 is the first version where every architectural component is technically justified end-to-end.
-- Emphasise the MDB contribution: this is what makes the Fusion Layer a true multimodal learner, not just a concatenation of two unimodal models.
-- When explaining architecture diagrams, always trace the data at each stage: \[512\] Speech Embedding + \[512\] Env Embedding → \[1024\] concatenated → \[256\] joint representation → \[20\] scene probabilities.
-- Demonstrate MSNL with a non-English audio clip to show multilingual capability.
-- Anticipate questions on: why not fine-tune Whisper/CLAP, why ESC-50 + LibriSpeech, what makes MDB necessary, CASRE vs GPT, ablation study design.
-- Have a backup audio file ready for the demo in case the microphone is unavailable.
-
-# **17\. References**
-
-- Radford, A., Kim, J. W., Xu, T., et al. (2022). Robust Speech Recognition via Large-Scale Weak Supervision. arXiv:2212.04356.
-- Wu, Y., Chen, K., Zhang, T., et al. (2022). Large-Scale Contrastive Language-Audio Pretraining. arXiv:2211.06687.
-- Piczak, K. J. (2015). ESC: Dataset for Environmental Sound Classification. ACM Multimedia 2015, pp. 1015-1018.
-- Panayotov, V., Chen, G., Povey, D., & Khudanpur, S. (2015). LibriSpeech: an ASR corpus based on public domain audio books. ICASSP 2015, pp. 5206-5210.
-- Vaswani, A., Shazeer, N., Parmar, N., et al. (2017). Attention Is All You Need. NeurIPS 2017, Vol. 30.
-- Tang, C., Yu, W., Zhang, G., et al. (2023). SALMONN: Towards Generic Hearing Abilities for Large Language Models. arXiv:2310.13289.
-- Heilbron, M., & Chait, M. (2018). Great Expectations: Is there Evidence for Predictive Coding in Auditory Cortex? Neuroscience, 389, 54-73.
-- Walton, T., & Evans, M. (2018). The role of human influence factors on overall listening experience. Quality and User Experience, 3(1).
-- Loshchilov, I., & Hutter, F. (2019). Decoupled Weight Decay Regularization. ICLR 2019. arXiv:1711.05101.
-- Paszke, A., Gross, S., Massa, F., et al. (2019). PyTorch: An Imperative Style, High-Performance Deep Learning Library. NeurIPS 2019, Vol. 32.
-- Tifrea, A., et al. (2022). Helsinki-NLP/opus-mt: Machine Translation Models. HuggingFace Model Hub.
-- Naous, T., et al. (2023). LangDetect: Probabilistic language detection library. PyPI.
-- Sohn, K. (2016). Improved Deep Metric Learning with Multi-class N-pair Loss Objective. NeurIPS 2016. (Basis for InfoNCE contrastive objective used in CLAP.)
+- **Sohn, K. (2016). Improved Deep Metric Learning with Multi-class N-pair Loss Objective. NeurIPS 2016.**
+  _Contribution:_ This paper introduces the multi-class N-pair loss objective, which serves as the theoretical precursor to the InfoNCE (Noise Contrastive Estimation) loss used to train the CLAP foundation model. InfoNCE is the mathematical mechanism that allows CLAP to learn a joint embedding space where audio clips and their corresponding text descriptions are pulled together while dissimilar pairs are pushed apart. Understanding this contrastive objective is critical to the ALM project, as it explains why the 512-dimensional Environmental Embeddings possess such strong, zero-shot semantic meaning. The mathematical principles outlined here justify the ALM's architectural choice to rely on CLAP embeddings as rich, descriptive inputs for the Fusion Layer.
 
 _- End of Document -_
 
-ALM v7.0 | Anurag University, School of Engineering | 2025-2026
+ALM v7.2 | Anurag University, School of Engineering | 2025-2026
