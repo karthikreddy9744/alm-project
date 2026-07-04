@@ -1,50 +1,112 @@
-# Byte-compiled / optimized / DLL files
+###############################################################################
+# ALM v10 - Production Repository .gitignore
+###############################################################################
+
+###############################################################################
+# Python
+###############################################################################
 __pycache__/
-*.py[cod]
-*$py.class
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+coverage/
+htmlcov/
 
-# C extensions
-*.so
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Virtual environments
+###############################################################################
+# Virtual Environments
+###############################################################################
 venv/
+.venv/
 env/
 ENV/
-env.bak/
-venv.bak/
 
-# Environment variables
-.env
-.env.local
-
-# MacOS
+###############################################################################
+# Operating System
+###############################################################################
 .DS_Store
+Thumbs.db
+desktop.ini
 
-# IDEs
-.idea/
+###############################################################################
+# IDE
+###############################################################################
 .vscode/
-*.swp
+.idea/
+*.iml
 
-# Project specific
-research/
-models/
+###############################################################################
+# Logs
+###############################################################################
+*.log
+logs/
+
+###############################################################################
+# Generated Data
+###############################################################################
+data/processed/*
+!data/processed/.gitkeep
+!data/processed/README.md
+data/training/*
+!data/training/.gitkeep
+!data/training/README.md
+
+# Ignore generated shards, temporary datasets, cached datasets, temporary audio
+*.shard
+*.cache
+tmp/
+temp/
+scratch/
+
+###############################################################################
+# Raw Datasets
+###############################################################################
+data/raw/speech/
+data/raw/events/
+data/raw/ambient/
+data/raw/audio/
+data/raw/environment/
+data/raw/ambient_beds/
+*.wav
+*.mp3
+*.flac
+
+###############################################################################
+# Models
+###############################################################################
+# Ignore large binary models
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.safetensors
+*.bin
+*.pickle
+*.pkl
+
+# Explicitly allow metadata files
+!models/training_metrics.json
+!models/training_config.json
+!models/dataset_manifest.json
+!models/version.json
+!models/model_card.md
+!models/README.md
+!models/best_checkpoint_info.json
+
+###############################################################################
+# Training Outputs
+###############################################################################
+runs/
+checkpoints/
+tensorboard/
+wandb/
+experiments/
+
+###############################################################################
+# Hugging Face
+###############################################################################
+.cache/
+huggingface/
+downloads/

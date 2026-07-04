@@ -1,101 +1,69 @@
-# 🎧 Audio Language Model (ALM)
+# ALM v10.8 (Acoustic Language Model)
 
-## Project Overview
-A deep learning system that **listens, thinks, and understands** both speech and environmental audio simultaneously.
+ALM v10.8 represents a major breakthrough in audio artificial intelligence. It introduces a **Unified Architecture** that bridges state-of-the-art Neural Perception Models with a Deterministic Cognitive Graph, resolving the hallucinations and inconsistencies typically associated with purely neural audio LLMs.
 
-## Features
-- **Multi-modal Input**: Live microphone, file upload, and drag-and-drop audio
-- **Speech Analysis**: OpenAI's Whisper for transcription and speech embeddings
-- **Environmental Analysis**: CLAP (Contrastive Language-Audio Pretraining) for environmental sound classification
-- **Fusion Architecture**: Custom Transformer Cross-Attention Fusion layer to dynamically combine speech + environmental embeddings
-- **Scene Classification**: 20 categories including Traffic, Media, Emergency, Weather, Water, Wildlife, Indoor, Crowd, and more.
-- **CASRE Omni-Matrix (V6.0)**: The ultimate 51-Scenario deterministic reasoning matrix that cross-references acoustics, linguistics, and physics to deduce highly specific events (e.g., Marine Rescue, Concert Stampede, Online Gaming) with 0 latency.
-- **Premium UI/UX**: State-of-the-art Glassmorphic responsive interface with a dark theme and Google Inter typography.
+## 🏗 Architecture Overview
 
-## Architecture
-1. **Audio Preprocessor**: Resamples to 16kHz, normalizes, applies VAD/RMS thresholding, and truncates/pads to max 60s
-2. **Whisper Encoder**: Extracts 512-d speech embeddings and transcript (with repetition-based hallucination suppression)
-3. **CLAP Encoder**: Extracts 512-d environmental audio embeddings
-4. **Fusion Layer**: Combines embeddings into 256-d fused representation (regularized with `Dropout(0.3)` to prevent modality collapse)
-5. **Scene Context Network**: Multi-label classification across 20 categories (trained with BCEWithLogitsLoss for class balancing)
-6. **CASRE**: Generates natural language explanation of scene + recommended action (featuring cross-modal contradiction detection)
+The system is strictly divided into two distinct halves:
 
-## 🚀 What's New in ALM v6.0 (The Omni-Matrix)
-- **The 51-Scenario Omni-Matrix**: Upgraded the CASRE reasoning engine from a sequential logic block to a multi-dimensional intersection matrix.
-- **Granular Real-World Deduction**: The system now mathematically isolates specific events like *Naval Conflicts*, *Mass Shootings*, *Transit PA Announcements*, and *Sports Stadium Reactions* based on acoustic and linguistic overlap.
-- **Neuro-Acoustic Temporal Expectation (NATE)**: Simulates human predictive coding by tracking pitch (surprisal) and proximity (RMS Doppler effects).
-- **Acoustic Dominance Protocols**: Completely suppresses Whisper hallucination outputs by invalidating text that contradicts high-confidence environmental audio (e.g., wind noise masquerading as speech).
-- **Semantic-Acoustic Alignment Filter**: Intercepts raw ML multi-label acoustic probabilities and automatically forces them to align with detected linguistic contexts. This completely suppresses random acoustic hallucinations from untrained weights and generates flawlessly realistic Temporal Event Timelines.
+### 1. Neural Perception Layer (The "Ears")
+We utilize a combination of mathematically frozen foundation models to extract acoustic features:
+- **Whisper Large-v3 Turbo**: Extracts linguistic and acoustic embeddings (512d).
+- **CLAP**: Extracts semantic audio embeddings (512d).
+- **HTS-AT**: Extracts polyphonic event embeddings (768d).
 
-## 🧠 Advanced Capabilities
+These features are passed into a trainable **Fusion Layer** (1792d $\rightarrow$ 256d) and mapped to 40 scene classes via the **Scene Context Network**. *Only the Fusion Layer and Scene Context Network receive gradients during training.*
 
-- **Deep Semantic Overrides:** Instantly overrides ambiguous acoustic predictions if critical safety keywords ("targeted", "missile", "evacuate") are detected in the transcript.
-- **Dynamic Thresholding:** Actively rescues weak acoustic signals if the transcript context supports them (e.g., classifying a song correctly even if the music label confidence was low).
-- **Neuro-Acoustic Temporal Expectation (NATE):** Simulates human predictive coding by tracking pitch and proximity.
-  - *Proximity/Doppler Logic:* Analyzes temporal RMS Energy to determine if an object (e.g., an ambulance) is passing by or stationary.
-  - *Predictive Surprise:* Uses Spectral Centroid analysis to detect sudden high-pitch spikes (e.g., fear, screams, crashes).
-  - *Complex Overlaps:* Identifies movie scenes or psycho events based on contradictory audio cues (e.g., music + sirens, or tools + screams).
-- **Ultimate CASRE Reasoning Matrix**: The engine now performs linguistic profiling (formality, repetition, tone) and acoustic intersection to deduce complex scenarios like *Live Musical Performances*, *Formal Dictation*, or *Public Social Interactions*. Fully optimized to run at 0 latency on HuggingFace CPU Free Tiers without needing external LLMs.
+### 2. Deterministic Cognitive Graph (The "Brain")
+Neural outputs are thresholded (`> 0.5`) and injected as discrete `EventNode` and `EntityNode` objects into the **Auditory World Model (AWM)**.
+The reasoning engine then applies strict, logic-based, deterministic pipelines:
+- **ARG (Auditory Relationship Graph)**: Explicitly connects events and entities based on co-occurrence and causality.
+- **PSE (Perceptual Segregation Engine)**: Separates the scene into salient foreground and ambient background streams.
+- **HRE (Hypothesis Reasoning Engine)**: Generates logical deductions from active streams.
+- **BSE (Belief State Engine)**: Assigns hierarchical confidence.
+- **WSE (World State Engine)**: Tracks the global state (e.g., Normal vs. Elevated Threat).
+- **SPE (Situation Projection Engine)**: Projects short-term futures.
+- **TRE (Transparent Reasoning Engine)**: Generates the JSON-auditable trace.
+- **SIR (Situation Intelligence Renderer)**: Formats the human-readable report.
 
+## 🚀 Getting Started
 
-- **Premium Glassmorphic UI**: Redesigned Gradio dashboard with dark slate themes, CSS backdrop filters, and modern Inter typography.
-
-## Setup & Installation
-1. **Create virtual environment** (optional but recommended):
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate  # macOS/Linux
-   # or
-   .\venv\Scripts\activate  # Windows
-   ```
-2. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. **Download/Prepare model checkpoint** (dummy checkpoint provided in `models/`):
-   ```bash
-   mkdir -p models
-   # To train your own model, see training/ directory
-   ```
-
-## Running the App
+### 1. Environment Setup
 ```bash
-python app.py
-```
-Open the Gradio interface URL (e.g., `http://127.0.0.1:7860`) in your browser!
-
-## Project Structure
-```
-alm-project/
-├── app.py                     # Gradio app entry point
-├── requirements.txt           # Dependencies
-├── README.md                  # This file
-├── core/                      # Core modules
-│   ├── feature_extractor.py   # Whisper + CLAP feature extractors
-│   ├── fusion_layer.py        # Fusion neural network
-│   ├── scene_network.py       # Scene classification network
-│   ├── casre_engine.py     # Context-Aware Smart Response Engine (CASRE)
-│   └── inference_pipeline.py  # Full inference pipeline
-├── models/                    # Model checkpoints
-│   └── scene_model.pt         # Trained fusion+scene weights
-├── training/                  # Training scripts
-│   ├── dataset_builder.py     # Dataset preparation
-│   ├── train.py               # Training loop
-│   └── evaluate.py            # Evaluation
-└── samples/                   # Sample audio files
+# Recommended: Python 3.10+
+pip install -r requirements.txt
 ```
 
-## Training
-1. Prepare ESC-50 dataset in `data/raw/`
-2. Precompute embeddings using `training/dataset_builder.py`
-3. Train model using `training/train.py`
-4. Evaluate using `training/evaluate.py`
+### 2. Data Preparation
+Place your raw `.wav` files into the following directories. The Dataset Builder will dynamically mix them into realistic acoustic scenes (handling overlap, SNR, reverb, and random gain). Multilingual speech directories are loaded recursively.
+- `data/raw/speech/<language>/` (e.g., english/, hindi/, telugu/)
+- `data/raw/environment/<Class_Name>/`
 
-## Citation
-Based on:
-- OpenAI Whisper: Radford et al., 2022
-- CLAP: Wu et al., 2022
-- ESC-50: Piczak, 2015
+### 3. Training (Transfer Learning)
+To comply with Kaggle hardware limits, ALM v10.8 uses "Option B" (Precompute & Cache).
+```bash
+# Step 1: Synthesize scenes and precompute Whisper/CLAP/HTS-AT embeddings
+python -m training.dataset_builder --max_events 6
 
-## License
-MIT
+# Step 2: Train the Fusion Layer & Scene Context Network
+python -m training.train --epochs 50 --batch_size 32
+```
+
+### 4. End-to-End Inference
+Launch the UI to run the full unified pipeline, complete with reasoning latencies, active events, and the JSON reasoning trace.
+```bash
+python application/app.py
+```
+*(Runs on `http://0.0.0.0:7860`)*
+
+## 🧠 Why Deterministic Reasoning?
+Traditional Audio-LLMs output next-token probabilities, making them susceptible to hallucinations when exposed to complex, overlapping environments. ALM v10.8 uses neural networks *only* for perception. All logic, physics tracking, and deductions occur in the Deterministic Graph, guaranteeing 100% interpretability and reliability.
+
+## 📁 Model Artifacts & Reproducibility
+The `models/` directory contains the production-ready weights and comprehensive metadata for scientific reproducibility:
+- `alm_v10_final.pt`: The trained production model (Fusion Layer & Scene Context Network).
+- `model_card.md`: Hugging Face-style model card with architecture, metrics, and capabilities.
+- `training_config.json`: Hyperparameters and configuration used during the Kaggle training run.
+- `dataset_manifest.json`: Detailed breakdown of the curriculum dataset (languages, classes, duration).
+- `training_metrics.json`: Final empirical metrics on the validation hold-out set.
+- `version.json` & `best_checkpoint_info.json`: Release engineering and checkpointing metadata.

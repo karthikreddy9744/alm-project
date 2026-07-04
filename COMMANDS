@@ -1,0 +1,20 @@
+# ALM v10.7 Validated Commands
+
+## 1. Directory Structure Setup
+(Ensure this runs before dataset generation)
+`mkdir -p data/raw/speech data/raw/environment`
+
+## 2. Generate Dataset & Extract Neural Features
+(Produces cached `embeddings.npy` and `labels.npy`. Use at least 500-1000 samples for robustness!)
+`python -m training.dataset_builder --num_samples 1000`
+
+## 3. Train Fusion & Scene Context Network
+`python -m training.train --epochs 50 --batch_size 32`
+
+## 4. Run Unified Validation Pipeline (Terminal)
+(Runs the end-to-end logic test without the UI)
+`python main.py`
+
+## 5. Launch Gradio Frontend
+(Interactive UI for audio testing)
+`python application/app.py`
