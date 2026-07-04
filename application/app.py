@@ -21,8 +21,20 @@ def run_alm_pipeline(audio_filepath: str):
         
         human_summary = report if report else "Processing completed but no critical events triggered the SIR."
         
-        world_state_status = validator.wse.state_vector.get("threat_level", "NORMAL")
-        world_state_dict = validator.wse.state_vector
+        if validator.wse.current_state:
+            world_state_status = validator.wse.current_state.dominant_state
+            world_state_dict = {
+                "id": validator.wse.current_state.id,
+                "dominant_state": validator.wse.current_state.dominant_state,
+                "confidence": validator.wse.current_state.confidence.__dict__ if validator.wse.current_state.confidence else {},
+                "ambiguity": validator.wse.current_state.ambiguity_score,
+                "consistency": validator.wse.current_state.consistency_score,
+                "environmental_context": validator.wse.current_state.environmental_context,
+                "speech_context": validator.wse.current_state.speech_context
+            }
+        else:
+            world_state_status = "UNKNOWN"
+            world_state_dict = {}
         
         # Format the specific requested metrics
         
