@@ -79,7 +79,7 @@ def run_alm_pipeline(audio_filepath: str):
 
 with gr.Blocks(theme=gr.themes.Base()) as demo:
     gr.Markdown("# 🎧 ALM v10.7 Unified Architecture")
-    gr.Markdown("Audio $\\rightarrow$ Frozen Foundation Models (Whisper/CLAP/HTS-AT) $\\rightarrow$ Trainable Fusion Layer & Scene Context Network $\\rightarrow$ Deterministic Reasoning Engine (AWM $\\rightarrow$ SIR)")
+    gr.Markdown("Audio → Frozen Foundation Models (Whisper/CLAP/HTS-AT) → Trainable Fusion Layer & Scene Context Network → Deterministic Reasoning Engine (AWM → SIR)")
     
     with gr.Row():
         with gr.Column(scale=1):
