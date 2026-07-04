@@ -68,7 +68,7 @@ def run_alm_pipeline(audio_filepath: str):
         trace_json = {
             "AWM_Events": [v.class_map for v in validator.awm.events.values()],
             "AWM_Entities": [v.entity_type for v in validator.awm.entities.values()],
-            "Active_Hypotheses": [h.statement for h in validator.hre.active_hypotheses],
+            "Active_Hypotheses": [h.statement for h in validator.hre.hypotheses.values()],
             "Latencies_ms": validator.latencies
         }
         
