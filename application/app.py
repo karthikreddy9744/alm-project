@@ -77,27 +77,35 @@ def run_alm_pipeline(audio_filepath: str):
     except Exception as e:
         return f"Pipeline Error: {str(e)}", {}, "Error", "ERROR", "ERROR", "ERROR", "ERROR"
 
-with gr.Blocks(theme=gr.themes.Base()) as demo:
-    gr.Markdown("# 🎧 ALM v10.7 Unified Architecture")
-    gr.Markdown("Audio → Frozen Foundation Models (Whisper/CLAP/HTS-AT) → Trainable Fusion Layer & Scene Context Network → Deterministic Reasoning Engine (AWM → SIR)")
+with gr.Blocks(theme=gr.themes.Soft(primary_hue="blue", secondary_hue="indigo")) as demo:
+    gr.Markdown("# 🎧 ALM v10.7: Acoustic Language Model")
+    gr.Markdown("### Unified Architecture: Neural Perception + Deterministic Cognitive Graph")
+    gr.Markdown("**Pipeline Phase Flow:** Audio → Frozen Foundation Models (Whisper/CLAP/HTS-AT) → Trainable Fusion Layer & Scene Context Network → Deterministic Reasoning Engine (AWM → SIR)")
     
     with gr.Row():
         with gr.Column(scale=1):
-            audio_input = gr.Audio(type="filepath", label="Acoustic Scene Input")
-            submit_btn = gr.Button("Execute ALM Pipeline", variant="primary")
+            gr.Markdown("### 1. Acoustic Input")
+            audio_input = gr.Audio(type="filepath", label="Upload or Record Audio")
+            submit_btn = gr.Button("🚀 Execute ALM Cognitive Pipeline", variant="primary")
             
-            gr.Markdown("### Extracted Perception Data")
-            speech_transcript_display = gr.Textbox(label="Speech Transcript", interactive=False)
-            active_events_display = gr.Textbox(label="Active Sound Events & Confidences", interactive=False, lines=4)
+            gr.Markdown("### 2. Extracted Neural Perception")
+            speech_transcript_display = gr.Textbox(label="🗣️ Speech Transcript (Whisper)", interactive=False)
+            active_events_display = gr.Textbox(label="🔊 Active Sound Events & Confidences (HTS-AT / CLAP)", interactive=False, lines=5)
             
         with gr.Column(scale=2):
-            status_display = gr.Textbox(label="World State Engine (WSE) Status", text_align="center", scale=1)
-            human_report = gr.Textbox(label="Situation Intelligence Renderer (Human Report)", lines=8)
-            processing_status = gr.Textbox(label="Pipeline Processing Status (Latencies)", interactive=False)
+            gr.Markdown("### 3. Cognitive Reasoning Output")
+            status_display = gr.Textbox(label="🚨 World State Engine (WSE) Dominant Status", text_align="center")
+            human_report = gr.Textbox(label="📄 Situation Intelligence Renderer (Human-Readable Report)", lines=12)
+            processing_status = gr.Textbox(label="⏱️ Pipeline Processing Latencies", interactive=False)
             
-    with gr.Row():
-        world_state_json = gr.JSON(label="World State Object (WSE)")
-        raw_json = gr.Code(label="Transparent Reasoning Engine Trace (TRE JSON)", language="json")
+    gr.Markdown("---")
+    gr.Markdown("### 4. Transparent Developer Trace (Under The Hood)")
+    with gr.Accordion("🔍 View Internal Graph States (AWM / WSE / TRE)", open=False):
+        with gr.Row():
+            with gr.Column():
+                world_state_json = gr.JSON(label="World State Object (WSE)")
+            with gr.Column():
+                raw_json = gr.Code(label="Transparent Reasoning Engine Trace (TRE JSON)", language="json")
 
     submit_btn.click(
         fn=run_alm_pipeline,
