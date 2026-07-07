@@ -10,3 +10,5 @@ class RenderMode(Enum):
     DEVELOPER = auto()
     JSON = auto()
     API = auto()
+    HUMAN_COGNITIVE = auto()
+    THREE_TIER_REPORT = auto()

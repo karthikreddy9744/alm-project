@@ -9,41 +9,65 @@ from reasoning_engine.wse.exceptions import InvalidWorldStateUpdateError
 from reasoning_engine.awm.models import HierarchicalConfidence
 
 @dataclass
+class DecomposedConfidence:
+    perception: float
+    context: float
+    situation: float
+    projection: float
+    overall: float
+
+@dataclass
+class ReasoningEvidence:
+    name: str
+    weight: float
+    reason: str
+    classification: str # "Observed Evidence", "Reasonable Inference", "Unknown"
+
+@dataclass
+class CognitiveState:
+    """
+    The ultimate language-independent structured cognitive state.
+    It manages semantic meaning but never creates it.
+    """
+    current_situation: str = "Unknown"
+    previous_situation: Optional[str] = None
+    
+    actors: List[str] = field(default_factory=list)
+    environment: str = "Unknown"
+    intentions: List[str] = field(default_factory=list)
+    interaction: str = "Unknown"
+    
+    confidence: DecomposedConfidence = field(default_factory=lambda: DecomposedConfidence(0,0,0,0,0))
+    overall_stability: float = 0.5
+    uncertainty: float = 0.5
+    
+    projection_hint: str = "None"
+    projection: str = "PENDING"
+    risk: str = "Unknown"
+    urgency: str = "Unknown"
+    
+    historical_memory: List[str] = field(default_factory=list)
+    state_timeline: List[str] = field(default_factory=list)
+    
+    evidence_references: List[ReasoningEvidence] = field(default_factory=list)
+    missing_evidence: List[str] = field(default_factory=list)
+    reasoning_trace: List[str] = field(default_factory=list)
+
+
+@dataclass
+class TemporalEvent:
+    concept: str
+    timestamp: float
+
+@dataclass
 class WorldState:
-    """
-    Represents the estimated current reality based on competing hypotheses.
-    Maintains causal memory.
-    """
     id: str
     dominant_state: str
-    secondary_states: List[str] = field(default_factory=list)
-    active_entities: List[str] = field(default_factory=list)
-    active_events: List[str] = field(default_factory=list)
-    environmental_context: str = "Unknown"
-    speech_context: str = "Unknown"
-    
-    confidence: HierarchicalConfidence = field(default_factory=HierarchicalConfidence)
-    uncertainty: float = 0.5
-    ambiguity_score: float = 0.0
-    consistency_score: float = 1.0
-    ecological_plausibility: float = 0.5 # Task 7
-    
-    supporting_hypotheses: List[str] = field(default_factory=list)
-    rejected_hypotheses: List[str] = field(default_factory=list)
-    
-    past_state_id: Optional[str] = None # Task 6: Causal Memory link
-    
+    past_state_id: Optional[str] = None
+    cognitive_state: Optional[CognitiveState] = None
     timestamp: float = field(default_factory=time.time)
 
     def __post_init__(self):
         if not self.id:
             raise InvalidWorldStateUpdateError("WorldState must have a valid ID.")
-        if not self.dominant_state:
-            raise InvalidWorldStateUpdateError("WorldState must have a dominant state.")
-        if not isinstance(self.confidence, HierarchicalConfidence):
-            raise InvalidWorldStateUpdateError("Confidence must be a HierarchicalConfidence object.")
-            
-        self.uncertainty = min(1.0, max(0.0, self.uncertainty))
-        self.ambiguity_score = min(1.0, max(0.0, self.ambiguity_score))
-        self.consistency_score = min(1.0, max(0.0, self.consistency_score))
-        self.ecological_plausibility = min(1.0, max(0.0, self.ecological_plausibility))
+

@@ -1,126 +1,182 @@
 import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import gradio as gr
 import json
 import librosa
 from main import UnifiedPipelineValidator
 
-print("Bootstrapping ALM v10.7 Unified Pipeline (Neural Perception + Deterministic Graph)...")
+print("Bootstrapping ALM v12.0 Unified Pipeline (Human Situation Understanding)...")
 validator = UnifiedPipelineValidator()
+
+def safe_serialize(obj):
+    try:
+        return json.loads(json.dumps(obj, default=lambda o: getattr(o, '__dict__', str(o))))
+    except Exception as e:
+        return {"serialization_error": str(e), "repr": str(obj)}
 
 def run_alm_pipeline(audio_filepath: str):
     """
-    Executes the ALM v10.7 deterministic pipeline:
-    Audio -> Whisper/CLAP/HTS-AT -> Fusion -> SceneNet -> AWM -> ... -> SIR
+    Executes the ALM v12.0 deterministic pipeline:
+    Audio -> Whisper/CLAP/HTS-AT -> Fusion -> Semantic -> HRE -> WSE -> SPE -> TRE -> SIR
     """
     if not audio_filepath or not os.path.exists(audio_filepath):
-        return "Error: No audio provided.", {}, "N/A", "N/A", "N/A", "N/A"
+        yield ("Error: No audio provided.", "", "", {}, {}, {}, {}, "Error")
+        return
+        
+    try:
+        duration = librosa.get_duration(path=audio_filepath)
+        if duration > 180:
+            yield (
+                "⚠️ **Upload Limit Exceeded**\n\nThe maximum allowed upload length is 3 minutes.",
+                "⚠️ **Upload Limit Exceeded**\n\nThe maximum allowed upload length is 3 minutes.",
+                "⚠️ **Upload Limit Exceeded**\n\nThe maximum allowed upload length is 3 minutes.",
+                {}, {}, {}, {}, "Error: Upload > 3 minutes."
+            )
+            return
+        if duration > 90:
+            yield (
+                "⚠️ **Analysis Limit Exceeded**\n\nTo ensure system stability, ALM can only analyze clips under 90 seconds. Your file was uploaded successfully, but please crop it before analyzing.",
+                "⚠️ **Analysis Limit Exceeded**\n\nAudio is too long for deep analysis.",
+                "⚠️ **Analysis Limit Exceeded**\n\nPlease crop the audio.",
+                {}, {}, {}, {}, "Error: Analysis > 90 seconds."
+            )
+            return
+    except Exception as e:
+        pass
+
+    # Yield initial loading state for better UX
+    yield (
+        "⏳ **Processing Speech...**\n\nRunning Neural Perception (Whisper)...",
+        "⏳ **Analyzing Environment...**\n\nExtracting acoustic features (CLAP/HTS-AT)...",
+        "⏳ **Fusing Intelligence...**\n\nRunning Semantic Engine & Reasoning...",
+        {"status": "processing..."},
+        {"status": "processing..."},
+        {"status": "processing..."},
+        {"status": "processing..."},
+        "Running pipeline... This may take up to a minute depending on hardware."
+    )
         
     try:
         audio, sr = librosa.load(audio_filepath, sr=16000)
         report = validator.run_pipeline(audio, sr)
         
-        human_summary = report if report else "Processing completed but no critical events triggered the SIR."
-        
-        if validator.wse.current_state:
-            world_state_status = validator.wse.current_state.dominant_state
-            world_state_dict = {
-                "id": validator.wse.current_state.id,
-                "dominant_state": validator.wse.current_state.dominant_state,
-                "confidence": validator.wse.current_state.confidence.__dict__ if validator.wse.current_state.confidence else {},
-                "ambiguity": validator.wse.current_state.ambiguity_score,
-                "consistency": validator.wse.current_state.consistency_score,
-                "environmental_context": validator.wse.current_state.environmental_context,
-                "speech_context": validator.wse.current_state.speech_context
-            }
+        if report:
+            speech_out = report.get("speech", "No speech detected.")
+            env_out = report.get("environment", "No environment sounds detected.")
+            sit_out = report.get("situation", "Situation unknown.")
+            
+            # Developer Mode objects
+            latencies = report.get("latencies", {})
+            process_status = (
+                f"Neural: {latencies.get('NeuralPerception', 0):.1f}ms | "
+                f"PSE: {latencies.get('PSE', 0):.1f}ms | "
+                f"Fusion: {latencies.get('EvidenceFusion', 0):.1f}ms | "
+                f"Semantic: {latencies.get('SemanticEngine', 0):.1f}ms | "
+                f"HRE: {latencies.get('HRE_rank', 0):.1f}ms | "
+                f"WSE: {latencies.get('WSE', 0):.1f}ms | "
+                f"SPE: {latencies.get('SPE', 0):.1f}ms | "
+                f"TRE: {latencies.get('TRE', 0):.1f}ms | "
+                f"SIR: {latencies.get('SIR', 0):.1f}ms\n"
+                f"Total: {sum(latencies.values()):.1f}ms"
+            )
+            
+            if report.get("audio_evidence"):
+                ae = report["audio_evidence"]
+                audio_evidence_dict = ae.model_dump() if hasattr(ae, "model_dump") else ae.dict() if hasattr(ae, "dict") else safe_serialize(ae)
+            else:
+                audio_evidence_dict = {}
+            
+            if report.get("semantic_json"):
+                sj = report["semantic_json"]
+                semantic_json_dict = sj.model_dump() if hasattr(sj, "model_dump") else sj.dict() if hasattr(sj, "dict") else safe_serialize(sj)
+            else:
+                semantic_json_dict = {}
+            
+            active_hyps = []
+            for h in report.get("active_hyps", []):
+                active_hyps.append(h.model_dump() if hasattr(h, "model_dump") else h.dict() if hasattr(h, "dict") else safe_serialize(h))
+            
+            if report.get("world_state"):
+                ws = report["world_state"]
+                world_state_dict = ws.model_dump() if hasattr(ws, "model_dump") else ws.dict() if hasattr(ws, "dict") else safe_serialize(ws)
+            else:
+                world_state_dict = {}
+            
+            dev_evidence = safe_serialize(audio_evidence_dict)
+            dev_semantic = safe_serialize(semantic_json_dict)
+            dev_hyps = safe_serialize(active_hyps)
+            dev_state = safe_serialize(world_state_dict)
+            
+            yield (
+                speech_out,
+                env_out,
+                sit_out,
+                dev_evidence,
+                dev_semantic,
+                dev_hyps,
+                dev_state,
+                process_status
+            )
         else:
-            world_state_status = "UNKNOWN"
-            world_state_dict = {}
-        
-        # Format the specific requested metrics
-        
-        # Transcript & Confidence
-        speech_transcript = "No speech detected."
-        speech_entities = [v for v in validator.awm.entities.values() if v.entity_type == "Speaker"]
-        if speech_entities:
-            spk = speech_entities[0]
-            # using getattr because transcript is a dynamic attribute we added in pipeline
-            speech_transcript = getattr(spk, 'transcript', 'Speech detected, no transcript.')
-            
-        # Active Sound Events & Confidences
-        active_events = []
-        for v in validator.awm.events.values():
-            conf_str = f"Detection: {v.confidence.sound_detection:.2f}"
-            active_events.append(f"- {v.class_map} (Salience: {v.acoustic_salience:.2f} | {conf_str})")
-            
-        active_events_str = "\n".join(active_events) if active_events else "No significant background events."
-        
-        # Pipeline processing status / latency
-        latencies = validator.latencies
-        process_status = (
-            f"Extraction: {latencies.get('extraction_ms', 0):.1f}ms | "
-            f"Fusion/Scene: {latencies.get('neural_fusion_ms', 0):.1f}ms | "
-            f"AWM Graph: {latencies.get('awm_ms', 0):.1f}ms | "
-            f"Reasoning: {latencies.get('reasoning_engine_ms', 0):.1f}ms | "
-            f"Renderer: {latencies.get('renderer_ms', 0):.1f}ms\n"
-            f"Total: {sum(latencies.values()):.1f}ms"
-        )
-        
-        trace_json = {
-            "AWM_Events": [v.class_map for v in validator.awm.events.values()],
-            "AWM_Entities": [v.entity_type for v in validator.awm.entities.values()],
-            "Active_Hypotheses": [h.statement for h in validator.hre.hypotheses.values()],
-            "Latencies_ms": validator.latencies
-        }
-        
-        return json.dumps(trace_json, indent=4), world_state_dict, human_summary, world_state_status, active_events_str, speech_transcript, process_status
+             yield ("Pipeline generated no output.", "", "", {}, {}, {}, {}, "N/A")
 
     except Exception as e:
-        return f"Pipeline Error: {str(e)}", {}, "Error", "ERROR", "ERROR", "ERROR", "ERROR"
+        import traceback
+        traceback.print_exc()
+        yield (f"Pipeline Error: {str(e)}", "", "", {}, {}, {}, {}, "Error")
 
 with gr.Blocks(theme=gr.themes.Soft(primary_hue="blue", secondary_hue="indigo")) as demo:
-    gr.Markdown("# 🎧 ALM v10.7: Acoustic Language Model")
-    gr.Markdown("### Unified Architecture: Neural Perception + Deterministic Cognitive Graph")
-    gr.Markdown("**Pipeline Phase Flow:** Audio → Frozen Foundation Models (Whisper/CLAP/HTS-AT) → Trainable Fusion Layer & Scene Context Network → Deterministic Reasoning Engine (AWM → SIR)")
+    gr.Markdown("# 🎧 ALM v12.0: Human Situation Understanding")
+    gr.Markdown("### Advanced Acoustic Language Model")
     
     with gr.Row():
         with gr.Column(scale=1):
-            gr.Markdown("### 1. Acoustic Input")
+            gr.Markdown("### 🎙️ Audio Input")
             audio_input = gr.Audio(type="filepath", label="Upload or Record Audio")
-            submit_btn = gr.Button("🚀 Execute ALM Cognitive Pipeline", variant="primary")
-            
-            gr.Markdown("### 2. Extracted Neural Perception")
-            speech_transcript_display = gr.Textbox(label="🗣️ Speech Transcript (Whisper)", interactive=False)
-            active_events_display = gr.Textbox(label="🔊 Active Sound Events & Confidences (HTS-AT / CLAP)", interactive=False, lines=5)
+            submit_btn = gr.Button("🚀 Analyze Audio Scene", variant="primary")
             
         with gr.Column(scale=2):
-            gr.Markdown("### 3. Cognitive Reasoning Output")
-            status_display = gr.Textbox(label="🚨 World State Engine (WSE) Dominant Status", text_align="center")
-            human_report = gr.Textbox(label="📄 Situation Intelligence Renderer (Human-Readable Report)", lines=12)
-            processing_status = gr.Textbox(label="⏱️ Pipeline Processing Latencies", interactive=False)
+            gr.Markdown("### 🧠 Situation Intelligence Renderer")
+            with gr.Tabs():
+                with gr.Tab("🗣️ Speech Understanding"):
+                    speech_ui = gr.Markdown("Waiting for audio...")
+                with gr.Tab("🌍 Environmental Understanding"):
+                    env_ui = gr.Markdown("Waiting for audio...")
+                with gr.Tab("🧠 Situation Understanding"):
+                    sit_ui = gr.Markdown("Waiting for audio...")
             
     gr.Markdown("---")
-    gr.Markdown("### 4. Transparent Developer Trace (Under The Hood)")
-    with gr.Accordion("🔍 View Internal Graph States (AWM / WSE / TRE)", open=False):
-        with gr.Row():
-            with gr.Column():
-                world_state_json = gr.JSON(label="World State Object (WSE)")
-            with gr.Column():
-                raw_json = gr.Code(label="Transparent Reasoning Engine Trace (TRE JSON)", language="json")
+    
+    with gr.Accordion("⚙️ Developer Mode (Under The Hood)", open=False):
+        gr.Markdown("### Technical Debugging Information")
+        processing_status = gr.Textbox(label="⏱️ Pipeline Processing Latencies", interactive=False)
+        with gr.Tabs():
+            with gr.Tab("Audio Evidence"):
+                dev_ev = gr.JSON()
+            with gr.Tab("Semantic Interpretation"):
+                dev_sem = gr.JSON()
+            with gr.Tab("Active Hypotheses"):
+                dev_hyp = gr.JSON()
+            with gr.Tab("Cognitive State"):
+                dev_st = gr.JSON()
 
     submit_btn.click(
         fn=run_alm_pipeline,
         inputs=audio_input,
         outputs=[
-            raw_json, 
-            world_state_json, 
-            human_report, 
-            status_display, 
-            active_events_display, 
-            speech_transcript_display, 
+            speech_ui,
+            env_ui,
+            sit_ui,
+            dev_ev,
+            dev_sem,
+            dev_hyp,
+            dev_st,
             processing_status
         ]
     )
 
 if __name__ == "__main__":
-    print("Launching ALM v10.7 Gradio Interface...")
-    demo.launch(server_name="0.0.0.0", server_port=7860, share=False)
+    print("Launching ALM v12.0 Gradio Interface...")
+    demo.launch(server_name="0.0.0.0", server_port=7860, share=True)

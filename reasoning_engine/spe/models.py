@@ -7,7 +7,7 @@ from typing import List, Optional
 import time
 
 from reasoning_engine.spe.exceptions import InvalidProjectionError
-from reasoning_engine.awm.models import HierarchicalConfidence
+from reasoning_engine.wse.models import DecomposedConfidence
 
 class RiskLevel(Enum):
     LOW = auto()
@@ -31,7 +31,7 @@ class StabilityLevel(Enum):
 class ProjectedState:
     """Represents a specific projection outcome."""
     state_description: str
-    confidence: HierarchicalConfidence = field(default_factory=HierarchicalConfidence)
+    confidence: DecomposedConfidence
     uncertainty: float = 0.5
     expected_duration: str = "Unknown"
     assumptions: List[str] = field(default_factory=list)
@@ -40,20 +40,18 @@ class ProjectedState:
 class SituationProjection:
     """
     Represents an anticipated future state deterministically projected 
-    from the current world state without fabricating unobserved evidence.
-    Task 8: Projection Enhancements (Primary, Alternative, Low Prob).
+    from the current world state using semantic hints without fabricating unobserved evidence.
     """
     id: str
     
     primary_projection: ProjectedState
     alternative_projection: Optional[ProjectedState] = None
-    low_probability_projection: Optional[ProjectedState] = None
     
     transition_sequence: List[str] = field(default_factory=list)
     
-    urgency: UrgencyLevel = UrgencyLevel.LOW
-    risk_level: RiskLevel = RiskLevel.LOW
-    stability: StabilityLevel = StabilityLevel.STABLE
+    urgency: str = "LOW"
+    risk_level: str = "LOW"
+    stability: str = "STABLE"
     
     supporting_world_state: str = "" # ID of the world state this was projected from
     

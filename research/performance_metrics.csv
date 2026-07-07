@@ -1,0 +1,10 @@
+Metric,Mean,Median,StdDev
+Pipeline Latency (ms),147.28212504002948,118.17349999985818,164.0045959630018
+alm_situation_quality,4.42,4.0,0.4935585071701226
+alm_human_plausibility,4.46,4.0,0.49839743177508455
+alm_explainability,4.46,4.0,0.49839743177508455
+alm_completeness,4.4,4.0,0.4898979485566356
+alm_uncertainty,4.64,5.0,0.48
+alm_naturalness,4.48,4.0,0.4995998398718719
+baseline_situation_quality,2.82,3.0,0.81706792863262
+baseline_human_plausibility,1.92,2.0,0.8207313811473277

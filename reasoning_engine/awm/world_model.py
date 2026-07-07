@@ -27,6 +27,9 @@ class AuditoryWorldModel:
         self.beliefs: List[BeliefObject] = []
         self.current_world_state: Optional[WorldStateObject] = None
         self.projection: Optional[ProjectionObject] = None
+        
+        # Semantic Concepts (from CLAP)
+        self.clap_concepts: List[str] = []
 
 
     def get_node(self, node_id: str):

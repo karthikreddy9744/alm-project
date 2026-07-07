@@ -1,20 +1,36 @@
-# ALM v10.7 Validated Commands
+# ALM v12.0 Command Cheat Sheet
 
-## 1. Directory Structure Setup
-(Ensure this runs before dataset generation)
-`mkdir -p data/raw/speech data/raw/environment`
+## 1. Environment Setup & Dependencies
+```bash
+pip install -r requirements.txt
+```
 
-## 2. Generate Dataset & Extract Neural Features
-(Produces cached `embeddings.npy` and `labels.npy`. Use at least 500-1000 samples for robustness!)
-`python -m training.dataset_builder --num_samples 1000`
+## 2. Running Inference & Validation Pipeline (Headless)
+Runs the unified ALM validation pipeline (Whisper -> Fusion -> Qwen -> HRE -> WSE -> SPE -> TRE -> SIR) over standard samples.
+```bash
+python main.py
+```
 
-## 3. Train Fusion & Scene Context Network
-`python -m training.train --epochs 50 --batch_size 32`
+## 3. Launching the User Interface
+Starts the Gradio web interface featuring the Three-Tier Intelligence report and the Developer Mode JSON trace.
+```bash
+python application/app.py
+```
 
-## 4. Run Unified Validation Pipeline (Terminal)
-(Runs the end-to-end logic test without the UI)
-`python main.py`
+## 4. Running Benchmarks
+Executes latency and tracemalloc memory profiling on the ALM pipeline.
+```bash
+python scripts/benchmark.py
+```
 
-## 5. Launch Gradio Frontend
-(Interactive UI for audio testing)
-`python application/app.py`
+## 5. Running the Validation Suite (Research Phase)
+Evaluates all samples inside the `samples/` directory and dumps results into a CSV.
+```bash
+python scripts/validation_suite.py
+```
+
+## 6. Cleanup Model Cache
+Free up storage by clearing huggingface cache (Note: Model will need to re-download next run).
+```bash
+rm -rf ~/.cache/huggingface/hub/models--Qwen--Qwen2.5-3B-Instruct
+```

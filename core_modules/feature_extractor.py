@@ -95,7 +95,7 @@ class WhisperFeatureExtractor:
         if detected_languages:
             dominant_lang = max(set(detected_languages), key=detected_languages.count)
         
-        return embedding, transcript, dominant_lang
+        return embedding, transcript, dominant_lang, timestamps
 
     @torch.inference_mode()
     def batch_extract(self, audio_list: list, sr: int = 16000):
@@ -148,6 +148,24 @@ class CLAPFeatureExtractor:
                 embedding = output
         
         return embedding.squeeze(0).cpu() # [512]
+
+    @torch.inference_mode()
+    def get_nearest_concepts(self, audio: np.ndarray, sr: int, concepts: list) -> dict:
+        """Returns similarity scores for a list of concepts."""
+        if sr != 48000:
+            import librosa
+            audio = librosa.resample(audio, orig_sr=sr, target_sr=48000)
+            sr = 48000
+            
+        inputs = self.processor(text=concepts, audio=audio, sampling_rate=sr, return_tensors="pt", padding=True)
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
+        
+        with torch.no_grad():
+            outputs = self.model(**inputs)
+            logits_per_audio = outputs.logits_per_audio
+            probs = logits_per_audio.softmax(dim=-1).squeeze(0).cpu().numpy()
+            
+        return {concept: float(prob) for concept, prob in zip(concepts, probs)}
 
     @torch.inference_mode()
     def batch_extract(self, audio_list: list, sr: int = 16000):

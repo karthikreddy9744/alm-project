@@ -6,8 +6,7 @@ from typing import List, Dict, Optional
 import time
 
 from reasoning_engine.tre.exceptions import InvalidTraceError
-from reasoning_engine.bse.models import BeliefObject
-from reasoning_engine.hre.models import Hypothesis
+from reasoning_engine.hre.models import ManagedHypothesisState
 from reasoning_engine.wse.models import WorldState
 from reasoning_engine.spe.models import SituationProjection
 
@@ -39,8 +38,6 @@ class TransparentReasoningTrace:
     observations: List[str] = field(default_factory=list) # AWM objects
     entities: List[str] = field(default_factory=list)
     events: List[str] = field(default_factory=list)
-    relationships: List[str] = field(default_factory=list) # ARG objects
-    beliefs: List[str] = field(default_factory=list)       # BSE objects
     hypotheses: List[str] = field(default_factory=list)    # HRE objects
     world_state: str = ""                                  # WSE object
     projections: List[str] = field(default_factory=list)   # SPE objects

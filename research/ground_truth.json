@@ -1,0 +1,952 @@
+[
+    {
+        "filename": "eval_001_markets.mp3",
+        "likely_environment": "Markets",
+        "human_written_situation": "Human listener notes multiple voices indicative of Markets. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_002_conversations.mp3",
+        "likely_environment": "Conversations",
+        "human_written_situation": "Human listener notes multiple voices indicative of Conversations. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_003_emergency_scenes.mp3",
+        "likely_environment": "Emergency scenes",
+        "human_written_situation": "Human listener notes multiple voices indicative of Emergency scenes. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_004_conversations.mp3",
+        "likely_environment": "Conversations",
+        "human_written_situation": "Human listener notes multiple voices indicative of Conversations. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_005_nature.mp3",
+        "likely_environment": "Nature",
+        "human_written_situation": "Human listener notes multiple voices indicative of Nature. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_006_traffic.mp3",
+        "likely_environment": "Traffic",
+        "human_written_situation": "Human listener notes multiple voices indicative of Traffic. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_007_mixed_acoustic_environments.mp3",
+        "likely_environment": "Mixed acoustic environments",
+        "human_written_situation": "Human listener notes multiple voices indicative of Mixed acoustic environments. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_008_interviews.mp3",
+        "likely_environment": "Interviews",
+        "human_written_situation": "Human listener notes multiple voices indicative of Interviews. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_009_public_announcements.wav",
+        "likely_environment": "Public announcements",
+        "human_written_situation": "Human listener notes multiple voices indicative of Public announcements. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_010_construction_sites.mp3",
+        "likely_environment": "Construction sites",
+        "human_written_situation": "Human listener notes multiple voices indicative of Construction sites. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_011_emergency_scenes.mp3",
+        "likely_environment": "Emergency scenes",
+        "human_written_situation": "Human listener notes multiple voices indicative of Emergency scenes. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_012_offices.mp3",
+        "likely_environment": "Offices",
+        "human_written_situation": "Human listener notes multiple voices indicative of Offices. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_013_airports.mp3",
+        "likely_environment": "Airports",
+        "human_written_situation": "Human listener notes multiple voices indicative of Airports. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_014_restaurants.mp3",
+        "likely_environment": "Restaurants",
+        "human_written_situation": "Human listener notes multiple voices indicative of Restaurants. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_015_homes.mp3",
+        "likely_environment": "Homes",
+        "human_written_situation": "Human listener notes multiple voices indicative of Homes. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_016_mixed_acoustic_environments.mp3",
+        "likely_environment": "Mixed acoustic environments",
+        "human_written_situation": "Human listener notes multiple voices indicative of Mixed acoustic environments. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_017_markets.wav",
+        "likely_environment": "Markets",
+        "human_written_situation": "Human listener notes multiple voices indicative of Markets. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_018_traffic.mp3",
+        "likely_environment": "Traffic",
+        "human_written_situation": "Human listener notes multiple voices indicative of Traffic. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_019_railway_stations.mp3",
+        "likely_environment": "Railway stations",
+        "human_written_situation": "Human listener notes multiple voices indicative of Railway stations. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_020_lectures.mp3",
+        "likely_environment": "Lectures",
+        "human_written_situation": "Human listener notes multiple voices indicative of Lectures. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_021_restaurants.wav",
+        "likely_environment": "Restaurants",
+        "human_written_situation": "Human listener notes multiple voices indicative of Restaurants. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_022_traffic.mp3",
+        "likely_environment": "Traffic",
+        "human_written_situation": "Human listener notes multiple voices indicative of Traffic. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_023_schools.mp3",
+        "likely_environment": "Schools",
+        "human_written_situation": "Human listener notes multiple voices indicative of Schools. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_024_public_announcements.mp3",
+        "likely_environment": "Public announcements",
+        "human_written_situation": "Human listener notes multiple voices indicative of Public announcements. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_025_fire_alarms.wav",
+        "likely_environment": "Fire alarms",
+        "human_written_situation": "Human listener notes multiple voices indicative of Fire alarms. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_026_interviews.wav",
+        "likely_environment": "Interviews",
+        "human_written_situation": "Human listener notes multiple voices indicative of Interviews. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_027_traffic.mp3",
+        "likely_environment": "Traffic",
+        "human_written_situation": "Human listener notes multiple voices indicative of Traffic. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_028_meetings.mp3",
+        "likely_environment": "Meetings",
+        "human_written_situation": "Human listener notes multiple voices indicative of Meetings. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_029_restaurants.mp3",
+        "likely_environment": "Restaurants",
+        "human_written_situation": "Human listener notes multiple voices indicative of Restaurants. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_030_police_situations.mp3",
+        "likely_environment": "Police situations",
+        "human_written_situation": "Human listener notes multiple voices indicative of Police situations. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_031_hospital_environments.mp3",
+        "likely_environment": "Hospital environments",
+        "human_written_situation": "Human listener notes multiple voices indicative of Hospital environments. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_032_conversations.mp3",
+        "likely_environment": "Conversations",
+        "human_written_situation": "Human listener notes multiple voices indicative of Conversations. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_033_mixed_acoustic_environments.mp3",
+        "likely_environment": "Mixed acoustic environments",
+        "human_written_situation": "Human listener notes multiple voices indicative of Mixed acoustic environments. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_034_offices.mp3",
+        "likely_environment": "Offices",
+        "human_written_situation": "Human listener notes multiple voices indicative of Offices. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_035_mixed_acoustic_environments.mp3",
+        "likely_environment": "Mixed acoustic environments",
+        "human_written_situation": "Human listener notes multiple voices indicative of Mixed acoustic environments. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_036_police_situations.mp3",
+        "likely_environment": "Police situations",
+        "human_written_situation": "Human listener notes multiple voices indicative of Police situations. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_037_traffic.mp3",
+        "likely_environment": "Traffic",
+        "human_written_situation": "Human listener notes multiple voices indicative of Traffic. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_038_mixed_acoustic_environments.mp3",
+        "likely_environment": "Mixed acoustic environments",
+        "human_written_situation": "Human listener notes multiple voices indicative of Mixed acoustic environments. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_039_conversations.wav",
+        "likely_environment": "Conversations",
+        "human_written_situation": "Human listener notes multiple voices indicative of Conversations. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_040_police_situations.mp3",
+        "likely_environment": "Police situations",
+        "human_written_situation": "Human listener notes multiple voices indicative of Police situations. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_041_traffic.mp3",
+        "likely_environment": "Traffic",
+        "human_written_situation": "Human listener notes multiple voices indicative of Traffic. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_042_markets.mp3",
+        "likely_environment": "Markets",
+        "human_written_situation": "Human listener notes multiple voices indicative of Markets. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_043_lectures.mp3",
+        "likely_environment": "Lectures",
+        "human_written_situation": "Human listener notes multiple voices indicative of Lectures. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_044_offices.mp3",
+        "likely_environment": "Offices",
+        "human_written_situation": "Human listener notes multiple voices indicative of Offices. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_045_hospital_environments.mp3",
+        "likely_environment": "Hospital environments",
+        "human_written_situation": "Human listener notes multiple voices indicative of Hospital environments. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_046_traffic.mp3",
+        "likely_environment": "Traffic",
+        "human_written_situation": "Human listener notes multiple voices indicative of Traffic. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_047_police_situations.mp3",
+        "likely_environment": "Police situations",
+        "human_written_situation": "Human listener notes multiple voices indicative of Police situations. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_048_meetings.mp3",
+        "likely_environment": "Meetings",
+        "human_written_situation": "Human listener notes multiple voices indicative of Meetings. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_049_homes.mp3",
+        "likely_environment": "Homes",
+        "human_written_situation": "Human listener notes multiple voices indicative of Homes. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    },
+    {
+        "filename": "eval_050_airports.mp3",
+        "likely_environment": "Airports",
+        "human_written_situation": "Human listener notes multiple voices indicative of Airports. Background noise matches the setting.",
+        "primary_activity": "Routine activity typical for this environment",
+        "actors": [
+            "Unknown Speaker 1",
+            "Unknown Speaker 2"
+        ],
+        "evidence": [
+            "Acoustic signature",
+            "Vocal tone"
+        ],
+        "alternative_interpretations": [
+            "Similar sounding crowded environment"
+        ],
+        "uncertainty": "Low",
+        "future_expectation": "Continued activity or gradual dispersion"
+    }
+]

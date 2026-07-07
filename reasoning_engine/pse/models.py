@@ -1,12 +1,26 @@
 from dataclasses import dataclass, field
 from typing import List, Dict, Any
-from reasoning_engine.arg.models import ARGNode
+from enum import Enum, auto
+from reasoning_engine.awm.models import EventNode, EntityNode
+
+class ContextImportance(Enum):
+    PRIMARY = auto()
+    SUPPORTING = auto()
+    BACKGROUND = auto()
+    IGNORED = auto()
 
 @dataclass
 class SegregatedStreams:
     """
-    Holds the segregated foreground and background streams determined by the PSE.
+    Holds the segregated streams determined by the PSE (Selective Attention Filter).
     """
-    foreground_nodes: List[ARGNode] = field(default_factory=list)
-    background_nodes: List[ARGNode] = field(default_factory=list)
+    primary_events: List[EventNode] = field(default_factory=list)
+    supporting_events: List[EventNode] = field(default_factory=list)
+    background_events: List[EventNode] = field(default_factory=list)
+    ignored_events: List[EventNode] = field(default_factory=list)
+    
+    primary_entities: List[EntityNode] = field(default_factory=list)
+    supporting_entities: List[EntityNode] = field(default_factory=list)
+    
+    ignored_reasons: Dict[str, str] = field(default_factory=dict) # Event ID -> reason ignored
     metadata: Dict[str, Any] = field(default_factory=dict)
