@@ -32,11 +32,22 @@ class SileroVADWrapper:
         self.threshold = threshold
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
-        # Load Silero VAD from torch hub
-        self.model, utils = torch.hub.load(repo_or_dir='snakers4/silero-vad',
-                                          model='silero_vad',
-                                          force_reload=False,
-                                          trust_repo=True)
+        # Load Silero VAD from torch hub with retry mechanism for Colab timeouts
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                self.model, utils = torch.hub.load(repo_or_dir='snakers4/silero-vad',
+                                                  model='silero_vad',
+                                                  force_reload=False,
+                                                  trust_repo=True)
+                break
+            except Exception as e:
+                if attempt == max_retries - 1:
+                    raise RuntimeError(f"Failed to load Silero VAD after {max_retries} attempts. Error: {e}")
+                import time
+                print(f"Connection error when loading Silero VAD: {e}. Retrying in {2 ** attempt} seconds...")
+                time.sleep(2 ** attempt)
+                
         self.model = self.model.to(self.device)
         self.get_speech_timestamps = utils[0]
 
