@@ -179,4 +179,4 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue="blue", secondary_hue="indigo"))
 
 if __name__ == "__main__":
     print("Launching ALM v12.0 Gradio Interface...")
-    demo.launch(server_name="0.0.0.0", server_port=7860, share=True)
+    demo.launch(server_name="0.0.0.0", server_port=7860, share=True, allowed_paths=["/tmp", "/content"])

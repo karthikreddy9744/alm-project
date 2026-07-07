@@ -162,10 +162,16 @@ class CLAPFeatureExtractor:
         
         with torch.no_grad():
             outputs = self.model(**inputs)
-            logits_per_audio = outputs.logits_per_audio
-            probs = logits_per_audio.softmax(dim=-1).squeeze(0).cpu().numpy()
+            audio_embeds = outputs.audio_embeds
+            text_embeds = outputs.text_embeds
             
-        return {concept: float(prob) for concept, prob in zip(concepts, probs)}
+            audio_embeds = audio_embeds / audio_embeds.norm(p=2, dim=-1, keepdim=True)
+            text_embeds = text_embeds / text_embeds.norm(p=2, dim=-1, keepdim=True)
+            
+            # Compute cosine similarity between audio and text embeddings
+            cosine_sim = torch.matmul(audio_embeds, text_embeds.t()).squeeze(0).cpu().numpy()
+            
+        return {concept: float(sim) for concept, sim in zip(concepts, cosine_sim)}
 
     @torch.inference_mode()
     def batch_extract(self, audio_list: list, sr: int = 16000):

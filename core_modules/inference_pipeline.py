@@ -178,21 +178,24 @@ class ALMInferencePipeline:
         ]
         nearest_concepts_dict = self.clap_fe.get_nearest_concepts(audio, sr, concept_list)
         
-        # Filter out the sinks and low-probability hallucinations
+        # Filter out the sinks and low-similarity hallucinations
         valid_concepts = []
-        for k, v in nearest_concepts_dict.items():
-            if k not in ["a person speaking clearly", "complete absolute silence", "background room noise"] and v > 0.15:
-                valid_concepts.append((k, v))
+        for k, sim in nearest_concepts_dict.items():
+            if k not in ["a person speaking clearly", "complete absolute silence", "background room noise"] and sim > 0.25:
+                # Conservative confidence mapping so sim=0.30 gives ~0.66 instead of 1.00
+                conf = min(0.95, max(0.2, (sim - 0.20) / 0.15))
+                valid_concepts.append((k, round(conf, 2)))
                 
         # Keep top 3 concepts
         sorted_concepts = sorted(valid_concepts, key=lambda x: x[1], reverse=True)[:3]
         nearest_concepts = [k for k, v in sorted_concepts]
         
-        # 3. Deterministic AWM Population (Lower prob to 0.2 to catch faint background sounds masked by speech)
+        # 3. Deterministic AWM Population 
+        # Increased threshold to 0.45 to prevent microphone pops from hallucinating scenes
         active_scenes = []
         for idx, prob in enumerate(probs):
-            if prob > 0.20:
-                active_scenes.append((SCENE_LABELS[idx], prob))
+            if prob > 0.45:
+                active_scenes.append((SCENE_LABELS[idx], round(prob, 2)))
                 
         # 4. Insert into World Model
         # Insert Speech Entity if present
