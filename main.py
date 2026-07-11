@@ -24,7 +24,7 @@ from reasoning_engine.semantic.engine import SemanticInterpretationEngine
 
 class UnifiedPipelineValidator:
     def __init__(self):
-        logger.info("Initializing ALM v11.0 Unified Pipeline (Phase 1)...")
+        logger.info("Initializing ALM v12.0 Unified Pipeline (Phase 1)...")
         # Neural Layer
         self.neural_pipeline = ALMInferencePipeline()
         

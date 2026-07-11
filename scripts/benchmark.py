@@ -19,7 +19,7 @@ def main():
     load_time = time.perf_counter() - start_load
     logger.info(f"Model Loading Time: {load_time:.2f} seconds")
     
-    sample_file = os.path.join(os.path.dirname(__file__), '..', 'samples', 'YTDown_Shorts_Loki-s-Glorious-Purpose_Media_KPz1r8DCuH0_009_128k.mp3')
+    sample_file = os.path.join(os.path.dirname(__file__), '..', 'samples', 'Loki.mp3')
     
     if not os.path.exists(sample_file):
         logger.error(f"Sample file not found: {sample_file}")

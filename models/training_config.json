@@ -1,5 +1,5 @@
 {
-    "model_name": "ALM v10 Unified Architecture",
+    "model_name": "ALM v12 Unified Architecture",
     "version": "10.13",
     "epochs": 40,
     "batch_size": 32,
@@ -13,5 +13,5 @@
     "loss_function": "BCEWithLogitsLoss",
     "device_used": "cuda",
     "mixed_precision": "unknown",
-    "dataset_builder_version": "v10.7"
+    "dataset_builder_version": "v12.7"
 }

@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 class PerceptualSegregationEngine:
     """
-    ALM v10.17 Perceptual Segregation Engine.
+    ALM v12.17 Perceptual Segregation Engine.
     Implements true Selective Attention by segregating the Auditory World Model
     into Primary, Supporting, Background, and Ignored streams based on contextual masking.
     """

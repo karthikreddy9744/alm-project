@@ -1,6 +1,6 @@
-# ALM v10.6 Kaggle Optimization Workflow
+# ALM v12.0 Kaggle Optimization Workflow
 
-Since ALM v10 does not utilize neural backpropagation training (the AWM relies on frozen foundation models and a deterministic logic graph), the Kaggle workflow is dedicated to **Hyperparameter Grid Search Optimization**.
+Since ALM v12 does not utilize neural backpropagation training (the AWM relies on frozen foundation models and a deterministic logic graph), the Kaggle workflow is dedicated to **Hyperparameter Grid Search Optimization**.
 
 We use Kaggle's free GPUs not for training weights, but for massively parallelizing inference over the `MultimodalDatasetBuilder` scenes to discover the optimal logic bounds (e.g., temporal thresholds, belief momentum) in `reasoning_engine/config.py`.
 

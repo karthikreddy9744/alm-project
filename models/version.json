@@ -1,12 +1,12 @@
 {
     "project_name": "Auditory Language Model (ALM)",
-    "alm_version": "10.13",
-    "model_version": "v10_final",
+    "alm_version": "12.0",
+    "model_version": "v12_final",
     "release_type": "Production Candidate",
-    "release_date": "2026-07-04",
+    "release_date": "2026-07-11",
     "git_tag": "unknown",
     "framework": "PyTorch",
     "python_version": "3.10+",
     "torch_version": "2.x",
-    "repository_compatibility": "ALM v10.x.x Series"
+    "repository_compatibility": "ALM v12.x.x Series"
 }

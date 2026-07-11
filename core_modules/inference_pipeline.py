@@ -9,11 +9,11 @@ from reasoning_engine.awm.models import EntityNode, EventNode, NodeState, Trajec
 
 class ALMInferencePipeline:
     """
-    ALM v10.7 Unified Inference Pipeline.
+    ALM v12.7 Unified Inference Pipeline.
     Bridges the Neural Perception Layer (Whisper/CLAP/HTS-AT + Fusion) 
     with the Deterministic Cognitive Graph (AWM).
     """
-    def __init__(self, model_path="models/alm_v10_final.pt"):
+    def __init__(self, model_path="models/alm_v12_final.pt"):
         print("Initializing Neural Perception Extractors...")
         self.whisper_fe = WhisperFeatureExtractor('base')
         self.clap_fe = CLAPFeatureExtractor()

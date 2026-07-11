@@ -3,7 +3,7 @@ import torch.nn as nn
 
 class FusionLayer(nn.Module):
     """
-    ALM v10.7 Unified Fusion Layer.
+    ALM v12.7 Unified Fusion Layer.
     Concatenates Speech (Whisper, 512), Semantic Audio (CLAP, 512), 
     and Polyphonic Event Detection (HTS-AT, 768) embeddings 
     and projects them into a Joint Representation (256) via an MLP.

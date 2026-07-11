@@ -222,7 +222,7 @@ class UnifiedDatasetBuilder:
     def build_and_extract(self, total_samples: int = 140000, shard_size: int = 1000, batch_size: int = 32):
         print(f"Synthesizing {total_samples} samples across 6 Curriculum Stages with {shard_size} samples per shard (Batch size: {batch_size})...")
         
-        # Exact ratios required by ALM v10.7.1
+        # Exact ratios required by ALM v12.7.1
         proportions = {
             1: 0.214, # Stage 1 (30k/140k)
             2: 0.250, # Stage 2 (35k/140k)
@@ -290,7 +290,7 @@ class UnifiedDatasetBuilder:
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="ALM v10.8 Curriculum Dataset Builder")
+    parser = argparse.ArgumentParser(description="ALM v12.8 Curriculum Dataset Builder")
     parser.add_argument("--audio_dir", type=str, default="data/raw", help="Path to raw audio files")
     parser.add_argument("--output_dir", type=str, default="data/processed", help="Path to save processed shards")
     parser.add_argument("--num_samples", type=int, default=100000, help="Total number of acoustic scenes")

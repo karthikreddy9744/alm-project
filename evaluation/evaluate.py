@@ -13,7 +13,7 @@ from training.train import ALMMultiLabelDataset, load_processed_data
 from core_modules.scene_network import SCENE_LABELS
 
 def evaluate_model(data_path: str = "data/processed",
-                   model_path: str = "models/alm_v10_final.pt",
+                   model_path: str = "models/alm_v12_final.pt",
                    output_path: str = "data/evaluation"):
     """
     Evaluate trained multi-label model on real embeddings and generate metrics.

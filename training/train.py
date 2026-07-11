@@ -76,7 +76,7 @@ def train_model(data_path: str = "data/processed",
                 lr: float = 1e-4,
                 weight_decay: float = 1e-4):
     """
-    Train the ALM v10.7.1 Unified Architecture with Curriculum Learning.
+    Train the ALM v12.7.1 Unified Architecture with Curriculum Learning.
     """
     embeddings, labels = load_processed_data(data_path)
     X_train, X_val, y_train, y_val = train_test_split(embeddings, labels, test_size=0.2, random_state=42)
@@ -100,7 +100,7 @@ def train_model(data_path: str = "data/processed",
     
     for epoch in range(epochs):
         # ---------------------------------------------------------
-        # ALM v10.7.1 CURRICULUM LEARNING LOGIC
+        # ALM v12.7.1 CURRICULUM LEARNING LOGIC
         # ---------------------------------------------------------
         if epoch < 10:
             # Stage 1: Clean Speech (6), Environment Only (5), 1 Spk + 1 Env (1)
@@ -215,7 +215,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_path", type=str, default="data/processed", help="Path to processed data shards")
-    parser.add_argument("--save_path", type=str, default="models/scene_model.pt", help="Path to save trained v10.7.1 model")
+    parser.add_argument("--save_path", type=str, default="models/scene_model.pt", help="Path to save trained v12.7.1 model")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size")
     parser.add_argument("--epochs", type=int, default=50, help="Number of epochs")
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate")

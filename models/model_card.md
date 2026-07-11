@@ -19,13 +19,13 @@ tags:
 - environmental-sound-classification
 ---
 
-# ALM v10: Auditory Language Model
+# ALM v12: Auditory Language Model
 
 **ALM (Auditory Language Model)** is a unified multimodal acoustic-cognitive architecture that bridges high-fidelity neural sound perception with a deterministic symbolic reasoning graph (the Auditory World Model).
 
 ## Model Details
-- **Model Name:** ALM v10 Unified Architecture
-- **Version:** v10.13 (Production Candidate)
+- **Model Name:** ALM v12 Unified Architecture
+- **Version:** v12.13 (Production Candidate)
 - **Architecture:** Neural Perception Extractors + Fusion Layer + Scene Context Network + Deterministic Reasoning Engine.
 - **Languages Supported:** 13+ (English, Hindi, Telugu, Tamil, Kannada, Malayalam, Bengali, Gujarati, Marathi, Punjabi, Spanish, French, German).
 - **Sampling Rate:** 16kHz
@@ -59,7 +59,7 @@ The core trainable components in this repository constitute a lightweight bridgi
 - **Echo Dependency:** Heavy reverberation can slightly degrade the Whisper transcription WER.
 
 ## Intended Use
-ALM v10 is designed for ambient acoustic intelligence, smart home auditory monitoring, cognitive robotics, and real-time auditory threat assessment. 
+ALM v12 is designed for ambient acoustic intelligence, smart home auditory monitoring, cognitive robotics, and real-time auditory threat assessment. 
 
 ## Unsupported Scenarios
 - Medical diagnostic audio (e.g., heart murmur detection).

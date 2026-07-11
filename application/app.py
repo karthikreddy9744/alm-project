@@ -60,6 +60,35 @@ def run_alm_pipeline(audio_filepath: str):
         
     try:
         audio, sr = librosa.load(audio_filepath, sr=16000)
+        
+        import numpy as np
+        # ---------------------------------------------------------
+        # NOISE-BURST MITIGATION & MICROPHONE VALIDATION
+        # ---------------------------------------------------------
+        rms = librosa.feature.rms(y=audio)[0]
+        mean_rms = np.mean(rms)
+        
+        if mean_rms < 0.0001:
+            yield (
+                "⚠️ **Audio Rejected**\n\nAudio is completely silent.",
+                "⚠️ **Audio Rejected**\n\nNo environmental sound detected.",
+                "⚠️ **Audio Rejected**\n\nPlease check your microphone and try again.",
+                {}, {}, {}, {}, "Error: Pure silence."
+            )
+            return
+            
+        zero_crossings = librosa.zero_crossings(audio, pad=False)
+        zc_rate = sum(zero_crossings) / len(audio)
+        if zc_rate > 0.4:
+            yield (
+                "⚠️ **Audio Rejected**\n\nAudio appears to be pure static or a microphone click.",
+                "⚠️ **Audio Rejected**\n\nNoise burst rejected by pipeline.",
+                "⚠️ **Audio Rejected**\n\nPlease record a clearer sample.",
+                {}, {}, {}, {}, "Error: Noise burst (high ZCR)."
+            )
+            return
+        # ---------------------------------------------------------
+
         report = validator.run_pipeline(audio, sr)
         
         if report:
