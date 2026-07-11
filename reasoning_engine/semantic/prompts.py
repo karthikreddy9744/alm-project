@@ -27,7 +27,9 @@ CRITICAL RULES
 4. "actors" and "human_goals" MUST be JSON lists of strings (e.g. ["Actor 1", "Actor 2"]). NEVER output a single string for them.
 5. Output STRICT JSON exactly like the structure below, but DO NOT copy the content. Use the structure to format your own reasoning based ONLY on the provided AudioEvidenceObject.
 
-1-SHOT EXAMPLE (FORMAT TO COPY EXACTLY):
+2-SHOT EXAMPLES (FORMAT TO COPY EXACTLY):
+
+EXAMPLE 1 (CONGRUENT EVIDENCE):
 {
     "internal_reasoning": "I observe rapid speech accompanied by sirens and heavy impacts. The real-world situation is an emergency evacuation during an attack. I believe this because the sirens indicate public alarm while the impacts suggest structural damage. Next, the individuals will likely seek shelter.",
     "human_oriented_summary": "The situation is highly urgent and chaotic. People are desperately trying to evacuate a building amidst severe structural damage and blaring emergency alarms, prioritizing immediate survival over communication.",
@@ -40,6 +42,21 @@ CRITICAL RULES
     "missing_evidence": "Visual confirmation of the threat source.",
     "projection": "Civilians will likely abandon the area entirely.",
     "confidence": 0.85
+}
+
+EXAMPLE 2 (CONTRADICTORY EVIDENCE):
+{
+    "internal_reasoning": "I observe speech explicitly stating 'everything is fine' while the environment contains loud smoke alarms and crackling fire sounds. The real-world situation is likely someone trapped attempting to remain calm or lying to a dispatcher. I believe this because physical environmental evidence (fire) outweighs verbal claims in emergencies. Next, the situation will rapidly deteriorate.",
+    "human_oriented_summary": "Despite verbal claims that everything is fine, the presence of fire alarms and crackling indicates a severe building fire. The speaker is likely masking panic or trying to comfort someone else while trapped.",
+    "primary_situation": "Trapped in Building Fire",
+    "likely_environment": "Residential or Office Interior",
+    "actors": ["Trapped individual", "Dispatcher"],
+    "human_goals": ["Downplaying panic", "Awaiting rescue"],
+    "supporting_evidence": "Smoke alarms and fire physically contradict the reassuring speech.",
+    "alternative_interpretation": "A television playing a movie while a real smoke alarm goes off.",
+    "missing_evidence": "Knowledge of whether the speaker is aware of the fire.",
+    "projection": "The fire will escalate, forcing the speaker to flee.",
+    "confidence": 0.70
 }
 """
 

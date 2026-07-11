@@ -180,11 +180,9 @@ class ALMInferencePipeline:
         
         # Filter out the sinks and low-similarity hallucinations
         valid_concepts = []
-        for k, sim in nearest_concepts_dict.items():
-            if k not in ["a person speaking clearly", "complete absolute silence", "background room noise"] and sim > 0.25:
-                # Conservative confidence mapping so sim=0.30 gives ~0.66 instead of 1.00
-                conf = min(0.95, max(0.2, (sim - 0.20) / 0.15))
-                valid_concepts.append((k, round(conf, 2)))
+        for k, prob in nearest_concepts_dict.items():
+            if k not in ["a person speaking clearly", "complete absolute silence", "background room noise"] and prob > 0.05:
+                valid_concepts.append((k, round(prob, 2)))
                 
         # Keep top 3 concepts
         sorted_concepts = sorted(valid_concepts, key=lambda x: x[1], reverse=True)[:3]
@@ -237,13 +235,25 @@ class ALMInferencePipeline:
             awm.add_event(env_event)
             
         # Insert Zero-Shot Environmental Events from CLAP
+        # 5. Dynamic Acoustic Masking Penalty
+        # If speech is present, it physically masks background noise. We penalize the environmental event salience
+        # to ensure the LLM prioritizes the speech intent rather than hallucinating danger from the muffled background.
+        speech_penalty = 0.85 if transcript else 1.0
+
+        # Insert Zero-Shot Environmental Events from CLAP
         for i, (concept, prob) in enumerate(sorted_concepts):
-            clap_event_conf = HierarchicalConfidence(sound_detection=prob)
+            # Base confidence from softmax
+            base_conf = min(1.0, prob * 3.0) 
+            clap_event_conf = HierarchicalConfidence(sound_detection=base_conf)
+            
+            # Apply dynamic masking penalty
+            salience = min(1.0, base_conf + 0.3) * speech_penalty
+            
             clap_event = EventNode(
                 id=f"evt_clap_{i}",
                 class_map=concept.title(),
                 trajectory=Trajectory.UNKNOWN,
-                acoustic_salience=min(1.0, prob + 0.6), # Boost salience to ensure PSE pays attention
+                acoustic_salience=salience,
                 confidence=clap_event_conf
             )
             awm.add_event(clap_event)

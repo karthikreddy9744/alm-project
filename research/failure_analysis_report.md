@@ -18,5 +18,13 @@ During the experimental evaluation on the 50-item dataset, a number of failure m
 - **Description:** Synthesized electronic tones (from phone rings or alarms in `eval_044_offices.mp3`) were occasionally misidentified by CLAP as "Musical Instrument."
 - **ALM Mitigation:** ALM treats environmental labels as supporting evidence; if the transcript contradicted the "music", the World State Engine correctly demoted the music classification.
 
+### 4. Acoustic Masking Hallucination (Resolved)
+- **Description:** Previously, when a faint background sound (like traffic) occurred simultaneously with a primary human speech event, the LLM would occasionally construct a situation centered entirely around the background noise, ignoring the intent of the speaker.
+- **ALM Mitigation:** Implemented a **Dynamic Acoustic Masking Penalty** in the Evidence Fusion layer. If speech is detected, the numeric salience of environmental tags is mathematically penalized before reaching the Semantic Engine.
+
+### 5. Temporal Thrashing (Resolved)
+- **Description:** Across sequential audio frames, the Hypothesis Reasoning Engine would rapidly alternate between mutually exclusive states (e.g. "Normal" $\leftrightarrow$ "Emergency").
+- **ALM Mitigation:** Integrated an **Exponential Moving Average (EMA) Momentum Filter**. The HRE now tracks the temporal momentum of hypotheses, heavily penalizing sudden state jumps and smoothing the cognitive trace.
+
 ## Conclusion
 The failure analysis reveals that ALM v12.0 fails *gracefully*. When sub-modules fail (Whisper fails to transcribe, or CLAP mislabels), the ALM Cognitive State Management Layer prevents catastrophic hallucinations and opts for uncertainty representation over false certainty.

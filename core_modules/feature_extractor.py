@@ -40,7 +40,10 @@ class WhisperFeatureExtractor:
                 "task": "translate",
                 "condition_on_prev_tokens": False,
                 "repetition_penalty": 1.5,
-                "no_repeat_ngram_size": 3
+                "no_repeat_ngram_size": 3,
+                "temperature": 0.0,
+                "no_speech_threshold": 0.55,
+                "logprob_threshold": -1.0
             }
         )
         
@@ -171,7 +174,15 @@ class CLAPFeatureExtractor:
             # Compute cosine similarity between audio and text embeddings
             cosine_sim = torch.matmul(audio_embeds, text_embeds.t()).squeeze(0).cpu().numpy()
             
-        return {concept: float(sim) for concept, sim in zip(concepts, cosine_sim)}
+            # Apply Softmax Temperature Calibration to suppress long-tail hallucinations
+            temperature = 0.05
+            scaled_sim = cosine_sim / temperature
+            # Stable softmax
+            max_sim = np.max(scaled_sim)
+            exp_sim = np.exp(scaled_sim - max_sim)
+            softmax_probs = exp_sim / np.sum(exp_sim)
+            
+        return {concept: float(prob) for concept, prob in zip(concepts, softmax_probs)}
 
     @torch.inference_mode()
     def batch_extract(self, audio_list: list, sr: int = 16000):

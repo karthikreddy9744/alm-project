@@ -130,16 +130,25 @@ class HypothesisReasoningEngine:
             acoustic_score += 0.3 # Speech is a strong acoustic anchor
         acoustic_score = min(1.0, acoustic_score)
         
-        # 3. Temporal Consistency Score
+        # 3. Temporal Consistency Score (EMA Momentum Filter)
         temporal_score = 0.5 # Neutral prior
         if temporal_history:
-            last_state = temporal_history[-1]
-            if last_state.dominant_state == situation:
-                temporal_score = 0.9 # High temporal continuity
-            elif last_state.cognitive_state and situation in last_state.cognitive_state.candidate_situations:
-                temporal_score = 0.7 # Plausible evolution
-            else:
-                temporal_score = 0.3 # Abrupt change
+            momentum = 0.0
+            weight_sum = 0.0
+            alpha = 0.5 # EMA decay factor
+            
+            for idx, state in enumerate(reversed(temporal_history[-5:])): # Look at last 5 states
+                weight = alpha ** idx
+                weight_sum += weight
+                if state.dominant_state == situation:
+                    momentum += 1.0 * weight
+                elif state.cognitive_state and situation in state.cognitive_state.candidate_situations:
+                    momentum += 0.5 * weight
+                    
+            ema_score = momentum / weight_sum if weight_sum > 0 else 0.5
+            
+            # Map EMA [0, 1] to temporal score [0.2, 0.9] to avoid absolute zeroes
+            temporal_score = 0.2 + (ema_score * 0.7)
 
         # 4. Synthesize Uncertainty and Unknowns
         if semantic_json.missing_evidence:

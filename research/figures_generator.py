@@ -14,9 +14,9 @@ graph TD
     B -->|Transcripts| D(Auditory World Model)
     C -->|Scene Labels| D
     D --> E(Perceptual Segregation Engine)
-    E -->|AudioEvidenceObject| F(Evidence Fusion Layer)
-    F --> G(Semantic Interpretation Engine <br> Qwen2.5-3B-Instruct)
-    G -->|SemanticSceneObject| H(Hypothesis Reasoning Engine)
+    E -->|AudioEvidenceObject| F(Evidence Fusion Layer <br> w/ Acoustic Masking Penalty)
+    F --> G(Semantic Interpretation Engine <br> Qwen3-4B-Instruct-2507)
+    G -->|SemanticSceneObject| H(Hypothesis Reasoning Engine <br> w/ EMA Momentum Filter)
     H -->|ManagedHypothesisState| I(World State Engine)
     I -->|CognitiveState| J(Situation Projection Engine)
     J --> K(Transparent Reasoning Engine)

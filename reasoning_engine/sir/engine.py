@@ -340,8 +340,18 @@ class SituationIntelligenceRenderer:
         if source_semantic and hasattr(source_semantic, 'human_oriented_summary') and source_semantic.human_oriented_summary and source_semantic.human_oriented_summary != "Unknown Situation":
             human_explanation = source_semantic.human_oriented_summary
         else:
-            proj_sentence = f"Looking ahead, {future_proj}." if future_proj != "Unknown" else ""
-            human_explanation = f"Based on the audio, {situation} appears to be taking place in {context}. The primary evidence includes {primary_evidence}. {alt_sentence} {missing_sentence} {proj_sentence}"
+            conf = cs.confidence.overall
+            if conf >= 0.85:
+                certainty_phrase = f"It is highly evident that a **{situation}** is taking place"
+            elif conf >= 0.60:
+                certainty_phrase = f"The evidence strongly suggests a **{situation}** is taking place"
+            elif conf >= 0.40:
+                certainty_phrase = f"There are indications of a **{situation}** taking place, though it is not definitive"
+            else:
+                certainty_phrase = f"There is a remote possibility of a **{situation}** taking place, but the audio is highly ambiguous"
+                
+            proj_sentence = f"Looking ahead, we can expect that {future_proj}." if future_proj != "Unknown" else ""
+            human_explanation = f"{certainty_phrase} in {context}. The primary acoustic evidence driving this conclusion includes {primary_evidence}. {alt_sentence} {missing_sentence} {proj_sentence}"
 
         intent = ", ".join(cs.actors) if cs.actors else "Unknown"
         alts_str = ", ".join([h.situation for h in hypotheses[1:]]) if hypotheses and len(hypotheses) > 1 else "None"

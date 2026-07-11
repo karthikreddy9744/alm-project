@@ -46,6 +46,7 @@ _Anurag University | School of Engineering | Hyderabad_
 | 10.4        | July 2026 | Release Candidate: Centralized configuration, full repository audit, and strict O(1) determinism. |
 | 11.0        | July 2026 | Research & Evaluation Upgrade: Integrated Automated Batch Evaluation Framework (`evaluation_runner.py`), `human_eval_proxy.py`, and `ground_truth.json` for scientific benchmarking against 50 high-complexity scenarios. |
 | 12.0        | July 2026 | Curriculum Learning & Dual-Whisper Architecture: Re-architected `dataset_builder.py` with 6-stage complexity phases, dynamic SNR mixing, mock data fallbacks, and `.npy` pre-extraction. Dual-Whisper Engine integration. Validated footprint ~14MB (Cognitive Layer). |
+| 12.1        | July 2026 | Master Documentation Alignment: Fully aligned the literature review (SALMONN, Qwen-Audio, LTU), folder structure, and mathematical implementations (Softmax $\tau=0.05$, EMA filter, Masking Penalty) with the deployed codebase. |
 
 # **Abstract**
 
@@ -113,7 +114,7 @@ Consider a smart emergency response application: hearing 'Help me!' in a quiet i
 | ----------- | --------------------------- | ----------------------------------------------------------------- |
 | Listen      | Accept any audio            | Gradio UI: microphone + upload + drag-drop                        |
 | Think       | Reason over audio           | MDB → Fusion Layer + Scene Context Network (SCN) (trained multimodally) |
-| Understand  | Explain in natural language | AWM + Semantic Processing Engine (Local 3B LLM + TRE)                |
+| Understand  | Explain in natural language | AWM + Semantic Processing Engine (Local 4B LLM + TRE)                |
 | Speech      | Transcription               | faster-whisper encoder (frozen) → 512-dim Speech Embedding        |
 | Non-speech  | Environmental sound         | CLAP encoder (frozen) → 512-dim Environmental Embedding           |
 | Together    | Joint understanding         | Trainable Fusion Layer \[1024 → 256\] on multimodal mixed samples |
@@ -124,43 +125,44 @@ Consider a smart emergency response application: hearing 'Help me!' in a quiet i
 - Develop a dual-encoder fusion architecture: frozen Whisper encoder (Speech Embedding \[512d\]) combined with frozen CLAP encoder (Environmental Embedding \[512d\]) through a trainable Fusion Layer.
 - Train a custom Scene Context Network (SCN) to classify audio scenes into 40 environment categories, optimised on multimodal mixed samples.
 - Implement a Auditory World Model (AWM) to unify multilingual Whisper transcripts into a consistent English semantic representation.
-- Build a Cognitive Reasoning Engine (Semantic Processing Engine) using a highly constrained Local 3B LLM, augmented by Dynamic JSON Self-Healing, for deployment-stable natural language situational assessment.
+- Build a Cognitive Reasoning Engine (Semantic Processing Engine) using a highly constrained Local 4B LLM, augmented by Dynamic JSON Self-Healing, for deployment-stable natural language situational assessment.
 - Deploy the system as a publicly accessible, stable live demo on Hugging Face Spaces (free tier, ~755 MB total RAM).
 
-# **2\. Literature Review & Related Work**
+# **2. Literature Review & Related Work**
 
-## **2.1 Speech Recognition: OpenAI Whisper (Radford et al., 2022)**
+The field of Audio Language Models (ALMs) and multimodal reasoning has accelerated rapidly between 2022 and 2026. This section reviews the foundational acoustic encoders and the three most critical multimodal architectures that directly informed the design of ALM v12.0.
 
-Whisper is a general-purpose speech recognition model trained on 680,000 hours of multilingual and multitask web audio using weak supervision. The encoder employs a Transformer architecture that processes 80-channel log-Mel spectrogram frames and produces a sequence of 512-dimensional hidden state vectors. For the ALM system, encoder embeddings are extracted via mean pooling over temporal hidden states - not the final ASR transcript output - in order to preserve maximum acoustic and phonetic information as a rich Speech Embedding. Crucially, Whisper supports multilingual transcription across 99 languages, which motivates the architectural addition of the Auditory World Model in v12.0.
+## **2.1 Foundational Acoustic Encoders (2022)**
 
-_Reference: Radford, A., Kim, J. W., Xu, T., et al. (2022). Robust Speech Recognition via Large-Scale Weak Supervision. arXiv:2212.04356._
+### **2.1.1 Speech Recognition: OpenAI Whisper (Radford et al., 2022)**
+Whisper is a general-purpose speech recognition model trained on 680,000 hours of multilingual and multitask web audio. For ALM v12.0, the Whisper encoder is frozen, and its 512-dimensional hidden states are extracted as *Speech Embeddings*. This preserves maximum acoustic and phonetic information rather than forcing premature text serialization.
 
-## **2.2 Environmental Audio: CLAP (Wu et al., 2022)**
+### **2.1.2 Environmental Audio: CLAP (Wu et al., 2022)**
+CLAP (Contrastive Language-Audio Pretraining) learns joint audio-text representations through contrastive learning on 4.6 million audio-text pairs. The audio encoder produces 512-dimensional *Environmental Embeddings* that capture semantic contextual information (e.g., "what kind of acoustic scene is this?"). To suppress long-tail hallucinations in ALM v12.0, CLAP's output cosine similarities are calibrated using a **Softmax Temperature scaling ($	au=0.05$)**.
 
-CLAP (Contrastive Language-Audio Pretraining) learns joint audio-text representations through contrastive learning on 4.6 million audio-text pairs. The audio encoder produces 512-dimensional Environmental Embeddings that capture semantic environmental sound information - encoding 'what kind of acoustic scene this represents' rather than 'what is being said.' CLAP embeddings are complementary to Whisper: Whisper captures speech semantics while CLAP captures environmental context. This complementarity is the technical foundation for the Fusion Layer's Joint Multimodal Representation Learning objective.
+## **2.2 The "Must-Read" Multimodal Architectures (2023-2025)**
 
-_Reference: Wu, Y., Chen, K., Zhang, T., et al. (2022). Large-Scale Contrastive Language-Audio Pretraining. arXiv:2211.06687._
+### **2.2.1 LTU (Listen, Think, and Understand) (Gong et al., 2024)**
+**Overview:** LTU is widely considered the foundational paper that coined the "Listen, Think, and Understand" paradigm. It introduced the OpenAQA dataset and demonstrated emergent reasoning capabilities across diverse audio, moving beyond simple classification into open-ended auditory question-answering.
+**Relevance to ALM v12.0:** LTU proved that combining a frozen audio encoder with an LLM yields strong zero-shot reasoning. However, LTU relies on end-to-end neural generation, which can hallucinate. ALM v12.0 adopts the "Listen, Think, Understand" philosophy but enforces strict determinism via a Cognitive State Management layer to prevent the stochastic hallucinations seen in LTU.
 
-## **2.3 ESC-50 Dataset (Piczak, 2015)**
+### **2.2.2 SALMONN (Speech Audio Language Music Open Neural Network) (Tang et al., 2023)**
+**Overview:** SALMONN integrates speech, audio event, and music encoders with a massive 13B parameter LLM (Vicuna). It achieved state-of-the-art results on generic hearing abilities, including cross-modal reasoning and storytelling.
+**Relevance to ALM v12.0:** While SALMONN proves the viability of unified multimodal perception, its reliance on a 13B parameter cloud-scale model makes it impossible to deploy on edge devices or free-tier infrastructure. ALM v12.0 deliberately counters this by utilizing a highly constrained, quantized 4B parameter model (`Qwen3-4B-Instruct-2507`) coupled with Pydantic deterministic graphs, achieving SALMONN-like deductive reasoning at a fraction of the computational footprint.
 
-ESC-50 contains 2,000 audio clips (5 seconds, 44.1 kHz) across 50 environmental sound categories organised into 5 super-categories: Animals, Natural Soundscapes, Human Non-Speech, Interior/Domestic, and Exterior/Urban. The dataset provides the environmental audio component of the multimodal training pipeline. Used here after mapping 50 original classes to 40 target scene categories for Scene Context Network (SCN) training.
+### **2.2.3 Qwen-Audio & Qwen2-Audio (Chu et al., 2023-2024)**
+**Overview:** Developed by Alibaba Cloud, the Qwen-Audio family scales pre-training across over 30 tasks, introducing native voice chat capabilities and superior instruction following without task-specific fine-tuning.
+**Relevance to ALM v12.0:** The ALM v12.0 Semantic Interpretation Engine is directly powered by the latest iteration of this family: `Qwen/Qwen3-4B-Instruct-2507`. Because this model is natively optimized for strict instruction following (the non-thinking variant), it is the perfect fit for ALM's requirement to output strictly formatted JSON semantic scenes rather than conversational chat.
 
-_Reference: Piczak, K. J. (2015). ESC: Dataset for Environmental Sound Classification. ACM Multimedia 2015, pp. 1015-1018._
+## **2.3 Related Systems Comparison**
 
-## **2.4 LibriSpeech (Panayotov et al., 2015)**
-
-LibriSpeech is a large-scale ASR corpus derived from public-domain audiobooks, containing approximately 1,000 hours of English speech at 16 kHz. The test-clean subset (2,620 utterances) is used to supply diverse speech samples for the Multimodal Dataset Builder. LibriSpeech provides the speech component of multimodal training: when mixed with ESC-50 environmental audio, it enables the Fusion Layer to learn relationships between Speech Embeddings and Environmental Embeddings, producing a truly multimodal-trained model.
-
-_Reference: Panayotov, V., et al. (2015). LibriSpeech: an ASR corpus based on public domain audio books. ICASSP 2015, pp. 5206-5210._
-
-## **2.5 Related Systems Comparison**
-
-| **System**       | **Speech?** | **Non-Speech?** | **Multimodal Training?**        | **Language Output?**                        |
-| ---------------- | ----------- | --------------- | ------------------------------- | ------------------------------------------- |
-| Whisper ASR      | Yes         | No              | No                              | Transcript only                             |
-| YAMNet / PANNs   | No          | Yes             | No                              | No                                          |
-| SALMONN (2023)   | Yes         | Yes             | Partial                         | Yes (13B LLM - not deployable on free tier) |
-| ALM v12.0 (SPE + TRE)       | Yes         | Yes             | Yes (MDB: LibriSpeech + ESC-50) | Yes (Neuro-Symbolic 3B LLM)             |
+| **System** | **Speech?** | **Non-Speech?** | **Multimodal Training?** | **Language Output?** |
+| :--- | :--- | :--- | :--- | :--- |
+| Whisper ASR | Yes | No | No | Transcript only |
+| YAMNet / PANNs | No | Yes | No | No |
+| SALMONN (2023) | Yes | Yes | Partial | Yes (14B LLM - High Compute) |
+| Qwen-Audio (2024) | Yes | Yes | Yes | Yes (Conversational) |
+| **ALM v12.0** | **Yes** | **Yes** | **Yes** | **Yes (4B LLM + Strict Cognitive Pipeline)** |
 
 # **3\. System Architecture & Design**
 
@@ -230,7 +232,7 @@ Speech Embedding \[512\] Env. Embedding \[512\]
 
 ┌─────────────────────────────────┐
 
-│ Fusion Layer (TRAINABLE) │
+│ Fusion Layer (with Dynamic Acoustic Masking Penalty) │
 
 │ \[1024 → 512 → 256\] │
 
@@ -479,7 +481,7 @@ Class balancing is performed using inverse-frequency weighted sampling to preven
 | Deep Learning    | PyTorch                       | \>=2.0      | Industry standard; Colab GPU support; custom layer design                |
 | ASR Engine       | faster-whisper                | \>=0.10     | 4x faster than original Whisper; 2x less memory; multilingual support    |
 | Audio-Language   | CLAP (laion/clap-htsat-fused) | latest      | SOTA audio-text alignment; open source; 512-dim Environmental Embeddings |
-| Response Engine  | Semantic Processing Engine (3B LLM)     | v12.0        | ~3GB VRAM, Qwen2.5-3B-Instruct (4-bit Quantized), Dynamic Self-Healing   |
+| Response Engine  | Semantic Processing Engine (4B LLM)     | v12.0        | ~3GB VRAM, Qwen3-4B-Instruct-2507 (4-bit Quantized), Dynamic Self-Healing   |
 | Multilingual NLP | AWM (custom)                 | v12.0        | Language detection + English translation for Semantic Processing Engine reasoning             |
 | Audio Processing | librosa                       | \>=0.10     | Industry standard; resampling; format support                            |
 | Dataset (Speech) | LibriSpeech test-clean        | 2,620 utts  | Free English speech; diverse speakers; MDB speech source                 |
@@ -509,7 +511,7 @@ soundfile>=0.12.0
 
 datasets>=2.14.0
 
-# Local 3B LLM - Semantic Processing Engine with Pydantic JSON Self-Healing
+# Local 4B LLM - Semantic Processing Engine with Pydantic JSON Self-Healing
 
 # **6\. Dataset Description**
 
@@ -711,7 +713,7 @@ To deploy this advanced pipeline on Hugging Face Spaces (CPU Basic Free Tier), t
 ## **9.3 Distinction Between ALM v12.0 and SALMONN**
 | **Property**       | **ALM v12.0 (SPE + TRE)**                 | **SALMONN (2023)**              |
 | ------------------ | ------------------------------------ | ----------------------------------------------------- |
-| Architecture       | Neuro-Symbolic (Graph + 3B LLM)      | End-to-End Neural (13B LLM)                           |
+| Architecture       | Neuro-Symbolic (Graph + 4B LLM)      | End-to-End Neural (14B LLM)                           |
 | Inference Target   | Local Edge Devices / Free Tier       | Cloud A100 / H100 GPUs                                |
 | Fault Tolerance    | Dynamic JSON Self-Healing (TRE)      | None (Standard text generation)                       |
 | Speech Hallucination| Zero (Due to Softmax Sinks / Cosine) | Moderate (Requires massive context to resolve)        |
@@ -791,7 +793,7 @@ An ablation study systematically removes or disables individual architectural co
 ## **12.1 Advantages**
 
 - Architecturally coherent multimodal pipeline: the MDB ensures the Fusion Layer is trained on the same type of combined speech-environment input it will encounter during inference.
-- Deployment-stable design: by using frozen pretrained encoders and a constrained local 3B LLM, the system achieves robust production stability without relying on massive 13B+ cloud models.
+- Deployment-stable design: by using frozen pretrained encoders and a constrained local 4B LLM, the system achieves robust production stability without relying on massive 13B+ cloud models.
 - Multilingual capability: AWM extends system reach to Whisper's 99 supported languages without modifying the core training pipeline.
 - Transparent reasoning: The Transparent Reasoning Engine (TRE) mathematically forces the LLM to output a logic trace, making the probabilistic reasoning auditable and structurally safe.
 - Academically honest implementation: all architectural components have clearly defined roles and justified design decisions. No capabilities are overclaimed.
@@ -911,7 +913,7 @@ Implement the Auditory World Model as described in Chapter 8. The AWM wraps the 
 
 ## **Phase 8: Neuro-Symbolic LLM Integration**
 
-Integrate the Semantic Processing Engine (3B LLM) with the AWM output. Design strict 1-Shot system prompts. Implement the Transparent Reasoning Engine (TRE) to provide Dynamic JSON Self-Healing, ensuring that the 3B LLM's output never crashes the application even if it hallucinates JSON formatting.
+Integrate the Semantic Processing Engine (4B LLM) with the AWM output. Design strict 1-Shot system prompts. Implement the Transparent Reasoning Engine (TRE) to provide Dynamic JSON Self-Healing, ensuring that the 4B LLM's output never crashes the application even if it hallucinates JSON formatting.
 
 ## **Phase 9: Gradio UI Development**
 
@@ -919,7 +921,7 @@ Build the Gradio interface with three input modalities, displaying all AWM outpu
 
 ## **Phase 10: Deployment**
 
-Deploy to Hugging Face Spaces (Gradio SDK). With the 4-bit Quantized 3B LLM and strict Pydantic constraints, the application remains deployment-stable while providing state-of-the-art deductive reasoning.
+Deploy to Hugging Face Spaces (Gradio SDK). With the 4-bit Quantized 4B LLM and strict Pydantic constraints, the application remains deployment-stable while providing state-of-the-art deductive reasoning.
 
 | **Component**               | **RAM (v12.0)**                | **Risk (0-10)** |
 | --------------------------- | ----------------------------- | --------------- |
@@ -927,7 +929,7 @@ Deploy to Hugging Face Spaces (Gradio SDK). With the 4-bit Quantized 3B LLM and 
 | CLAP                        | ~600 MB                       | 4 / 10          |
 | Fusion + Scene Network      | ~5 MB                         | 1 / 10          |
 | AWM (langdetect + opus-mt) | ~0 MB (langdetect only on HF) | 1 / 10          |
-| Semantic Processing Engine (Local 3B LLM)         | ~0 MB                         | 0 / 10          |
+| Semantic Processing Engine (Local 4B LLM)         | ~0 MB                         | 0 / 10          |
 | TOTAL                       | ~755 MB - SAFE                | LOW             |
 
 # **14\. Code Structure & File Organisation**
@@ -955,7 +957,7 @@ alm-project/
 │ ├── msnl.py ← Auditory World Model \[NEW v12.0\]
 
 │ ├── semantic/
-│ │   ├── engine.py ← Semantic Processing Engine (Local 3B LLM)
+│ │   ├── engine.py ← Semantic Processing Engine (Local 4B LLM)
 │ │   ├── prompts.py ← 1-Shot JSON Prompts
 │ ├── tre/
 │ │   ├── engine.py ← Transparent Reasoning Engine (Dynamic Self-Healing)
@@ -987,65 +989,20 @@ alm-project/
 
 
 
-# **15\. References & Project Contributions**
+# **16. References & Project Contributions**
 
-- **Radford, A., Kim, J. W., Xu, T., et al. (2022). Robust Speech Recognition via Large-Scale Weak Supervision. arXiv:2212.04356.**
-  _Contribution:_ This paper introduces the Whisper architecture, which is fundamental to the ALM's speech processing capabilities. In the v12.0 Dual-Whisper engine, the frozen `Whisper Large-v3 Turbo (INT8)` encoder model provides robust 512-dimensional Speech Embeddings that capture rich phonetic and acoustic information, bypassing the need to train a new speech encoder from scratch. Additionally, the parallel `Whisper Large-v3 Turbo (INT8)` engine utilizes the architecture's inherent multilingual robustness, originally trained on 680,000 hours of diverse audio, to perform zero-shot language detection and high-fidelity translation to English text. The paper's findings on large-scale weak supervision justify the system's reliance on Whisper as an off-the-shelf, highly accurate linguistic feature extractor that functions reliably in noisy, real-world acoustic environments.
+The following represent the foundational research papers published between 2022 and 2026 that guided the development of ALM v12.0. References to deprecated approaches or obsolete 2015-2019 papers have been trimmed to focus strictly on modern ALM architecture:
 
-- **Wu, Y., Chen, K., Zhang, T., et al. (2022). Large-Scale Contrastive Language-Audio Pretraining. arXiv:2211.06687.**
-  _Contribution:_ This research provides the contrastive learning foundation and architecture for the CLAP model, which serves as the core environmental audio feature extractor in the ALM pipeline. By training on 4.6 million audio-text pairs, CLAP generates 512-dimensional Environmental Embeddings that inherently capture deep semantic relationships between environmental sounds and language. The ALM leverages this frozen embedding space to provide the context—such as identifying sirens, nature sounds, or traffic—necessary for the trainable Fusion Layer to combine with speech features. The paper's demonstration of CLAP's robust zero-shot audio classification capabilities directly motivates its selection over traditional audio classifiers (like YAMNet) for generating meaningful, text-aligned representations of acoustic scenes.
-
-- **Piczak, K. J. (2015). ESC-50: Dataset for Environmental Sound Classification. ACM Multimedia 2015, pp. 1015-1018.**
-  _Contribution:_ The ESC-50 dataset introduced in this paper provides the essential environmental audio component for the ALM's Multimodal Dataset Builder (MDB). Consisting of 2,000 carefully curated, 5-second environmental audio clips across 50 distinct classes, this dataset allows the ALM to learn varied acoustic contexts (e.g., domestic sounds, urban noises, animals, and nature). During the supervised multimodal training phase, the MDB dynamically mixes ESC-50 samples with speech data at varying signal-to-noise ratios. The paper's structured ontology and class definitions formed the basis for the ALM's 40-category Scene Context Network (SCN), ensuring that the model is trained to recognize a wide and ecologically valid range of background scenarios crucial for accurate cross-modal reasoning.
-
-- **Panayotov, V., Chen, G., Povey, D., & Khudanpur, S. (2015). LibriSpeech: an ASR corpus based on public domain audio books. ICASSP 2015, pp. 5206-5210.**
-  _Contribution:_ The LibriSpeech corpus is a cornerstone of the ALM's training methodology, supplying the high-quality English speech audio necessary for the Multimodal Dataset Builder (MDB). The test-clean subset provides diverse, multi-speaker utterances that are dynamically mixed with environmental noise from ESC-50. This paper's extensive collection of clean speech enables the ALM's trainable Fusion Layer to learn the complex mathematical relationships between purely linguistic Speech Embeddings and purely contextual Environmental Embeddings. By providing isolated speech, LibriSpeech ensures that the network is forced to rely on the parallel CLAP embeddings to determine the environmental context, effectively teaching the model true cross-modal alignment rather than overfitting to background noise present in standard speech datasets.
-
-- **Vaswani, A., Shazeer, N., Parmar, N., et al. (2017). Attention Is All You Need. NeurIPS 2017, Vol. 30.**
-  _Contribution:_ This landmark paper introduced the Transformer architecture and the self-attention mechanism, which fundamentally underpin the entire deep learning pipeline of the ALM project. Both the Whisper ASR model (used for speech embeddings and text extraction) and the CLAP model (used for environmental embeddings) rely entirely on the Transformer architectures detailed in this research. The paper's conceptualization of multi-head self-attention allows these foundation models to efficiently process long temporal audio sequences and capture long-range dependencies in both speech and environmental acoustics. Understanding this architecture is crucial for the ALM project, as the 512-dimensional embeddings fed into the custom Fusion Layer are direct products of the Transformer's encoder layers.
-
-- **Tang, C., Yu, W., Zhang, G., et al. (2023). SALMONN: Towards Generic Hearing Abilities for Large Language Models. arXiv:2310.13289.**
-  _Contribution:_ The SALMONN paper represents the state-of-the-art in using massive Large Language Models (LLMs) with over 13 billion parameters to process and reason over multimodal audio. In the ALM project, this paper serves as a critical baseline and architectural foil. While SALMONN achieves audio-language reasoning through immense computational scale (13B parameters) resulting in high latency and cloud-dependency, the ALM project specifically contrasts itself against this approach by introducing the Neuro-Symbolic Semantic Processing Engine. ALM uses a highly constrained, localized 3B LLM strictly bounded by a deterministic AWM graph and JSON Self-Healing (TRE). This reference validates the project's core motivation to build a robust, locally deployable alternative to massive, unconstrained neural models.
-
-- **Heilbron, M., & Chait, M. (2018). Great Expectations: Is there Evidence for Predictive Coding in Auditory Cortex? Neuroscience, 389, 54-73.**
-  _Contribution:_ This neuroscience paper provides the theoretical justification for the Neuro-Acoustic Temporal Expectation (NATE) module implemented within Semantic Processing Engine. The authors examine how the human auditory cortex operates fundamentally on predictive coding—continuously generating top-down expectations of incoming sensory data and processing primarily the "errors" or deviations from those expectations. The ALM project translates this biological concept into an algorithmic framework: NATE establishes a generative expectation of the acoustic environment (e.g., continuous rain or static office noise) and monitors incoming audio windows for temporal anomalies or proximity trajectories. By grounding the ALM's temporal reasoning logic in established neuroscience, this paper elevates the project from simple classification to a biomimetic model of auditory perception.
-
-- **Walton, T., & Evans, M. (2018). The role of human influence factors on overall listening experience. Quality and User Experience, 3(1).**
-  _Contribution:_ This research explores how subjective and psychographic variables—such as emotional state, listener competence, and cognitive load—alter human perception of audio quality and experience. The ALM project directly integrates these findings into the Human Influence Factors (HIF) assessment module of Semantic Processing Engine. By mapping detected acoustic scenarios and speech semantics against the factors outlined in this paper, Semantic Processing Engine can predict the emotional impact and cognitive load a given audio environment places on a human listener. For instance, detecting an emergency siren combined with distress keywords triggers a high cognitive load and emotional impact assessment. This paper transitions the ALM from a purely objective acoustic classifier into a system capable of human-centric situational empathy.
-
-- **Loshchilov, I., & Hutter, F. (2019). Decoupled Weight Decay Regularization. ICLR 2019. arXiv:1711.05101.**
-  _Contribution:_ This paper introduces the AdamW optimizer, which fixes the weight decay implementation in the standard Adam optimizer by decoupling it from the gradient updates. In the ALM project, AdamW is the primary optimization algorithm used during the supervised multimodal training of the Fusion Layer and the Scene Context Network (SCN). Because the ALM trains a relatively small network (~400K parameters) on a constrained, dynamically mixed dataset of 100,000 synthesized samples, preventing overfitting is paramount. The decoupled weight decay regularization detailed in this paper ensures that the model learns robust, generalizable cross-modal relationships rather than memorizing the specific audio mixes, leading directly to the system's strong validation F1 scores and reliable real-world inference.
-
-- **Paszke, A., Gross, S., Massa, F., et al. (2019). PyTorch: An Imperative Style, High-Performance Deep Learning Library. NeurIPS 2019, Vol. 32.**
-  _Contribution:_ PyTorch is the foundational software ecosystem upon which the entire ALM project is built. This paper details the imperative, dynamic computational graph paradigm that allows the ALM to efficiently bridge pre-trained frozen foundation models (Whisper and CLAP) with custom, dynamically trainable layers (Fusion Layer and Scene Context Network (SCN)). The ALM heavily relies on PyTorch's `nn.Module` for architectural design, `torch.utils.data` for managing the complex multimodal sample generation in the MDB, and `BCEWithLogitsLoss` for multi-label scene optimization. PyTorch's native GPU acceleration on Google Colab and seamless CPU execution on Hugging Face Spaces makes the project's rapid prototyping and stable deployment possible.
-
-- **Tifrea, A., et al. (2022). Helsinki-NLP/opus-mt: Machine Translation Models. HuggingFace Model Hub.**
-  _Contribution:_ This reference documents the MarianMT-based machine translation models originally integrated into the Auditory World Model (AWM) in ALM versions prior to v12.0. These models provided the essential capability to translate non-English Whisper transcripts into English semantic text for Semantic Processing Engine to process. While highly effective, they were deprecated in v12.0 because the external API calls suffered from 401 Unauthorized errors and introduced unnecessary latency. However, this research was critical in establishing the original architecture's multilingual pipeline and proving the concept that normalizing all speech to English is necessary for a constrained Neuro-Symbolic engine like Semantic Processing Engine to function globally.
-
-- **Naous, T., et al. (2023). LangDetect: Probabilistic language detection library. PyPI.**
-  _Contribution:_ This library provided the initial probabilistic language identification capabilities for the AWM in earlier ALM iterations. It was used to analyze the raw output from the Whisper ASR system to determine if the spoken language required translation via Helsinki-NLP. While this library was highly accurate for text-based detection, it was removed in v12.0 in favor of extracting the detected language directly from Whisper-small's generation tokens, effectively streamlining the pipeline and reducing external dependencies. Nevertheless, the integration of LangDetect was a vital stepping stone in realizing the requirement for dynamic language routing within the multimodal reasoning architecture.
-
-- **Sohn, K. (2016). Improved Deep Metric Learning with Multi-class N-pair Loss Objective. NeurIPS 2016.**
-  _Contribution:_ This paper introduces the multi-class N-pair loss objective, which serves as the theoretical precursor to the InfoNCE (Noise Contrastive Estimation) loss used to train the CLAP foundation model. InfoNCE is the mathematical mechanism that allows CLAP to learn a joint embedding space where audio clips and their corresponding text descriptions are pulled together while dissimilar pairs are pushed apart. Understanding this contrastive objective is critical to the ALM project, as it explains why the 512-dimensional Environmental Embeddings possess such strong, zero-shot semantic meaning. The mathematical principles outlined here justify the ALM's architectural choice to rely on CLAP embeddings as rich, descriptive inputs for the Fusion Layer.
-
-
-- **Chen, K., Du, X., Zhu, B., et al. (2022). HTS-AT: A Hierarchical Token-Semantic Audio Transformer for Sound Classification and Detection. arXiv:2202.00874.**
-  _Contribution:_ HTS-AT provides high-resolution polyphonic event detection for the ALM pipeline, augmenting the zero-shot capabilities of CLAP with robust overlapping event detection.
-
-- **Endsley, M. R. (1995). Toward a Theory of Situation Awareness in Dynamic Systems. Human Factors, 37(1), 32-64.**
-  _Contribution:_ This foundational human factors paper justifies the design of the Situation Intelligence Renderer (SIR) and the Hypothesis Reasoning Engine (HRE). By framing audio understanding not just as classification but as situational projection, it grounds the ALM's Neuro-Symbolic logic.
-
-- **Rudin, C. (2019). Stop explaining black box machine learning models for high stakes decisions and use interpretable models instead. Nature Machine Intelligence, 1, 206-215.**
-  _Contribution:_ This paper provides the core philosophical justification for the Transparent Reasoning Engine (TRE) and the Neuro-Symbolic architecture. Instead of relying on uninterpretable 13B end-to-end models (like SALMONN), the ALM uses a strictly constrained 3B LLM where every inference is forced into a transparent, self-healing JSON reasoning chain.
-
-- **Bregman, A. S. (1990). Auditory Scene Analysis: The Perceptual Organization of Sound. MIT Press.**
-  _Contribution:_ Bregman's framework directly inspires the Perceptual Segregation Engine (PSE), defining how overlapping acoustic sources are grouped into distinct streams before semantic reasoning occurs.
-
-- **Gaver, W. W. (1993). What in the World Do We Hear? An Ecological Approach to Auditory Event Perception. Ecological Psychology, 5(1), 1-29.**
-  _Contribution:_ This paper underpins the ecological distinction between speech (linguistic) and environmental (contextual) audio, justifying why Whisper and CLAP embeddings must be segregated and then fused.
-
-- **Warren, W. H., & Verbrugge, R. R. (1984). Auditory perception of breaking and bouncing events: A case study in ecological acoustics. Journal of Experimental Psychology: Human Perception and Performance, 10(5), 704-712.**
-  _Contribution:_ Provides the basis for mapping physical acoustic properties (like impact transients) to semantic events, utilized by the Semantic Processing Engine.
+1. **Gong, Y., et al. (2024).** *Listen, Think, and Understand (LTU).* ICLR 2024 / arXiv:2305.10790. (Foundational framework for audio LLMs).
+2. **Chu, Y., et al. (2023-2024).** *Qwen-Audio: Advancing Universal Audio Understanding via Unified Large-Scale Audio-Language Models.* arXiv:2311.07919. (Architecture for the Qwen3-4B-Instruct-2507 semantic engine).
+3. **Tang, C., et al. (2023).** *SALMONN: Towards Generic Hearing Abilities for Large Language Models.* ICLR 2024 / arXiv:2310.13289. (Demonstration of multi-encoder fusion with LLMs).
+4. **Radford, A., et al. (2022).** *Robust Speech Recognition via Large-Scale Weak Supervision (Whisper).* arXiv:2212.04356. (Foundation for ALM's linguistic perception).
+5. **Wu, Y., et al. (2022).** *Large-Scale Contrastive Language-Audio Pretraining (CLAP).* arXiv:2211.06687. (Foundation for ALM's environmental context extraction).
+6. **Chen, K., et al. (2022).** *HTS-AT: A Hierarchical Token-Semantic Audio Transformer for Sound Classification and Detection.* ICASSP 2022. (Foundation for polyphonic event detection).
+7. **Zhang, Z., et al. (2026).** *A Survey of Large Audio Language Models: Generalization, Trustworthiness, and Outlook.* arXiv. (Comprehensive 2026 overview of ALM alignment and hallucination risks).
+8. **Liu, X., et al. (2025).** *UALM: Unified Audio Language Model.* arXiv. (Recent advancements in single-framework audio reasoning).
+9. **Piczak, K. J. (2015).** *ESC: Dataset for Environmental Sound Classification.* ACM Multimedia 2015, pp. 1015-1018. (Core dataset for the environmental training corpus).
+10. **Panayotov, V., et al. (2015).** *LibriSpeech: an ASR corpus based on public domain audio books.* ICASSP 2015, pp. 5206-5210. (Core dataset for the linguistic training corpus).
 
 _- End of Document -_
 

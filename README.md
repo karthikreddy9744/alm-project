@@ -52,7 +52,7 @@ python scripts/validation_suite.py
 ## 💻 Models Used
 - **Whisper Large-v3:** Linguistic perception and transcript generation.
 - **CLAP & HTS-AT:** Acoustic and environmental feature extraction.
-- **Qwen2.5-3B-Instruct:** Highly constrained local language model used strictly for parsing structured semantic evidence.
+- **Qwen3-4B-Instruct-2507:** Highly constrained local language model used strictly for parsing structured semantic evidence.
 
 ## 📊 Performance Notes
 ALM v12.0 achieves a 100% JSON valid output rate due to its deterministic fallback mechanisms. By executing the Semantic layer locally, inference overhead is primarily gated by local GPU/MPS capability, requiring roughly 5-8GB of memory. The Cognitive Pipeline itself runs in <50ms.

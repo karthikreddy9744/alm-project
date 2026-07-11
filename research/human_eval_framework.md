@@ -6,7 +6,7 @@ This document outlines the protocol for human evaluators to score ALM outputs ag
 1. **Listen:** The participant listens to a single audio clip (drawn from the 50-item evaluation dataset).
 2. **Review Ground Truth:** Participant identifies the *Ground Truth Situation* (what a human infers).
 3. **Compare Outputs:** Participant reads the output from 3 blinded systems:
-   - System A (Raw Qwen text-only prompt)
+   - System A (Raw Qwen3-4B-Instruct-2507 text-only prompt)
    - System B (ALM v12.0 Output)
    - System C (Whisper Transcript only)
 
@@ -33,7 +33,7 @@ This document outlines the protocol for human evaluators to score ALM outputs ag
 
 ### 5. Uncertainty Handling
 - 1: Confidently incorrect or fails to acknowledge ambiguity.
-- 5: Appropriately flags uncertainty when audio is unclear.
+- 5: Appropriately flags uncertainty when audio is unclear using natural language hedging (e.g. "There is a remote possibility...").
 
 ### 6. Naturalness
 - 1: Robotic, overly verbose, repetitive.

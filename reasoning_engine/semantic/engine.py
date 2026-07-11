@@ -11,7 +11,7 @@ from reasoning_engine.semantic.prompts import SYSTEM_PROMPT, build_user_prompt
 logger = logging.getLogger(__name__)
 
 class SemanticInterpretationEngine:
-    def __init__(self, model_id="Qwen/Qwen2.5-3B-Instruct"):
+    def __init__(self, model_id="Qwen/Qwen3-4B-Instruct-2507"):
         self.model_id = model_id
         self.model = None
         self.tokenizer = None
