@@ -11,11 +11,15 @@ class SpeechInfo(BaseModel):
     duration: Optional[float] = None
 
 class EventInfo(BaseModel):
+    id: str = "Unknown"
     event_label: str
     salience: float
     confidence: float
     is_foreground: bool
     is_background: bool
+    start_time: float = 0.0
+    end_time: float = 0.0
+    detector: str = "Unknown"
 
 class AudioEvidenceObject(BaseModel):
     speech: SpeechInfo

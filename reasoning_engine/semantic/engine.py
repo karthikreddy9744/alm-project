@@ -108,17 +108,6 @@ class SemanticInterpretationEngine:
             if not isinstance(data, dict):
                 data = {}
                 
-            # --- DYNAMIC SELF-HEALING ---
-            # 3B models often generate a brilliant internal_reasoning paragraph and then prematurely stop or hallucinate keys.
-            # We salvage the reasoning by mapping it to the UI-facing fields if they are missing.
-            reasoning = data.get("internal_reasoning", "")
-            if isinstance(reasoning, str) and len(reasoning) > 10:
-                if not data.get("human_oriented_summary") or data.get("human_oriented_summary") == "Unknown Situation":
-                    data["human_oriented_summary"] = reasoning
-                if not data.get("primary_situation") or data.get("primary_situation") == "Unknown":
-                    data["primary_situation"] = "Complex Auditory Scene"
-            # ----------------------------
-
             try:
                 # Try strict Pydantic parse
                 return SemanticSceneObject(**data)
@@ -146,16 +135,35 @@ class SemanticInterpretationEngine:
             return self._fallback_interpretation()
             
     def _fallback_interpretation(self) -> SemanticSceneObject:
+        from reasoning_engine.semantic.models import (
+            SpeechUnderstanding, AuditoryObservation, CrossModalAssessment,
+            AgreementLevel, VerificationStatus, DominantModality
+        )
         return SemanticSceneObject(
-            internal_reasoning="Failed to parse JSON.",
-            human_oriented_summary="Unknown Situation",
+            speech_understanding=SpeechUnderstanding(
+                summary="Failed to parse JSON.",
+                topic="Unknown",
+                speaker_intent="Unknown",
+                emotional_tone="Unknown",
+                confidence=0.0
+            ),
+            auditory_observations=[],
+            cross_modal_assessment=CrossModalAssessment(
+                agreement_level=AgreementLevel.LOW,
+                verification_status=VerificationStatus.INCONCLUSIVE,
+                dominant_modality=DominantModality.BALANCED,
+                major_supports=[],
+                major_conflicts=[],
+                remaining_uncertainty="JSON parsing failed.",
+                overall_assessment="System error during semantic parsing."
+            ),
             primary_situation="Unknown",
-            likely_environment="Unknown",
+            environmental_context="Unknown",
             actors=[],
             human_goals=[],
-            supporting_evidence="",
-            alternative_interpretation="None",
-            missing_evidence="",
-            projection="Unknown",
-            confidence=0.1
+            alternative_hypotheses=[],
+            missing_evidence=[],
+            likely_next_state="Unknown",
+            interpretation_confidence=0.1,
+            human_oriented_summary="Unknown Situation"
         )

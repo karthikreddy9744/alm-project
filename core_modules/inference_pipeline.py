@@ -222,19 +222,21 @@ class ALMInferencePipeline:
             )
             awm.add_event(speech_event)
             
-        # Insert Environmental Events from SceneNet
+        # Insert Environmental Events from SceneNet (HTS-AT)
         for i, (scene_label, conf) in enumerate(active_scenes):
             env_event_conf = HierarchicalConfidence(sound_detection=conf)
             env_event = EventNode(
-                id=f"evt_env_{i}",
+                id=f"obs_htsat_{i}",
                 class_map=scene_label,
                 trajectory=Trajectory.UNKNOWN,
                 acoustic_salience=min(1.0, conf + 0.1),
-                confidence=env_event_conf
+                confidence=env_event_conf,
+                start_time=0.0,
+                end_time=round(len(audio)/sr, 2),
+                detector="HTS-AT"
             )
             awm.add_event(env_event)
             
-        # Insert Zero-Shot Environmental Events from CLAP
         # 5. Dynamic Acoustic Masking Penalty
         # (Disabled: Cross-modal conflict resolution is now handled purely at the Semantic LLM layer)
         speech_penalty = 1.0
@@ -249,11 +251,14 @@ class ALMInferencePipeline:
             salience = min(1.0, base_conf + 0.3) * speech_penalty
             
             clap_event = EventNode(
-                id=f"evt_clap_{i}",
+                id=f"obs_clap_{i}",
                 class_map=concept.title(),
                 trajectory=Trajectory.UNKNOWN,
                 acoustic_salience=salience,
-                confidence=clap_event_conf
+                confidence=clap_event_conf,
+                start_time=0.0,
+                end_time=round(len(audio)/sr, 2),
+                detector="CLAP"
             )
             awm.add_event(clap_event)
             

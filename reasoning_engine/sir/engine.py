@@ -272,29 +272,50 @@ class SituationIntelligenceRenderer:
         # OUTPUT 2: ENVIRONMENTAL UNDERSTANDING
         # ---------------------------------------------------------
         env_lines = []
-        if not streams:
-            env_lines.append("- No environmental events recorded.")
+        source_semantic = hypotheses[0].source_semantic_object if (hypotheses and hasattr(hypotheses[0], 'source_semantic_object')) else None
+        
+        if source_semantic and hasattr(source_semantic, 'auditory_observations') and source_semantic.auditory_observations:
+            env_lines.append("### Auditory Observations")
+            for obs in source_semantic.auditory_observations:
+                used = " (Used in Final Reasoning)" if obs.used_in_final_reasoning else ""
+                env_lines.append(f"- **{obs.sound}** [{obs.id}]: Detected by {obs.detector} ({obs.start_time}-{obs.end_time}s) | Influence: {obs.influence.value}{used}")
+                env_lines.append(f"  - *Relationship:* {obs.relationship_to_hypothesis.value}")
+                env_lines.append(f"  - *Justification:* {obs.justification}")
         else:
-            if streams.primary_events:
-                env_lines.append("- **Primary Sounds:** " + ", ".join([f"{e.class_map} ({e.acoustic_salience:.2f})" for e in streams.primary_events]))
+            if not streams:
+                env_lines.append("- No environmental events recorded.")
             else:
-                env_lines.append("- **Primary Sounds:** None")
-                
-            if streams.supporting_events:
-                env_lines.append("- **Supporting Sounds:** " + ", ".join([f"{e.class_map} ({e.acoustic_salience:.2f})" for e in streams.supporting_events]))
-            else:
-                env_lines.append("- **Supporting Sounds:** None")
-                
-            if streams.background_events:
-                env_lines.append("- **Background Sounds:** " + ", ".join([f"{e.class_map} ({e.acoustic_salience:.2f})" for e in streams.background_events]))
-            else:
-                env_lines.append("- **Background Sounds:** None")
-                
-            if streams.ignored_events:
-                env_lines.append("- **Ignored Sounds:** " + ", ".join([f"{e.class_map}" for e in streams.ignored_events]))
-            else:
-                env_lines.append("- **Ignored Sounds:** None")
-                
+                if streams.primary_events:
+                    env_lines.append("- **Primary Sounds:** " + ", ".join([f"{e.class_map} ({e.acoustic_salience:.2f})" for e in streams.primary_events]))
+                else:
+                    env_lines.append("- **Primary Sounds:** None")
+                    
+                if streams.supporting_events:
+                    env_lines.append("- **Supporting Sounds:** " + ", ".join([f"{e.class_map} ({e.acoustic_salience:.2f})" for e in streams.supporting_events]))
+                else:
+                    env_lines.append("- **Supporting Sounds:** None")
+                    
+                if streams.background_events:
+                    env_lines.append("- **Background Sounds:** " + ", ".join([f"{e.class_map} ({e.acoustic_salience:.2f})" for e in streams.background_events]))
+                else:
+                    env_lines.append("- **Background Sounds:** None")
+                    
+                if streams.ignored_events:
+                    env_lines.append("- **Ignored Sounds:** " + ", ".join([f"{e.class_map}" for e in streams.ignored_events]))
+                else:
+                    env_lines.append("- **Ignored Sounds:** None")
+
+        if source_semantic and hasattr(source_semantic, 'cross_modal_assessment') and source_semantic.cross_modal_assessment:
+            cma = source_semantic.cross_modal_assessment
+            env_lines.append("\n### Cross-Modal Evidence Assessment")
+            env_lines.append(f"- **Agreement Level:** {cma.agreement_level.value}")
+            env_lines.append(f"- **Verification Status:** {cma.verification_status.value}")
+            env_lines.append(f"- **Dominant Modality:** {cma.dominant_modality.value}")
+            env_lines.append(f"- **Major Supports:** {', '.join(cma.major_supports) if cma.major_supports else 'None'}")
+            env_lines.append(f"- **Major Conflicts:** {', '.join(cma.major_conflicts) if cma.major_conflicts else 'None'}")
+            env_lines.append(f"- **Overall Assessment:** {cma.overall_assessment}")
+            env_lines.append(f"- **Remaining Uncertainty:** {cma.remaining_uncertainty}")
+
         environmental_understanding = "\n".join(env_lines)
 
         # ---------------------------------------------------------

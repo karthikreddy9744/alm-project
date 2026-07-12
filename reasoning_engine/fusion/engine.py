@@ -30,11 +30,15 @@ class EvidenceFusionLayer:
             info = []
             for ev in events:
                 info.append(EventInfo(
+                    id=ev.id,
                     event_label=ev.class_map,
                     salience=ev.acoustic_salience,
                     confidence=ev.confidence.sound_detection,
                     is_foreground=is_foreground,
-                    is_background=is_background
+                    is_background=is_background,
+                    start_time=getattr(ev, 'start_time', 0.0),
+                    end_time=getattr(ev, 'end_time', 0.0),
+                    detector=getattr(ev, 'detector', 'Unknown')
                 ))
             return info
             

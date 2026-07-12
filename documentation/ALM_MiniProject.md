@@ -47,6 +47,7 @@ _Anurag University | School of Engineering | Hyderabad_
 | 11.0        | July 2026 | Research & Evaluation Upgrade: Integrated Automated Batch Evaluation Framework (`evaluation_runner.py`), `human_eval_proxy.py`, and `ground_truth.json` for scientific benchmarking against 50 high-complexity scenarios. |
 | 12.0        | July 2026 | Curriculum Learning & Dual-Whisper Architecture: Re-architected `dataset_builder.py` with 6-stage complexity phases, dynamic SNR mixing, mock data fallbacks, and `.npy` pre-extraction. Dual-Whisper Engine integration. Validated footprint ~14MB (Cognitive Layer). |
 | 12.1        | July 2026 | Master Documentation Alignment: Fully aligned the literature review (SALMONN, Qwen-Audio, LTU), folder structure, and mathematical implementations (Softmax $\tau=0.05$, EMA filter, Masking Penalty) with the deployed codebase. |
+| 12.2        | July 2026 | Architecture Freeze: Implemented strict Pydantic Enum models, Cross-Modal Evidence Verification, Evidence Influence Assessment, and temporal grounding. Deprecated unstructured `internal_reasoning` in favor of deterministic JSON logic traces. |
 
 # **Abstract**
 
@@ -125,7 +126,7 @@ Consider a smart emergency response application: hearing 'Help me!' in a quiet i
 - Develop a dual-encoder fusion architecture: frozen Whisper encoder (Speech Embedding \[512d\]) combined with frozen CLAP encoder (Environmental Embedding \[512d\]) through a trainable Fusion Layer.
 - Train a custom Scene Context Network (SCN) to classify audio scenes into 40 environment categories, optimised on multimodal mixed samples.
 - Implement a Auditory World Model (AWM) to unify multilingual Whisper transcripts into a consistent English semantic representation.
-- Build a Cognitive Reasoning Engine (Semantic Processing Engine) using a highly constrained Local 4B LLM, augmented by Dynamic JSON Self-Healing, for deployment-stable natural language situational assessment.
+- Build a Cognitive Reasoning Engine (Semantic Processing Engine) using a highly constrained Local 4B LLM, augmented by strict Pydantic JSON schema enforcement, for deployment-stable natural language situational assessment.
 - Deploy the system as a publicly accessible, stable live demo on Hugging Face Spaces (free tier, ~755 MB total RAM).
 
 # **2. Literature Review & Related Work**
@@ -315,17 +316,30 @@ English Semantic Transcript │
 
 ▼
 
-┌─────────────────────────────────┐
+┌──────────────────────────────────────────────┐
 
-│ Semantic Processing Engine Neuro-Symbolic Pipeline │
+│ Semantic Processing Engine (SPE) - Local 4B  │
+│ → Cross-Modal Assessment & Synthesis         │
 
-│ Semantic Processing Engine │
+└──────────────────────┬───────────────────────┘
 
-└────────────────┬────────────────┘
+                       ▼
 
-▼
+┌──────────────────────────────────────────────┐
 
-Situational Assessment Output
+│ Transparent Reasoning Engine (TRE)           │
+│ → Deterministic JSON (SemanticSceneObject)   │
+
+└──────────────────────┬───────────────────────┘
+
+                       ▼
+
+┌──────────────────────────────────────────────┐
+
+│ Situation Intelligence Renderer (SIR)        │
+│ → Human-Oriented Situation Output            │
+
+└──────────────────────────────────────────────┘
 
 ## **3.4 Pipeline Stage Summary**
 
@@ -336,9 +350,10 @@ Situational Assessment Output
 | 2B        | CLAP Encoder (frozen)             | numpy \[T\]                             | Environmental Embedding \[512\]         | Both           |
 | MDB       | Multimodal Dataset Builder        | LibriSpeech + ESC-50                    | Mixed audio + label                     | Training only  |
 | 3         | Fusion Layer (trainable)          | Speech \[512\] + Env \[512\] → \[1024\] | Joint Representation \[256\]            | Both           |
-| 4         | Scene Context Network (SCN) (trainable) | Joint Representation \[256\]            | Scene probabilities \[40\]              | Both           |
-| AWM      | Multilingual Speech Norm. Layer   | Whisper transcript (any lang.)          | English semantic transcript             | Inference only |
-| 5         | Semantic Processing Engine                             | Transcript + scene + confidence         | Natural language situational assessment | Inference only |
+| 4         | Scene Context Network (SCN)       | Joint Representation \[256\]            | Scene probabilities \[40\]              | Both           |
+| AWM       | Auditory World Model (AWM)        | Transcript + Scene + Temporal Events    | AWM Event Graph                         | Inference only |
+| 5         | SPE + TRE (Local 4B LLM)          | AWM Event Graph                         | SemanticSceneObject (Strict JSON)       | Inference only |
+| 6         | Situation Intelligence Renderer   | SemanticSceneObject                     | Human-Oriented Markdown Report          | Inference only |
 
 ## **3.5 Why Both Foundation Models Are Frozen**
 
@@ -473,7 +488,7 @@ Class balancing is performed using inverse-frequency weighted sampling to preven
 | Deep Learning    | PyTorch                       | \>=2.0      | Industry standard; Colab GPU support; custom layer design                |
 | ASR Engine       | faster-whisper                | \>=0.10     | 4x faster than original Whisper; 2x less memory; multilingual support    |
 | Audio-Language   | CLAP (laion/clap-htsat-fused) | latest      | SOTA audio-text alignment; open source; 512-dim Environmental Embeddings |
-| Response Engine  | Semantic Processing Engine (4B LLM)     | v12.0        | ~3GB VRAM, Qwen3-4B-Instruct-2507 (4-bit Quantized), Dynamic Self-Healing   |
+| Response Engine  | Semantic Processing Engine (4B LLM)     | v12.0        | ~3GB VRAM, Qwen3-4B-Instruct-2507 (4-bit Quantized), Strict Pydantic JSON   |
 | Multilingual NLP | AWM (custom)                 | v12.0        | Language detection + English translation for Semantic Processing Engine reasoning             |
 | Audio Processing | librosa                       | \>=0.10     | Industry standard; resampling; format support                            |
 | Dataset (Speech) | LibriSpeech & FLEURS        | validation  | Free English and Multilingual speech; diverse speakers; MDB speech source |
@@ -503,7 +518,7 @@ soundfile>=0.12.0
 
 datasets>=2.14.0
 
-# Local 4B LLM - Semantic Processing Engine with Pydantic JSON Self-Healing
+# Local 4B LLM - Semantic Processing Engine with Strict Pydantic JSON Enforcement
 
 # **6\. Dataset Description**
 
@@ -680,24 +695,24 @@ The Reasoning Engine is composed of four strictly sequential modules: the **Worl
 **Academic Inspiration:** Inspired by **Graph RAG (Retrieval-Augmented Generation)** techniques and classical cognitive architectures like **SOAR (Laird, 2012)**. These frameworks propose that symbolic representations (graphs/objects) are necessary to ground neural networks in factual reality, preventing uncontrolled generative drift.
 
 ## **8.2 Semantic Processing Engine (SPE) & Cross-Modal Consistency Reasoning**
-**Function:** The SPE is a highly optimized local **3B parameter Large Language Model**. It consumes the AWM graph via a strict prompt and uses its extensive pre-trained knowledge to deduce the underlying human situation.
+**Function:** The SPE is a highly optimized local **3B parameter Large Language Model** constrained by deterministic `Pydantic` schema enforcement. It consumes the AWM graph via a strict prompt and uses its extensive pre-trained knowledge to deduce the underlying human situation.
 
 **ALM’s Cross-Modal Cognitive Reasoning Principle:**
-ALM treats speech and environmental audio as complementary sources of evidence rather than independent or competing modalities. Speech typically provides the initial semantic hypothesis by conveying the speaker’s topic, intent, and perspective, while environmental audio supplies contextual evidence describing the surrounding physical world. Instead of treating either source as absolutely dominant, ALM performs Cross-Modal Consistency Reasoning, evaluating how well the environmental evidence supports, refines, strengthens, weakens, or contradicts the semantic hypothesis established by speech. Each modality is weighted according to the reliability, confidence, coherence, and contextual relevance of its evidence. The final Human-Oriented Auditory Situation Understanding is generated only after reconciling both sources into a unified, evidence-grounded interpretation, closely reflecting the way humans naturally interpret complex auditory scenes.
+ALM treats speech and environmental audio as complementary sources of evidence rather than independent or competing modalities. Speech typically provides the initial semantic hypothesis by conveying the speaker’s topic, intent, and perspective, while environmental audio supplies contextual evidence describing the surrounding physical world.
 
 **The 5-Step Reasoning Process:**
 1. **Speech Understanding:** Speech establishes the initial semantic hypothesis (topic, intent, context). This is not the final interpretation, only the initial hypothesis.
-2. **Environmental Understanding:** Environmental perception independently identifies physical evidence (dominant events, background ambience).
-3. **Cross-Modal Consistency Analysis:** ALM evaluates their relationship. Does the environment support, contradict, or provide no relation to the speech? Rather than suppressing conflicting evidence, ALM explains why the evidence agrees or disagrees.
-4. **Evidence Weighting:** Evidence is weighted based on cross-modal agreement, logical coherence, and origin model confidence. Low-confidence or inconsistent observations remain available but contribute less.
-5. **Situation Synthesis:** The final situation represents the most plausible real-world situation supported by all available, reconciled auditory evidence.
+2. **Environmental Understanding (Temporal Grounding):** Environmental perception identifies physical evidence and inherently binds to temporal bounds (`start_time`, `end_time`) and specific source `detectors`.
+3. **Cross-Modal Assessment:** ALM evaluates their relationship using strict enumerations (`AgreementLevel`, `VerificationStatus`, `DominantModality`). Does the environment support or contradict the speech? 
+4. **Evidence Influence Assessment:** Evidence is individually weighted (`Influence`, `used_in_final_reasoning`) based on logical coherence and origin model confidence. Low-confidence observations remain available but contribute less.
+5. **Situation Synthesis:** The final situation represents the most plausible real-world situation synthesized inside the deterministic JSON object, notably without relying on an unstructured `internal_reasoning` text block.
 
-**Why we use it:** Traditional audio classifiers detect labels ("screaming"), but cannot infer semantics ("burglary"). The SPE provides zero-shot deductive reasoning, combining disparate audio events into a cohesive human narrative.
-**Academic Inspiration:** Inspired by **SALMONN (Tang et al., 2023)**, but diverges by trading unconstrained 13B+ parameters for a strict 3B local model restricted to deterministic graph inputs.
+**Why we use it:** Traditional audio classifiers detect labels ("screaming"), but cannot infer semantics ("burglary"). The SPE provides zero-shot deductive reasoning, combining disparate audio events into a cohesive human narrative via heavily structured evidence weighting rather than stochastic chain-of-thought hallucination.
+**Academic Inspiration:** Inspired by **SALMONN (Tang et al., 2023)**, but diverges by trading unconstrained 13B+ parameters for a strict 3B local model restricted to deterministic Pydantic graph outputs.
 
 ## **8.3 Transparent Reasoning Engine (TRE)**
-**Function:** The TRE acts as the critical safety and verification layer. It enforces strict JSON schemas on the SPE's output using **Pydantic**. Crucially, it implements **Dynamic JSON Self-Healing**: if the SPE suffers from attention drift and produces truncated or malformed JSON, the TRE intercepts the crash, uses Regular Expressions to salvage the successfully generated `internal_reasoning` field, and mathematically repairs the JSON payload.
-**Why we use it:** Small 3B models are notorious for forgetting formatting instructions midway through generation, especially under heavy context loads. The TRE guarantees 100% application uptime by making the reasoning pipeline fault-tolerant, refusing to let LLM formatting errors crash the application.
+**Function:** The TRE acts as the critical safety and verification layer. It enforces strict JSON schemas on the SPE's output using **Pydantic** objects (like `SemanticSceneObject`). Crucially, because all fields are tightly typed (e.g., `RelationshipToHypothesis`, `Influence`), the TRE mathematically guarantees that the reasoning step is correctly formatted and aligned before reaching the UI.
+**Why we use it:** Small 3B models are notorious for forgetting formatting instructions midway through generation, especially under heavy context loads or chain-of-thought generation. By completely removing free-form `internal_reasoning` and forcing the reasoning trace into explicit `CrossModalAssessment` objects and flags (`used_in_final_reasoning`), the TRE guarantees 100% application uptime.
 **Academic Inspiration:** Inspired by recent advancements in **Constrained Decoding** and **Self-Reflective LLM Agents (e.g., ReAct by Yao et al., 2022)**, where systems actively monitor, parse, and correct their own outputs to maintain software-level reliability.
 
 ## **8.4 Situation Intelligence Renderer (SIR)**
@@ -718,7 +733,7 @@ To deploy this advanced pipeline on Hugging Face Spaces (CPU Basic Free Tier), t
 | ------------------ | ------------------------------------ | ----------------------------------------------------- |
 | Architecture       | Neuro-Symbolic (Graph + 4B LLM)      | End-to-End Neural (14B LLM)                           |
 | Inference Target   | Local Edge Devices / Free Tier       | Cloud A100 / H100 GPUs                                |
-| Fault Tolerance    | Dynamic JSON Self-Healing (TRE)      | None (Standard text generation)                       |
+| Fault Tolerance    | Strict Pydantic JSON Enforcement (TRE) | None (Standard text generation)                       |
 | Speech Hallucination| Zero (Due to Softmax Sinks / Cosine) | Moderate (Requires massive context to resolve)        |
 
 # **10. Evaluation & Results**
@@ -916,7 +931,7 @@ Implement the Auditory World Model as described in Chapter 8. The AWM wraps the 
 
 ## **Phase 8: Neuro-Symbolic LLM Integration**
 
-Integrate the Semantic Processing Engine (4B LLM) with the AWM output. Design strict 1-Shot system prompts. Implement the Transparent Reasoning Engine (TRE) to provide Dynamic JSON Self-Healing, ensuring that the 4B LLM's output never crashes the application even if it hallucinates JSON formatting.
+Integrate the Semantic Processing Engine (4B LLM) with the AWM output. Design strict 1-Shot system prompts. Implement the Transparent Reasoning Engine (TRE) to enforce strict Pydantic JSON schemas (e.g., `SemanticSceneObject`), mathematically guaranteeing that the reasoning step is correctly formatted and aligned before reaching the UI.
 
 ## **Phase 9: Gradio UI Development**
 
@@ -941,7 +956,7 @@ alm-project/
 
 │
 
-├── app.py ← Gradio app entry point
+├── main.py ← Full inference pipeline orchestration
 
 ├── requirements.txt ← v12.0 dependencies
 
@@ -949,45 +964,91 @@ alm-project/
 
 │
 
-├── core/
+├── application/
 
-│ ├── feature_extractor.py ← Whisper + CLAP extractors (frozen)
+│   ├── app.py ← Gradio app entry point
 
-│ ├── fusion_layer.py ← FusionLayer nn.Module
-
-│ ├── scene_network.py ← SceneContextNetwork
-
-│ ├── msnl.py ← Auditory World Model \[NEW v12.0\]
-
-│ ├── semantic/
-│ │   ├── engine.py ← Semantic Processing Engine (Local 4B LLM)
-│ │   ├── prompts.py ← 1-Shot JSON Prompts
-│ ├── tre/
-│ │   ├── engine.py ← Transparent Reasoning Engine (Dynamic Self-Healing)
-│ ├── sir/
-│ │   ├── engine.py ← Situation Intelligence Renderer
-│ ├── awm/
-│ │   ├── world_model.py ← Auditory World Model Graph
-│ ├── hre/
-│ │   ├── engine.py ← Hypothesis Reasoning Engine
-│ ├── spe/
-│ │   ├── engine.py ← Situation Projection Engine
-│ ├── pse/
-│ │   ├── engine.py ← Perceptual Segregation Engine
 │
+
+├── core_modules/
+
+│   ├── feature_extractor.py ← Whisper + CLAP extractors (frozen)
+
+│   ├── fusion_layer.py ← FusionLayer nn.Module
+
+│   ├── scene_network.py ← SceneContextNetwork
+
+│   ├── inference_pipeline.py ← Hardware-accelerated inference loop
+
+│   ├── msnl.py ← Multilingual Speech Normalization Layer
+
+│
+
+├── reasoning_engine/
+
+│   ├── awm/
+
+│   │   ├── models.py ← Auditory World Model Graph definitions
+
+│   │   ├── engine.py ← AWM Engine
+
+│   ├── fusion/
+
+│   │   ├── models.py ← Pydantic schema for Fusion (AudioEvidenceObject)
+
+│   │   ├── engine.py ← Temporal event fusion layer
+
+│   ├── semantic/
+
+│   │   ├── models.py ← Strict Pydantic JSON Schema (SemanticSceneObject)
+
+│   │   ├── engine.py ← Semantic Processing Engine (Local 4B LLM)
+
+│   │   ├── prompts.py ← Deterministic 1-Shot JSON Prompts
+
+│   ├── tre/
+
+│   │   ├── engine.py ← Transparent Reasoning Engine
+
+│   ├── sir/
+
+│   │   ├── engine.py ← Situation Intelligence Renderer
+
+│   ├── hre/
+
+│   │   ├── engine.py ← Hypothesis Reasoning Engine
+
+│   ├── spe/
+
+│   │   ├── engine.py ← Situation Projection Engine
+
+│   ├── pse/
+
+│   │   ├── engine.py ← Perceptual Segregation Engine
+
+│
+
 ├── training/
-│ ├── dataset_builder.py ← Curriculum Learning & MDB logic
-│ ├── dataset_downloader.py ← Fetches LibriSpeech / ESC-50
-│ ├── train.py ← Phase-based Curriculum Learning loop
-│ └── validate_dataset.py ← Validates generated `.npy` shards
-│
-├── research/
-│ ├── evaluation_runner.py ← Automated Batch Evaluation script
-│ ├── human_eval_proxy.py ← Checks output vs Ground Truth
-│ ├── statistical_analysis.py ← Computes Human Plausibility metrics
-│ └── ground_truth.json ← 50 annotated test scenarios
 
-└── test_pipeline.py ← Full inference pipeline tests
+│   ├── dataset_builder.py ← Curriculum Learning & MDB logic
+
+│   ├── dataset_downloader.py ← Fetches LibriSpeech / ESC-50
+
+│   ├── train.py ← Phase-based Curriculum Learning loop
+
+│   └── validate_dataset.py ← Validates generated `.npy` shards
+
+│
+
+├── research/
+
+│   ├── evaluation_runner.py ← Automated Batch Evaluation script
+
+│   ├── human_eval_proxy.py ← Checks output vs Ground Truth
+
+│   ├── statistical_analysis.py ← Computes Human Plausibility metrics
+
+│   └── ground_truth.json ← 50 annotated test scenarios
 
 
 

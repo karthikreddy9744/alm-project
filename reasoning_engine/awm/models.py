@@ -110,6 +110,9 @@ class EventNode:
     trajectory: Trajectory
     acoustic_salience: float
     confidence: HierarchicalConfidence
+    start_time: float = 0.0
+    end_time: float = 0.0
+    detector: str = "Unknown"
     last_updated_timestamp: float = field(default_factory=time.time)
     persistence_count: int = 1
 
