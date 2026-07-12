@@ -181,7 +181,7 @@ class ALMInferencePipeline:
         # Filter out the sinks and low-similarity hallucinations
         valid_concepts = []
         for k, prob in nearest_concepts_dict.items():
-            if k not in ["a person speaking clearly", "complete absolute silence", "background room noise"] and prob > 0.05:
+            if k not in ["a person speaking clearly", "complete absolute silence", "background room noise"] and prob > 0.10:
                 valid_concepts.append((k, round(prob, 2)))
                 
         # Keep top 3 concepts
@@ -236,9 +236,8 @@ class ALMInferencePipeline:
             
         # Insert Zero-Shot Environmental Events from CLAP
         # 5. Dynamic Acoustic Masking Penalty
-        # If speech is present, it physically masks background noise. We penalize the environmental event salience
-        # to ensure the LLM prioritizes the speech intent rather than hallucinating danger from the muffled background.
-        speech_penalty = 0.85 if transcript else 1.0
+        # (Disabled: Cross-modal conflict resolution is now handled purely at the Semantic LLM layer)
+        speech_penalty = 1.0
 
         # Insert Zero-Shot Environmental Events from CLAP
         for i, (concept, prob) in enumerate(sorted_concepts):

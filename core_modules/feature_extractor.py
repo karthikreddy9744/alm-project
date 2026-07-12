@@ -175,7 +175,7 @@ class CLAPFeatureExtractor:
             cosine_sim = torch.matmul(audio_embeds, text_embeds.t()).squeeze(0).cpu().numpy()
             
             # Apply Softmax Temperature Calibration to suppress long-tail hallucinations
-            temperature = 0.05
+            temperature = 0.15
             scaled_sim = cosine_sim / temperature
             # Stable softmax
             max_sim = np.max(scaled_sim)

@@ -130,31 +130,21 @@ Consider a smart emergency response application: hearing 'Help me!' in a quiet i
 
 # **2. Literature Review & Related Work**
 
-The field of Audio Language Models (ALMs) and multimodal reasoning has accelerated rapidly between 2022 and 2026. This section reviews the foundational acoustic encoders and the three most critical multimodal architectures that directly informed the design of ALM v12.0.
+The field of Audio Language Models (ALMs) and multimodal reasoning has accelerated rapidly between 2022 and 2026. This section reviews the three most critical, state-of-the-art multimodal architectures that directly informed the design of ALM v12.0.
 
-## **2.1 Foundational Acoustic Encoders (2022)**
-
-### **2.1.1 Speech Recognition: OpenAI Whisper (Radford et al., 2022)**
-Whisper is a general-purpose speech recognition model trained on 680,000 hours of multilingual and multitask web audio. For ALM v12.0, the Whisper encoder is frozen, and its 512-dimensional hidden states are extracted as *Speech Embeddings*. This preserves maximum acoustic and phonetic information rather than forcing premature text serialization.
-
-### **2.1.2 Environmental Audio: CLAP (Wu et al., 2022)**
-CLAP (Contrastive Language-Audio Pretraining) learns joint audio-text representations through contrastive learning on 4.6 million audio-text pairs. The audio encoder produces 512-dimensional *Environmental Embeddings* that capture semantic contextual information (e.g., "what kind of acoustic scene is this?"). To suppress long-tail hallucinations in ALM v12.0, CLAP's output cosine similarities are calibrated using a **Softmax Temperature scaling ($	au=0.05$)**.
-
-## **2.2 The "Must-Read" Multimodal Architectures (2023-2025)**
-
-### **2.2.1 LTU (Listen, Think, and Understand) (Gong et al., 2024)**
+## **2.1 LTU (Listen, Think, and Understand) (Gong et al., 2024)**
 **Overview:** LTU is widely considered the foundational paper that coined the "Listen, Think, and Understand" paradigm. It introduced the OpenAQA dataset and demonstrated emergent reasoning capabilities across diverse audio, moving beyond simple classification into open-ended auditory question-answering.
 **Relevance to ALM v12.0:** LTU proved that combining a frozen audio encoder with an LLM yields strong zero-shot reasoning. However, LTU relies on end-to-end neural generation, which can hallucinate. ALM v12.0 adopts the "Listen, Think, Understand" philosophy but enforces strict determinism via a Cognitive State Management layer to prevent the stochastic hallucinations seen in LTU.
 
-### **2.2.2 SALMONN (Speech Audio Language Music Open Neural Network) (Tang et al., 2023)**
+## **2.2 SALMONN (Speech Audio Language Music Open Neural Network) (Tang et al., 2023)**
 **Overview:** SALMONN integrates speech, audio event, and music encoders with a massive 13B parameter LLM (Vicuna). It achieved state-of-the-art results on generic hearing abilities, including cross-modal reasoning and storytelling.
 **Relevance to ALM v12.0:** While SALMONN proves the viability of unified multimodal perception, its reliance on a 13B parameter cloud-scale model makes it impossible to deploy on edge devices or free-tier infrastructure. ALM v12.0 deliberately counters this by utilizing a highly constrained, quantized 4B parameter model (`Qwen3-4B-Instruct-2507`) coupled with Pydantic deterministic graphs, achieving SALMONN-like deductive reasoning at a fraction of the computational footprint.
 
-### **2.2.3 Qwen-Audio & Qwen2-Audio (Chu et al., 2023-2024)**
+## **2.3 Qwen-Audio & Qwen2-Audio (Chu et al., 2023-2024)**
 **Overview:** Developed by Alibaba Cloud, the Qwen-Audio family scales pre-training across over 30 tasks, introducing native voice chat capabilities and superior instruction following without task-specific fine-tuning.
 **Relevance to ALM v12.0:** The ALM v12.0 Semantic Interpretation Engine is directly powered by the latest iteration of this family: `Qwen/Qwen3-4B-Instruct-2507`. Because this model is natively optimized for strict instruction following (the non-thinking variant), it is the perfect fit for ALM's requirement to output strictly formatted JSON semantic scenes rather than conversational chat.
 
-## **2.3 Related Systems Comparison**
+## **2.4 Related Systems Comparison**
 
 | **System** | **Speech?** | **Non-Speech?** | **Multimodal Training?** | **Language Output?** |
 | :--- | :--- | :--- | :--- | :--- |
@@ -371,15 +361,14 @@ The Multimodal Dataset Builder is a dedicated architectural module that operates
 
 ### **4.2.1 MDB Responsibilities**
 
-- Loading LibriSpeech test-clean utterances (2,620 speech clips)
+- Loading LibriSpeech validation utterances (clean split)
+- Loading Google FLEURS validation utterances (9 Indic languages)
 - Loading ESC-50 environmental audio (2,000 clips across 50 classes)
-- Random pairing between speech and environmental audio samples
+- Random pairing between speech and environmental audio samples across a 6-stage complexity curriculum
 - Random SNR generation in the range \[−5 dB, +20 dB\]
-- Dynamic audio mixing with clipping prevention
-- Loudness normalisation to −23 LUFS (EBU R128 standard)
+- Dynamic audio mixing with clipping prevention and random gain
 - Label inheritance from the ESC-50 environmental sample
-- Generation of three sample types: speech-only, environment-only, and mixed
-- Dataset balancing across all three sample types
+- Pre-computation embedding extraction using Whisper, CLAP, and HTS-AT
 
 ### **4.2.2 Audio Mixing Procedure**
 
@@ -451,25 +440,28 @@ snr = np.random.uniform(-5, 20)
 
 return self.mix_audio(speech, env, snr), self.env_labels\[idx\]
 
-## **4.3 Training Sample Distribution**
+## **4.3 Curriculum Learning Stages**
 
-The MDB generates three types of training samples. The recommended distribution is:
+The MDB generates samples according to a strict 6-stage curriculum to progressively build auditory reasoning complexity:
 
-| **Sample Type**      | **Description**                                      | **Recommended Proportion** | **Justification**                                                                                          |
-| -------------------- | ---------------------------------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Speech-only          | LibriSpeech utterances without environmental overlay | 30%                        | Teaches the Fusion Layer that Speech Embeddings carry independent linguistic information.                  |
-| Environment-only     | ESC-50 clips without speech                          | 30%                        | Teaches the Fusion Layer that Environmental Embeddings carry independent acoustic scene information.       |
-| Speech + Environment | Dynamically mixed samples from MDB                   | 40%                        | Teaches the Fusion Layer to integrate both embedding types simultaneously - the core multimodal objective. |
+| **Stage** | **Configuration** | **Proportion** | **Description** |
+| --------- | ----------------- | -------------- | --------------- |
+| Stage 1 | 1 Spk + 1 Env | 21.4% | Basic foreground/background separation. |
+| Stage 2 | 1 Spk + 2-3 Env | 25.0% | Moderate polyphonic environmental masking. |
+| Stage 3 | 2 Spk + 2-3 Env | 21.4% | Multi-speaker tracking with noise. |
+| Stage 4 | 3 Spk + up to 6 Env | 14.3% | Maximum complexity acoustic cocktail party. |
+| Stage 5 | Environment Only | 10.7% | Teaches independent scene classification. |
+| Stage 6 | Speech Only | 7.2% | Teaches independent linguistic grounding. |
 
-All three sample types are required. Training on mixed samples alone would prevent the model from developing clean single-modality representations. Training on single-modality samples alone would fail to teach cross-modal integration. The 30/30/40 distribution provides a balanced curriculum that develops all three capabilities.
+This curriculum ensures the model builds robust capabilities progressively rather than failing to converge on chaotic, highly polyphonic audio immediately.
 
 ## **4.4 Dataset Statistics**
 
-| **Split**        | **Speech Samples** | **Environment Samples** | **Mixed Samples** | **Total** |
-| ---------------- | ------------------ | ----------------------- | ----------------- | --------- |
-| Training (80%)   | 24,000             | 24,000                  | 32,000            | 80,000    |
-| Validation (20%) | 6,000              | 6,000                   | 8,000             | 20,000    |
-| Total            | 30,000             | 30,000                  | 40,000            | 100,000   |
+| **Split**        | **Samples** |
+| ---------------- | ----------- |
+| Training (80%)   | 80,000      |
+| Validation (20%) | 20,000      |
+| Total            | 100,000     |
 
 Class balancing is performed using inverse-frequency weighted sampling to prevent dominant ESC-50 categories from biasing the Scene Context Network (SCN). A weighted BCEWithLogitsLoss with per-class positive weights is applied to further address class imbalance across the 40 scene categories.
 
@@ -484,7 +476,7 @@ Class balancing is performed using inverse-frequency weighted sampling to preven
 | Response Engine  | Semantic Processing Engine (4B LLM)     | v12.0        | ~3GB VRAM, Qwen3-4B-Instruct-2507 (4-bit Quantized), Dynamic Self-Healing   |
 | Multilingual NLP | AWM (custom)                 | v12.0        | Language detection + English translation for Semantic Processing Engine reasoning             |
 | Audio Processing | librosa                       | \>=0.10     | Industry standard; resampling; format support                            |
-| Dataset (Speech) | LibriSpeech test-clean        | 2,620 utts  | Free English speech; diverse speakers; MDB speech source                 |
+| Dataset (Speech) | LibriSpeech & FLEURS        | validation  | Free English and Multilingual speech; diverse speakers; MDB speech source |
 | Dataset (Env)    | ESC-50                        | 2,000 clips | Self-contained; 50 classes; MDB environmental source                     |
 | Training         | Google Colab T4               | Free GPU    | Sufficient for ~400K parameter training; free access                     |
 | Deployment       | HF Spaces (Gradio SDK)        | Free tier   | Permanent public URL; CPU Basic; ~755 MB total RAM                       |
@@ -518,7 +510,7 @@ datasets>=2.14.0
 ## **6.1 Speech Component (LibriSpeech & Google FLEURS)**
 
 The speech component of the multimodal training pipeline is designed to be highly multilingual. It utilizes two distinct datasets:
-- **LibriSpeech (English):** The `test-clean` subset provides high-quality English utterances from diverse speakers, recorded at 16 kHz with minimal noise. 
+- **LibriSpeech (English):** The `validation` (clean) subset provides high-quality English utterances from diverse speakers, recorded at 16 kHz with minimal noise. 
 - **Google FLEURS (Multilingual):** To train the pipeline for global deployment and ensure the Auditory World Model (AWM) can effectively translate non-English audio, the pipeline incorporates 9 Indic languages (Hindi, Telugu, Tamil, Kannada, Malayalam, Marathi, Bengali, Gujarati, Punjabi) from the FLEURS dataset.
 
 These utterances are used exclusively as input to the Multimodal Dataset Builder (MDB). Individual clips are selected randomly and mixed with environmental audio. The original speech transcripts and language labels are discarded; the MDB inherits labels exclusively from the paired environmental sample to force the model into cross-modal contextual learning.
@@ -687,10 +679,21 @@ The Reasoning Engine is composed of four strictly sequential modules: the **Worl
 **Why we use it:** Large Language Models are prone to hallucination when fed unstructured probabilities or raw logit scores. By forcing all neural evidence into a strict, object-oriented graph (the AWM), we artificially constrain the LLM's context window to factual, verified events.
 **Academic Inspiration:** Inspired by **Graph RAG (Retrieval-Augmented Generation)** techniques and classical cognitive architectures like **SOAR (Laird, 2012)**. These frameworks propose that symbolic representations (graphs/objects) are necessary to ground neural networks in factual reality, preventing uncontrolled generative drift.
 
-## **8.2 Semantic Processing Engine (SPE)**
-**Function:** The SPE is a highly optimized local **3B parameter Large Language Model**. It consumes the AWM graph via a strict 1-Shot Prompt and uses its extensive pre-trained knowledge to deduce the underlying human situation.
-**Why we use it:** Traditional audio classifiers (like ESC-50 models) can detect "glass breaking" and "screaming", but cannot infer the semantic meaning that a "burglary or emergency" is occurring. The SPE provides zero-shot deductive reasoning, combining disparate audio events into a cohesive human narrative that a deterministic rule-engine could never achieve.
-**Academic Inspiration:** Inspired by the **SALMONN (Tang et al., 2023)** paper, which demonstrated that LLMs possess emergent audio-reasoning capabilities. However, ALM diverges significantly from SALMONN: instead of relying on a massive, unconstrained 13B+ parameter cloud model (which is slow and expensive), the SPE utilizes a much smaller 3B local model restricted to deterministic graph inputs. This trades sheer parameter count for strict input constraints, enabling free-tier deployment without sacrificing deductive capability.
+## **8.2 Semantic Processing Engine (SPE) & Cross-Modal Consistency Reasoning**
+**Function:** The SPE is a highly optimized local **3B parameter Large Language Model**. It consumes the AWM graph via a strict prompt and uses its extensive pre-trained knowledge to deduce the underlying human situation.
+
+**ALM’s Cross-Modal Cognitive Reasoning Principle:**
+ALM treats speech and environmental audio as complementary sources of evidence rather than independent or competing modalities. Speech typically provides the initial semantic hypothesis by conveying the speaker’s topic, intent, and perspective, while environmental audio supplies contextual evidence describing the surrounding physical world. Instead of treating either source as absolutely dominant, ALM performs Cross-Modal Consistency Reasoning, evaluating how well the environmental evidence supports, refines, strengthens, weakens, or contradicts the semantic hypothesis established by speech. Each modality is weighted according to the reliability, confidence, coherence, and contextual relevance of its evidence. The final Human-Oriented Auditory Situation Understanding is generated only after reconciling both sources into a unified, evidence-grounded interpretation, closely reflecting the way humans naturally interpret complex auditory scenes.
+
+**The 5-Step Reasoning Process:**
+1. **Speech Understanding:** Speech establishes the initial semantic hypothesis (topic, intent, context). This is not the final interpretation, only the initial hypothesis.
+2. **Environmental Understanding:** Environmental perception independently identifies physical evidence (dominant events, background ambience).
+3. **Cross-Modal Consistency Analysis:** ALM evaluates their relationship. Does the environment support, contradict, or provide no relation to the speech? Rather than suppressing conflicting evidence, ALM explains why the evidence agrees or disagrees.
+4. **Evidence Weighting:** Evidence is weighted based on cross-modal agreement, logical coherence, and origin model confidence. Low-confidence or inconsistent observations remain available but contribute less.
+5. **Situation Synthesis:** The final situation represents the most plausible real-world situation supported by all available, reconciled auditory evidence.
+
+**Why we use it:** Traditional audio classifiers detect labels ("screaming"), but cannot infer semantics ("burglary"). The SPE provides zero-shot deductive reasoning, combining disparate audio events into a cohesive human narrative.
+**Academic Inspiration:** Inspired by **SALMONN (Tang et al., 2023)**, but diverges by trading unconstrained 13B+ parameters for a strict 3B local model restricted to deterministic graph inputs.
 
 ## **8.3 Transparent Reasoning Engine (TRE)**
 **Function:** The TRE acts as the critical safety and verification layer. It enforces strict JSON schemas on the SPE's output using **Pydantic**. Crucially, it implements **Dynamic JSON Self-Healing**: if the SPE suffers from attention drift and produces truncated or malformed JSON, the TRE intercepts the crash, uses Regular Expressions to salvage the successfully generated `internal_reasoning` field, and mathematically repairs the JSON payload.
@@ -991,18 +994,18 @@ alm-project/
 
 # **16. References & Project Contributions**
 
-The following represent the foundational research papers published between 2022 and 2026 that guided the development of ALM v12.0. References to deprecated approaches or obsolete 2015-2019 papers have been trimmed to focus strictly on modern ALM architecture:
+The following represent the 10 foundational research papers published strictly between 2022 and 2026 that guided the development of ALM v12.0. References to deprecated approaches or obsolete papers have been trimmed to focus exclusively on modern ALM architecture:
 
-1. **Gong, Y., et al. (2024).** *Listen, Think, and Understand (LTU).* ICLR 2024 / arXiv:2305.10790. (Foundational framework for audio LLMs).
-2. **Chu, Y., et al. (2023-2024).** *Qwen-Audio: Advancing Universal Audio Understanding via Unified Large-Scale Audio-Language Models.* arXiv:2311.07919. (Architecture for the Qwen3-4B-Instruct-2507 semantic engine).
-3. **Tang, C., et al. (2023).** *SALMONN: Towards Generic Hearing Abilities for Large Language Models.* ICLR 2024 / arXiv:2310.13289. (Demonstration of multi-encoder fusion with LLMs).
-4. **Radford, A., et al. (2022).** *Robust Speech Recognition via Large-Scale Weak Supervision (Whisper).* arXiv:2212.04356. (Foundation for ALM's linguistic perception).
-5. **Wu, Y., et al. (2022).** *Large-Scale Contrastive Language-Audio Pretraining (CLAP).* arXiv:2211.06687. (Foundation for ALM's environmental context extraction).
+1. **Gong, Y., et al. (2024).** *Listen, Think, and Understand (LTU).* ICLR 2024. (Foundational framework for audio LLMs).
+2. **Chu, Y., et al. (2023-2024).** *Qwen-Audio: Advancing Universal Audio Understanding via Unified Large-Scale Audio-Language Models.* (Architecture for the Qwen3-4B-Instruct-2507 semantic engine).
+3. **Tang, C., et al. (2023).** *SALMONN: Towards Generic Hearing Abilities for Large Language Models.* ICLR 2024. (Demonstration of multi-encoder fusion with LLMs).
+4. **Radford, A., et al. (2022).** *Robust Speech Recognition via Large-Scale Weak Supervision (Whisper).* (Foundation for ALM's linguistic perception).
+5. **Wu, Y., et al. (2022).** *Large-Scale Contrastive Language-Audio Pretraining (CLAP).* (Foundation for ALM's environmental context extraction).
 6. **Chen, K., et al. (2022).** *HTS-AT: A Hierarchical Token-Semantic Audio Transformer for Sound Classification and Detection.* ICASSP 2022. (Foundation for polyphonic event detection).
-7. **Zhang, Z., et al. (2026).** *A Survey of Large Audio Language Models: Generalization, Trustworthiness, and Outlook.* arXiv. (Comprehensive 2026 overview of ALM alignment and hallucination risks).
-8. **Liu, X., et al. (2025).** *UALM: Unified Audio Language Model.* arXiv. (Recent advancements in single-framework audio reasoning).
-9. **Piczak, K. J. (2015).** *ESC: Dataset for Environmental Sound Classification.* ACM Multimedia 2015, pp. 1015-1018. (Core dataset for the environmental training corpus).
-10. **Panayotov, V., et al. (2015).** *LibriSpeech: an ASR corpus based on public domain audio books.* ICASSP 2015, pp. 5206-5210. (Core dataset for the linguistic training corpus).
+7. **Deshmukh, S., et al. (2023).** *Pengi: An Audio Language Model for Audio Tasks.* NeurIPS 2023. (Foundational work on prompt-based audio models).
+8. **Huang, R., et al. (2023).** *AudioGPT: Understanding and Generating Speech, Music, Sound, and Talking Head.* (Architecture mapping diverse audio to LLMs).
+9. **Liu, X., et al. (2025).** *UALM: Unified Audio Language Model.* (Recent advancements in single-framework audio reasoning).
+10. **Zhang, Z., et al. (2026).** *A Survey of Large Audio Language Models: Generalization, Trustworthiness, and Outlook.* (Comprehensive 2026 overview of ALM alignment and hallucination risks).
 
 _- End of Document -_
 

@@ -10,11 +10,23 @@ from main import UnifiedPipelineValidator
 print("Bootstrapping ALM v12.0 Unified Pipeline (Human Situation Understanding)...")
 validator = UnifiedPipelineValidator()
 
+import shutil
+
 def safe_serialize(obj):
     try:
         return json.loads(json.dumps(obj, default=lambda o: getattr(o, '__dict__', str(o))))
     except Exception as e:
         return {"serialization_error": str(e), "repr": str(obj)}
+
+def sanitize_upload(file_path):
+    """Intercepts the upload to strip broken characters (like #) before the audio player tries to fetch it."""
+    if not file_path: return None
+    safe_path = "/tmp/alm_safe_upload.wav"
+    try:
+        shutil.copy(file_path, safe_path)
+        return safe_path
+    except:
+        return file_path
 
 def run_alm_pipeline(audio_filepath: str):
     """
@@ -27,20 +39,12 @@ def run_alm_pipeline(audio_filepath: str):
         
     try:
         duration = librosa.get_duration(path=audio_filepath)
-        if duration > 180:
+        if duration > 120:
             yield (
-                "⚠️ **Upload Limit Exceeded**\n\nThe maximum allowed upload length is 3 minutes.",
-                "⚠️ **Upload Limit Exceeded**\n\nThe maximum allowed upload length is 3 minutes.",
-                "⚠️ **Upload Limit Exceeded**\n\nThe maximum allowed upload length is 3 minutes.",
-                {}, {}, {}, {}, "Error: Upload > 3 minutes."
-            )
-            return
-        if duration > 90:
-            yield (
-                "⚠️ **Analysis Limit Exceeded**\n\nTo ensure system stability, ALM can only analyze clips under 90 seconds. Your file was uploaded successfully, but please crop it before analyzing.",
-                "⚠️ **Analysis Limit Exceeded**\n\nAudio is too long for deep analysis.",
-                "⚠️ **Analysis Limit Exceeded**\n\nPlease crop the audio.",
-                {}, {}, {}, {}, "Error: Analysis > 90 seconds."
+                "⚠️ **Audio Too Long**\n\nALM only supports analyzing audio clips up to 2 minutes (120 seconds). Please trim your audio in the player and submit again.",
+                "⚠️ **Audio Too Long**\n\nPlease trim the audio to under 2 minutes.",
+                "⚠️ **Audio Too Long**\n\nMaximum duration is 120 seconds.",
+                {}, {}, {}, {}, "Error: Upload > 120 seconds."
             )
             return
     except Exception as e:
@@ -163,8 +167,12 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue="blue", secondary_hue="indigo"))
     with gr.Row():
         with gr.Column(scale=1):
             gr.Markdown("### 🎙️ Audio Input")
-            audio_input = gr.Audio(type="filepath", label="Upload or Record Audio")
-            submit_btn = gr.Button("🚀 Analyze Audio Scene", variant="primary")
+            gr.Markdown("**Note:** Use the upload button below if your filename contains spaces or hashtags (`#`).")
+            upload_btn = gr.UploadButton("📁 1. Upload Audio File", file_types=["audio"], variant="secondary")
+            audio_input = gr.Audio(sources=["microphone"], type="filepath", label="2. Review & Trim Audio", interactive=True)
+            submit_btn = gr.Button("🚀 3. Analyze Audio Scene", variant="primary")
+            
+            upload_btn.upload(fn=sanitize_upload, inputs=upload_btn, outputs=audio_input)
             
         with gr.Column(scale=2):
             gr.Markdown("### 🧠 Situation Intelligence Renderer")
@@ -208,4 +216,4 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue="blue", secondary_hue="indigo"))
 
 if __name__ == "__main__":
     print("Launching ALM v12.0 Gradio Interface...")
-    demo.launch(server_name="0.0.0.0", server_port=7860, share=True, allowed_paths=["/tmp", "/content"])
+    demo.launch(server_name="0.0.0.0", server_port=7860, share=True, allowed_paths=["/", "/tmp", "/content"])
