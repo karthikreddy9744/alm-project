@@ -4,7 +4,7 @@ School of Engineering
 
 _Venkatapur (V), Ghatkesar (M), Medchal Dist - 500088, Telangana_
 
-**MINI PROJECT DOCUMENTATION - VERSION 10.4**
+**MINI PROJECT DOCUMENTATION - VERSION 12.2**
 
 Mini Project (2 Credits) | IV Year B.Tech I Semester | Academic Year: 2025 - 2026
 
