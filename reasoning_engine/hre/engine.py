@@ -37,7 +37,7 @@ class HypothesisReasoningEngine:
             # Formulate Primary Hypothesis
             primary = self._build_hypothesis_from_semantic(
                 situation=semantic_json.primary_situation,
-                semantic_confidence=semantic_json.confidence,
+                semantic_confidence=semantic_json.interpretation_confidence,
                 semantic_json=semantic_json,
                 streams=streams,
                 temporal_history=temporal_history,
@@ -46,17 +46,18 @@ class HypothesisReasoningEngine:
             generated.append(primary)
             
             # Formulate Alternatives
-            if hasattr(semantic_json, 'alternative_interpretation') and semantic_json.alternative_interpretation and semantic_json.alternative_interpretation.lower() not in ["none", "unknown"]:
-                alt_situation = semantic_json.alternative_interpretation
-                alt = self._build_hypothesis_from_semantic(
-                    situation=alt_situation,
-                    semantic_confidence=max(0.1, semantic_json.confidence - 0.3),
-                    semantic_json=semantic_json,
-                    streams=streams,
-                    temporal_history=temporal_history,
-                    is_primary=False
-                )
-                generated.append(alt)
+            if hasattr(semantic_json, 'alternative_hypotheses') and semantic_json.alternative_hypotheses:
+                for alt_situation in semantic_json.alternative_hypotheses:
+                    if alt_situation.lower() not in ["none", "unknown"]:
+                        alt = self._build_hypothesis_from_semantic(
+                            situation=alt_situation,
+                            semantic_confidence=max(0.1, semantic_json.interpretation_confidence - 0.3),
+                            semantic_json=semantic_json,
+                            streams=streams,
+                            temporal_history=temporal_history,
+                            is_primary=False
+                        )
+                        generated.append(alt)
         if not generated:
             # Fallback when Semantic Engine completely fails or suggests Unknown
             fallback = ManagedHypothesisState(
@@ -105,22 +106,24 @@ class HypothesisReasoningEngine:
         unknowns = []
         
         if is_primary:
-            if hasattr(semantic_json, 'observed_evidence'):
-                supporting.append(str(semantic_json.observed_evidence))
-            if hasattr(semantic_json, 'supporting_evidence') and semantic_json.supporting_evidence:
-                supporting.append(str(semantic_json.supporting_evidence))
+            # Pull evidence from auditory_observations and cross_modal_assessment
+            for obs in semantic_json.auditory_observations:
+                if obs.relationship_to_hypothesis.value in ["PrimarySupport", "SecondarySupport"]:
+                    supporting.append(f"{obs.sound} ({obs.detector})")
+                elif obs.relationship_to_hypothesis.value == "Contradictory":
+                    contradicting.append(f"{obs.sound} ({obs.detector})")
+                    
+            if semantic_json.cross_modal_assessment.overall_assessment:
+                supporting.append(semantic_json.cross_modal_assessment.overall_assessment)
                 
             if isinstance(semantic_json.missing_evidence, list):
                 missing.extend(semantic_json.missing_evidence)
             else:
                 missing.append(str(semantic_json.missing_evidence))
-                
-            if hasattr(semantic_json, 'contradicting_evidence') and semantic_json.contradicting_evidence and str(semantic_json.contradicting_evidence).lower() != "none":
-                contradicting.append(str(semantic_json.contradicting_evidence))
         else:
             # For alternatives, the LLM usually gives reasons in the fields
             # We treat them loosely as alternative views.
-            supporting.append(f"Semantic suggestion: {situation}")
+            supporting.append(f"Semantic alternative suggestion: {situation}")
             
         # 2. Acoustic Evidence Score
         # Does the raw audio actually contain strong foreground signals?
@@ -167,11 +170,16 @@ class HypothesisReasoningEngine:
             f"Composite Score: {composite:.2f}"
         ]
 
+        # Handle Interaction Type gracefully
+        interaction_type = "Unknown"
+        if semantic_json.speech_understanding and semantic_json.speech_understanding.speaker_intent:
+            interaction_type = semantic_json.speech_understanding.speaker_intent
+
         return ManagedHypothesisState(
             id=str(uuid.uuid4()),
             situation=situation,
-            interaction_type=getattr(semantic_json, 'interaction_type', 'Unknown'),
-            likely_environment=semantic_json.likely_environment,
+            interaction_type=interaction_type,
+            likely_environment=getattr(semantic_json, 'environmental_context', 'Unknown'),
             active_concepts=semantic_json.actors + semantic_json.human_goals,
             supporting_evidence=supporting,
             contradicting_evidence=contradicting,

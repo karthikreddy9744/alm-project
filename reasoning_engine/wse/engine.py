@@ -80,7 +80,7 @@ class WorldStateEngine:
             confidence=decomp_conf,
             overall_stability=top_hyp.temporal_consistency_score,
             uncertainty=top_hyp.uncertainty,
-            projection_hint=getattr(semantic_json, 'projection', "None") if semantic_json else "None",
+            projection_hint=getattr(semantic_json, 'likely_next_state', "None") if semantic_json else "None",
             projection="PENDING",
             risk="Unknown",
             urgency="Unknown",
