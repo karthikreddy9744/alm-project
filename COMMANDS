@@ -32,5 +32,5 @@ python scripts/validation_suite.py
 ## 6. Cleanup Model Cache
 Free up storage by clearing huggingface cache (Note: Model will need to re-download next run).
 ```bash
-rm -rf ~/.cache/huggingface/hub/models--Qwen--Qwen2.5-3B-Instruct
+rm -rf ~/.cache/huggingface/hub/models--Qwen--Qwen3-4B-Instruct-2507
 ```

@@ -316,6 +316,16 @@ class SituationIntelligenceRenderer:
             env_lines.append(f"- **Overall Assessment:** {cma.overall_assessment}")
             env_lines.append(f"- **Remaining Uncertainty:** {cma.remaining_uncertainty}")
 
+        if source_semantic and hasattr(source_semantic, 'audio_provenance_reasoning') and source_semantic.audio_provenance_reasoning:
+            prov = source_semantic.audio_provenance_reasoning
+            env_lines.append("\n### Audio Provenance Reasoning")
+            env_lines.append(f"- **Source Type:** {prov.source_type.value}")
+            env_lines.append(f"- **Representation Type:** {prov.representation_type.value}")
+            env_lines.append(f"- **Reliability:** {prov.provenance_reliability.value}")
+            env_lines.append(f"- **Confidence:** {prov.confidence:.2f}")
+            env_lines.append(f"- **Supporting Evidence:** {', '.join(prov.supporting_evidence) if prov.supporting_evidence else 'None'}")
+            env_lines.append(f"- **Remaining Uncertainty:** {prov.remaining_uncertainty}")
+
         environmental_understanding = "\n".join(env_lines)
 
         # ---------------------------------------------------------

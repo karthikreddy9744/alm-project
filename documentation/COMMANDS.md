@@ -25,7 +25,7 @@ python main.py
 ### Purpose
 Runs the unified ALM validation pipeline (Whisper -> Fusion -> Qwen -> HRE -> WSE -> SPE -> TRE -> SIR) directly in the terminal over a default test sample.
 ### Expected Behaviour
-- Loads Whisper Large-v3, CLAP, HTS-AT, and Qwen2.5-3B.
+- Loads Whisper Large-v3, CLAP, HTS-AT, and Qwen3-4B-Instruct-2507.
 - Prints a structured dictionary directly to the terminal encompassing the `speech`, `environment`, and `situation` outputs.
 ### Developer Notes
 Useful for verifying that the complete architecture executes without crashing before loading the UI.
@@ -80,7 +80,7 @@ Essential for ablation studies or reproducing research evaluation metrics across
 ## 6. Cleanup Model Cache
 ### Command
 ```bash
-rm -rf ~/.cache/huggingface/hub/models--Qwen--Qwen2.5-3B-Instruct
+rm -rf ~/.cache/huggingface/hub/models--Qwen--Qwen3-4B-Instruct-2507
 ```
 ### Purpose
 Frees up disk space if you no longer intend to run ALM locally.

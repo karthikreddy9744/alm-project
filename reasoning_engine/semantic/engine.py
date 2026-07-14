@@ -137,7 +137,8 @@ class SemanticInterpretationEngine:
     def _fallback_interpretation(self) -> SemanticSceneObject:
         from reasoning_engine.semantic.models import (
             SpeechUnderstanding, AuditoryObservation, CrossModalAssessment,
-            AgreementLevel, VerificationStatus, DominantModality
+            AgreementLevel, VerificationStatus, DominantModality,
+            AudioProvenanceReasoning, SourceType, RepresentationType, ProvenanceReliability
         )
         return SemanticSceneObject(
             speech_understanding=SpeechUnderstanding(
@@ -148,6 +149,14 @@ class SemanticInterpretationEngine:
                 confidence=0.0
             ),
             auditory_observations=[],
+            audio_provenance_reasoning=AudioProvenanceReasoning(
+                source_type=SourceType.UNKNOWN,
+                representation_type=RepresentationType.UNKNOWN,
+                confidence=0.0,
+                provenance_reliability=ProvenanceReliability.LOW,
+                supporting_evidence=[],
+                remaining_uncertainty="JSON parsing failed."
+            ),
             cross_modal_assessment=CrossModalAssessment(
                 agreement_level=AgreementLevel.LOW,
                 verification_status=VerificationStatus.INCONCLUSIVE,

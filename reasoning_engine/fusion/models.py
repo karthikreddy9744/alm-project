@@ -1,6 +1,14 @@
 from pydantic import BaseModel
 from typing import List, Optional, Tuple, Dict, Any
 
+class RecordingCharacterization(BaseModel):
+    reverberation_profile: Optional[str] = None
+    compression_level: Optional[str] = None
+    post_processing_artifacts: Optional[bool] = None
+    dynamic_range: Optional[str] = None
+    noise_profile: Optional[str] = None
+    recording_quality: Optional[str] = None
+
 class SpeechInfo(BaseModel):
     transcript: str
     language: str
@@ -31,5 +39,6 @@ class AudioEvidenceObject(BaseModel):
     ignored_events: List[str]
     clap_concepts: List[str]
     clap_confidence: float
+    recording_characterization: Optional[RecordingCharacterization] = None
     metadata: Optional[Dict[str, Any]] = None
     processing_information: Optional[Dict[str, Any]] = None

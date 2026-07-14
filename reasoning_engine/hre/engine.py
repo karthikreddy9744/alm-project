@@ -109,9 +109,9 @@ class HypothesisReasoningEngine:
             # Pull evidence from auditory_observations and cross_modal_assessment
             for obs in semantic_json.auditory_observations:
                 if obs.relationship_to_hypothesis.value in ["PrimarySupport", "SecondarySupport"]:
-                    supporting.append(f"{obs.sound} ({obs.detector})")
+                    supporting.append(f"{obs.sound} ({obs.evidence_source})")
                 elif obs.relationship_to_hypothesis.value == "Contradictory":
-                    contradicting.append(f"{obs.sound} ({obs.detector})")
+                    contradicting.append(f"{obs.sound} ({obs.evidence_source})")
                     
             if semantic_json.cross_modal_assessment.overall_assessment:
                 supporting.append(semantic_json.cross_modal_assessment.overall_assessment)

@@ -34,6 +34,41 @@ class DominantModality(str, Enum):
     ENVIRONMENT = "Environment"
     BALANCED = "Balanced"
 
+class SourceType(str, Enum):
+    REAL_WORLD = "RealWorld"
+    BROADCAST = "Broadcast"
+    MEDIA_PRODUCTION = "MediaProduction"
+    PODCAST = "Podcast"
+    USER_RECORDING = "UserRecording"
+    SURVEILLANCE = "Surveillance"
+    SYNTHETIC = "Synthetic"
+    UNKNOWN = "Unknown"
+
+class RepresentationType(str, Enum):
+    LITERAL = "Literal"
+    REENACTMENT = "Reenactment"
+    FICTION = "Fiction"
+    REPORTING = "Reporting"
+    EDUCATIONAL = "Educational"
+    ENTERTAINMENT = "Entertainment"
+    DOCUMENTARY = "Documentary"
+    PERFORMANCE = "Performance"
+    UNKNOWN = "Unknown"
+
+class ProvenanceReliability(str, Enum):
+    HIGH = "High"
+    MODERATE = "Moderate"
+    LOW = "Low"
+    UNKNOWN = "Unknown"
+
+class AudioProvenanceReasoning(BaseModel):
+    source_type: SourceType
+    representation_type: RepresentationType
+    confidence: float = Field(description="Confidence propagated from perception uncertainty.")
+    provenance_reliability: ProvenanceReliability
+    supporting_evidence: List[str] = Field(description="Evidence supporting this provenance.")
+    remaining_uncertainty: str = Field(description="What is still unknown about the source?")
+
 class SpeechUnderstanding(BaseModel):
     summary: str = Field(description="Brief summary of what was spoken.")
     topic: str = Field(description="The semantic topic.")
@@ -44,7 +79,7 @@ class SpeechUnderstanding(BaseModel):
 class AuditoryObservation(BaseModel):
     id: str = Field(description="Unique ID for this observation (e.g., obs_01).")
     sound: str = Field(description="The detected sound event.")
-    detector: str = Field(description="Source model (e.g., HTS-AT, CLAP).")
+    evidence_source: str = Field(description="Source model (e.g., HTS-AT, CLAP).")
     start_time: float = Field(description="Start time in seconds.")
     end_time: float = Field(description="End time in seconds.")
     detection_confidence: float = Field(description="Original confidence from the perception model.")
@@ -65,6 +100,7 @@ class CrossModalAssessment(BaseModel):
 class SemanticSceneObject(BaseModel):
     speech_understanding: SpeechUnderstanding
     auditory_observations: List[AuditoryObservation]
+    audio_provenance_reasoning: AudioProvenanceReasoning
     cross_modal_assessment: CrossModalAssessment
     primary_situation: str = Field(description="Extremely concise title (max 7 words).")
     environmental_context: str = Field(description="The synthesized physical environment.")
