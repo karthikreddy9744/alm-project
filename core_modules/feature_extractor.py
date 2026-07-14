@@ -11,7 +11,7 @@ from core_modules.audio_utils import SileroVADWrapper
 class WhisperFeatureExtractor:
     def __init__(self, model_size='base'):
         model_name = f'openai/whisper-{model_size}'
-        from transformers import WhisperForConditionalGeneration
+        from transformers import WhisperForConditionalGeneration, WhisperProcessor
         self.processor = WhisperProcessor.from_pretrained(model_name)
         self.model = WhisperForConditionalGeneration.from_pretrained(model_name)
         self.model.eval()
@@ -22,29 +22,19 @@ class WhisperFeatureExtractor:
         
         if torch.backends.mps.is_available():
             self.device = torch.device('mps')
+            device_str = "auto"
         else:
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            device_str = "cuda" if torch.cuda.is_available() else "cpu"
             
         self.model.to(self.device)
         
-        # Initialize transcription pipeline once using the SAME model instance to save memory
-        from transformers import pipeline
-        self.transcriber = pipeline(
-            'automatic-speech-recognition',
-            model=self.model,
-            tokenizer=self.processor.tokenizer,
-            feature_extractor=self.processor.feature_extractor,
-            chunk_length_s=30,
-            device=self.device,
-            generate_kwargs={
-                "task": "translate",
-                "condition_on_prev_tokens": False,
-                "repetition_penalty": 1.5,
-                "no_repeat_ngram_size": 3,
-                "temperature": 0.0,
-                "no_speech_threshold": 0.55,
-                "logprob_threshold": -1.0
-            }
+        # Initialize Dual-Whisper Transcription Engine (Faster-Whisper Large-v3-Turbo)
+        from faster_whisper import WhisperModel as FasterWhisperModel
+        self.transcriber = FasterWhisperModel(
+            "large-v3-turbo", 
+            device=device_str, 
+            compute_type="int8"
         )
         
         # Initialize Silero VAD
@@ -57,7 +47,7 @@ class WhisperFeatureExtractor:
         
         transcript_parts = []
         detected_languages = []
-        # 2. VAD-Guided Transcription with Repetition Suppression
+        # 2. VAD-Guided Transcription with Faster-Whisper
         if extract_text and len(timestamps) > 0:
             for t in timestamps:
                 start_sample = t['start']
@@ -65,10 +55,15 @@ class WhisperFeatureExtractor:
                 
                 if (end_sample - start_sample) / sr > 0.2:
                     speech_chunk = audio[start_sample:end_sample]
-                    out = self.transcriber(speech_chunk, return_language=True)
-                    text = out['text'].strip()
-                    if 'chunks' in out and len(out['chunks']) > 0 and 'language' in out['chunks'][0]:
-                        detected_languages.append(out['chunks'][0]['language'])
+                    segments, info = self.transcriber.transcribe(
+                        speech_chunk,
+                        beam_size=5,
+                        condition_on_previous_text=False
+                    )
+                    
+                    text = " ".join([s.text.strip() for s in segments]).strip()
+                    if info.language:
+                        detected_languages.append(info.language)
                     
                     # 3. Hallucination Post-Filtering
                     if text:
@@ -76,7 +71,7 @@ class WhisperFeatureExtractor:
                         if len(words) > 0:
                             unique_words = set(words)
                             rep_ratio = len(unique_words) / len(words)
-                            # Suppress pathological loops (like "AHHHH AHHHH")
+                            # Suppress pathological loops
                             if rep_ratio > 0.3 or len(words) < 5:
                                 # Truncate absurdly long continuous spam
                                 if len(text) > 200 and rep_ratio < 0.5:
@@ -85,12 +80,12 @@ class WhisperFeatureExtractor:
         
         transcript = " ".join(transcript_parts) if extract_text else ""
         
-        # 4. Extract Acoustic Embeddings
+        # 4. Extract Acoustic Embeddings using Transformers (Preserves FusionLayer 512-dim compatibility)
         embedding = None
         if extract_emb:
             inputs = self.processor(audio, sampling_rate=sr, return_tensors="pt")
             input_features = inputs.input_features.to(self.device)
-            encoder_output = self.transcriber.model.model.encoder(input_features)
+            encoder_output = self.model.model.encoder(input_features)
             encoder_last_hidden = encoder_output.last_hidden_state
             embedding = encoder_last_hidden.mean(dim=1).squeeze(0).cpu() # [512]
         
@@ -111,7 +106,7 @@ class WhisperFeatureExtractor:
                 padded_audio.append(a[:480000])
         inputs = self.processor(padded_audio, sampling_rate=sr, return_tensors="pt")
         input_features = inputs.input_features.to(self.device)
-        encoder_output = self.transcriber.model.model.encoder(input_features)
+        encoder_output = self.model.model.encoder(input_features)
         embeddings = encoder_output.last_hidden_state.mean(dim=1).cpu() # [batch, 512]
         return embeddings
 class CLAPFeatureExtractor:

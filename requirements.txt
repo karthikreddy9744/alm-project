@@ -5,6 +5,7 @@ torchaudio>=2.1.0
 transformers>=4.51.0
 bitsandbytes>=0.46.1
 accelerate>=0.26.0
+faster-whisper>=1.0.0
 
 # Numerical & Data manipulation
 numpy>=1.26.0

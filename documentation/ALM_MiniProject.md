@@ -40,7 +40,7 @@ ALM utilizes an 8-step Cognitive Pipeline that flows from raw audio arrays to co
 
 ## 9. Neural Perception Layer
 The foundation of ALM's pipeline. It provides objective observations without attempting to interpret them contextually.
-- **Whisper**: Provides Automatic Speech Recognition (ASR).
+- **Dual-Whisper Architecture**: Uses `faster-whisper` (Large-v3 Turbo) for high-accuracy multilingual Automatic Speech Recognition (ASR), and `whisper-base` strictly to extract 512-dim acoustic embeddings for the Fusion Layer.
 - **HTS-AT**: Provides high-temporal-resolution event detection.
 - **CLAP**: Provides zero-shot semantic mapping and environmental context.
 - **Recording Characterization**: Analyzes acoustic features (reverb, clipping, background music) and explicitly maps them in the perception layer to inform downstream provenance reasoning.
@@ -162,7 +162,8 @@ The current codebase reflects ALM Version 12, featuring a clean separation betwe
 All system thresholds, file paths, and model parameters are managed centrally in `reasoning_engine/config.py`.
 
 ## 33. Models Used
-- **ASR**: OpenAI Whisper Base
+- **ASR (Speech-to-Text)**: Whisper Large-v3 Turbo (INT8 Quantized via faster-whisper)
+- **Acoustic Embeddings**: OpenAI Whisper Base (Headless Encoder, 512-dim)
 - **Zero-Shot Audio**: LAION CLAP (HTS-AT Fused)
 - **Event Detection**: HTS-AT
 - **Semantic Engine**: Qwen/Qwen3-4B-Instruct-2507 (4-bit quantized)
