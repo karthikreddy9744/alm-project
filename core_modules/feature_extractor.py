@@ -1,5 +1,8 @@
 import torch
 import numpy as np
+import logging
+
+logger = logging.getLogger(__name__)
 from transformers import (
     WhisperProcessor,
     WhisperModel,
@@ -31,11 +34,13 @@ class WhisperFeatureExtractor:
         
         # Initialize Dual-Whisper Transcription Engine (Faster-Whisper Large-v3-Turbo)
         from faster_whisper import WhisperModel as FasterWhisperModel
+        compute_precision = "int8_float16"
         self.transcriber = FasterWhisperModel(
-            "large-v3-turbo", 
+            "large-v3", 
             device=device_str, 
-            compute_type="int8"
+            compute_type=compute_precision
         )
+        logger.info(f"Faster-Whisper initialized with model='large-v3', device='{device_str}', compute_type='{compute_precision}'")
         
         # Initialize Silero VAD
         self.vad = SileroVADWrapper(threshold=0.3)
