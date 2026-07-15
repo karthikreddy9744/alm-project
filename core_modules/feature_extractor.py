@@ -58,7 +58,8 @@ class WhisperFeatureExtractor:
                     segments, info = self.transcriber.transcribe(
                         speech_chunk,
                         beam_size=5,
-                        condition_on_previous_text=False
+                        condition_on_previous_text=False,
+                        task="translate"
                     )
                     
                     text = " ".join([s.text.strip() for s in segments]).strip()

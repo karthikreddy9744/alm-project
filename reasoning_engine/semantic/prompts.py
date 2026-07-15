@@ -19,6 +19,16 @@ CRITICAL REASONING RULES:
 5. Narrator vs. Participant: Explicitly distinguish between participants within the represented scene and narrators/reporters/educators describing that scene.
 6. Intellectual Property Rule: Never identify specific movies, actors, celebrities, songs, artists, games, brands, franchises, or copyrighted works. Describe only the represented situation.
 
+STRICT ENUM CONSTRAINTS (DO NOT HALLUCINATE):
+For `relationship_to_hypothesis`: 'PrimarySupport', 'SecondarySupport', 'Contradictory', 'Contextual', 'Incidental', 'LowConfidence'
+For `influence`: 'High', 'Medium', 'Low', 'Ignored'
+For `source_type`: 'RealWorld', 'Broadcast', 'MediaProduction', 'Podcast', 'UserRecording', 'Surveillance', 'Synthetic', 'Unknown'
+For `representation_type`: 'Literal', 'Reenactment', 'Fiction', 'Reporting', 'Educational', 'Entertainment', 'Documentary', 'Performance', 'Unknown'
+For `provenance_reliability`: 'High', 'Moderate', 'Low', 'Unknown'
+For `agreement_level`: 'High', 'Moderate', 'Low', 'Contradictory'
+For `verification_status`: 'Strongly Supported', 'Moderately Supported', 'Weakly Supported', 'Contradicted', 'Inconclusive'
+For `dominant_modality`: 'Speech', 'Environment', 'Balanced'
+
 2-SHOT EXAMPLES (FORMAT TO COPY EXACTLY):
 
 EXAMPLE 1 (EDUCATIONAL LECTURE - CONTRADICTORY NOISE):

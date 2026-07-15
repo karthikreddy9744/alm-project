@@ -119,16 +119,46 @@ class SemanticInterpretationEngine:
                     if key in data and isinstance(data[key], str):
                         data[key] = [data[key]]
                         
+                # Aggressive Salvage: Scrub hallucinated Enums
+                for error in ve.errors():
+                    if error.get("type") == "enum" or "Input should be" in error.get("msg", ""):
+                        loc = error.get("loc", [])
+                        
+                        field_name = loc[-1] if loc else ""
+                        fallback = "Unknown"
+                        if field_name == "dominant_modality":
+                            fallback = "Balanced"
+                        elif field_name == "agreement_level":
+                            fallback = "Low"
+                        elif field_name == "verification_status":
+                            fallback = "Inconclusive"
+                        elif field_name == "relationship_to_hypothesis":
+                            fallback = "LowConfidence"
+                        elif field_name == "influence":
+                            fallback = "Ignored"
+
+                        curr = data
+                        for i, key in enumerate(loc):
+                            if i == len(loc) - 1:
+                                if isinstance(curr, dict) and key in curr:
+                                    logger.warning(f"Scrubbing invalid enum at {loc} (was '{curr[key]}'). Forcing '{fallback}'.")
+                                    curr[key] = fallback
+                                elif isinstance(curr, list) and isinstance(key, int) and key < len(curr):
+                                    logger.warning(f"Scrubbing invalid enum in list at {loc}. Forcing '{fallback}'.")
+                                    curr[key] = fallback
+                            elif isinstance(curr, dict) and key in curr:
+                                curr = curr[key]
+                            elif isinstance(curr, list) and isinstance(key, int) and key < len(curr):
+                                curr = curr[key]
+                            else:
+                                break
+                                
                 # Try strict parse again
                 try:
                     return SemanticSceneObject(**data)
-                except ValidationError:
-                    # If it STILL fails, manually inject whatever fields successfully parsed into the fallback object
-                    default_obj = self._fallback_interpretation()
-                    for k, v in data.items():
-                        if hasattr(default_obj, k):
-                            setattr(default_obj, k, v)
-                    return default_obj
+                except ValidationError as e:
+                    logger.warning(f"Second pass Pydantic validation failed: {e}. Returning safe fallback.")
+                    return self._fallback_interpretation()
                     
         except Exception as e:
             logger.error(f"Failed to parse LLM JSON: {e}\nRaw output: {response_text}")

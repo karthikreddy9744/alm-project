@@ -278,7 +278,7 @@ class SituationIntelligenceRenderer:
             env_lines.append("### Auditory Observations")
             for obs in source_semantic.auditory_observations:
                 used = " (Used in Final Reasoning)" if obs.used_in_final_reasoning else ""
-                env_lines.append(f"- **{obs.sound}** [{obs.id}]: Detected by {obs.detector} ({obs.start_time}-{obs.end_time}s) | Influence: {obs.influence.value}{used}")
+                env_lines.append(f"- **{obs.sound}** [{obs.id}]: Detected by {obs.evidence_source} ({obs.start_time}-{obs.end_time}s) | Influence: {obs.influence.value}{used}")
                 env_lines.append(f"  - *Relationship:* {obs.relationship_to_hypothesis.value}")
                 env_lines.append(f"  - *Justification:* {obs.justification}")
         else:
