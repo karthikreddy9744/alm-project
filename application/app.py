@@ -31,7 +31,7 @@ def sanitize_upload(file_path):
 def run_alm_pipeline(audio_filepath: str):
     """
     Executes the ALM v12.0 deterministic pipeline:
-    Audio -> Whisper/CLAP/HTS-AT -> Fusion -> Semantic -> HRE -> WSE -> SPE -> TRE -> SIR
+    Audio -> Whisper/CLAP -> Fusion -> Semantic -> HRE -> WSE -> SPE -> TRE -> SIR
     """
     if not audio_filepath or not os.path.exists(audio_filepath):
         yield ("Error: No audio provided.", "", "", {}, {}, {}, {}, "Error")
@@ -53,7 +53,7 @@ def run_alm_pipeline(audio_filepath: str):
     # Yield initial loading state for better UX
     yield (
         "⏳ **Processing Speech...**\n\nRunning Neural Perception (Whisper)...",
-        "⏳ **Analyzing Environment...**\n\nExtracting acoustic features (CLAP/HTS-AT)...",
+        "⏳ **Analyzing Environment...**\n\nExtracting acoustic features (CLAP)...",
         "⏳ **Fusing Intelligence...**\n\nRunning Semantic Engine & Reasoning...",
         {"status": "processing..."},
         {"status": "processing..."},

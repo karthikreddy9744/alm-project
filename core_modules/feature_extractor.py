@@ -34,7 +34,7 @@ class WhisperFeatureExtractor:
         
         # Initialize Dual-Whisper Transcription Engine (Faster-Whisper Large-v3-Turbo)
         from faster_whisper import WhisperModel as FasterWhisperModel
-        compute_precision = "int8_float16"
+        compute_precision = "int8_float16" if device_str == "cuda" else "default"
         self.transcriber = FasterWhisperModel(
             "large-v3", 
             device=device_str, 

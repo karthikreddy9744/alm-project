@@ -97,31 +97,36 @@ alm-project/
 All zero-shot folders (`core_modules`, `reasoning_engine`, `evaluation`) are active and frozen. All end-to-end deep learning scripts are deprecated and sequestered to `archive/`.
 
 
-## Project History
+## Project Evolution and Architectural Journey
 
-# 02: Project History
+# 02: Project Evolution and Architectural Journey
 
-## ALM v1 - v4 (End-to-End CNNs)
-- **Main Idea:** Custom PyTorch CNNs trained locally on the ESC-50 dataset.
-- **Why it changed:** Catastrophically brittle.
-- **Lessons Learned:** Local, narrow datasets are too small for real-world generalization; deep learning audio classifiers act as black boxes.
-- **Reason for Moving On:** Hit the "Explainability Wall".
+The ALM (Auditory Language Model) project began with a straightforward objective: to bridge the gap between acoustic event detection and semantic understanding. Early machine listening systems could classify sounds (e.g., "dog bark") but lacked the contextual reasoning necessary for complex auditory scene analysis. The evolution of ALM represents a continuous struggle against three fundamental scientific barriers: the Explainability Wall, the Hallucination Wall, and the Compute Wall.
 
-## ALM v5 - v8 (Audio-LLM Hybrids)
-- **Main Idea:** Projecting audio embeddings (CLAP) directly into an LLM's token space.
-- **Why it changed:** Severe, uncontrollable hallucinations. 
-- **Lessons Learned:** LLMs conflate audio features with visual data from their training distribution (e.g., guessing a speaker's shirt color from their voice).
-- **Reason for Moving On:** Hit the "Hallucination Wall".
+### The Explainability Wall and the Limits of End-to-End Classification
+The earliest iteration of the project was structured around conventional, custom-trained PyTorch Convolutional Neural Networks (CNNs) trained on the ESC-50 dataset. While these models achieved acceptable accuracy in isolated environments, they proved catastrophically brittle when exposed to real-world acoustic overlaps. 
+The primary research insight from this phase was that deep learning audio classifiers act as opaque black boxes. When the CNN failed, there was no logical trace to explain *why* it failed. It became evident that local, narrow datasets were insufficient for generalizing to unconstrained auditory environments, prompting a complete abandonment of pure end-to-end classification in favor of models with broader linguistic capacity.
 
-## ALM v9 - v11 (Hybrid Neuro-Symbolic)
-- **Main Idea:** Fusion of Whisper ASR with a custom-trained local `scene_model.pt`.
-- **Why it changed:** The local scene model became a massive computational and linguistic bottleneck.
-- **Lessons Learned:** Custom training cannot compete with massive foundation models for semantic intelligence.
-- **Reason for Moving On:** Hit the "Compute Wall".
+### The Hallucination Wall and the Danger of Audio-LLM Projection
+To achieve true semantic understanding, the project shifted toward Audio-LLM Hybrids. Inspired by architectures like SLAM-LLM, ALM attempted to project acoustic embeddings (via CLAP) directly into the token space of a Large Language Model. 
+While this granted the system extraordinary descriptive capabilities, it introduced severe, uncontrollable hallucinations. Experiments revealed that LLMs would conflate acoustic features with visual data from their training distribution—for instance, confidently describing the color of a speaker's shirt based purely on their voice. The research demonstrated that directly feeding unconstrained acoustic vectors into autoregressive LLMs inherently compromises the factual integrity of the output, making the architecture unsafe for high-stakes intelligence reporting.
 
-## ALM v12 (Zero-Shot Structured Reasoning - FINAL)
-- **Main Idea:** Total deprecation of custom models. 100% reliance on a Hybrid Deterministic pipeline (Whisper + CLAP -> Semantic Qwen3 -> Deterministic Python Heuristics) strictly governed by the `AudioEvidenceObject`.
-- **Why it became final:** Architecturally sound, highly explainable, entirely zero-shot, drastically lowers latency, and resolves all hallucination issues by replacing downstream LLM reasoning with reproducible mathematical heuristics.
+### The Compute Wall and the Deprecation of Custom Networks
+Attempting to reign in the LLM hallucinations, the architecture transitioned to a Hybrid Neuro-Symbolic approach. The pipeline fused Whisper ASR with a custom-trained local `scene_network`. While this structured the inputs, maintaining and training the custom scene model became a massive computational bottleneck. The custom model could not compete with the zero-shot generalization capabilities of massive foundation models. This forced a critical architectural pivot: custom neural weight training was entirely deprecated. ALM realized that foundation models (Whisper, CLAP) should be leveraged exclusively as zero-shot perceptual organs.
+
+### The Final Transition: Zero-Shot Deterministic Schemas
+The culmination of this research journey is the ALM v12 architecture, a Zero-Shot Hybrid Deterministic pipeline. The defining scientific breakthrough was the introduction of the `AudioEvidenceObject`—a strict, immutable Pydantic schema that acts as a firewall between perception and reasoning. 
+By forcing the Semantic Interpretation Engine (Qwen3) to operate strictly over verified acoustic text, rather than raw embeddings, semantic hallucinations were eradicated. Furthermore, the project recognized that downstream reasoning tasks (Hypothesis Generation, Cross-Modal Verification, Situation Projection) do not require probabilistic language generation. Consequently, the HRE, WSE, TRE, SPE, and SIR were rebuilt as entirely deterministic Python heuristics. 
+This architectural segregation ensures that the LLM is only responsible for unstructured semantic interpretation, while all subsequent logic is explicitly auditable, mathematically reproducible, and executed with near-zero latency.
+
+### Evolution of Methodology and Repository
+As the architecture matured, so did the repository and evaluation methodology. The project migrated from training loss metrics on ESC-50 to procedural benchmarking over `hoasu_bench.json`. The codebase was systematically purged of training loops, optimizers, and legacy `.pt` artifacts, reorganizing into a strict pipeline that clearly delineates `core_modules/` (Perception) from `reasoning_engine/` (Cognition). This final state is scientifically sound, reproducible, and stands as a foundational architecture for Human-Oriented Auditory Situation Understanding (HOASU).
+
+## Concise Version History Summary
+- **ALM v1–v4:** End-to-end PyTorch CNNs trained on narrow datasets (ESC-50). Abandoned due to black-box brittleness and inability to generalize.
+- **ALM v5–v8:** Audio-LLM Hybrids projecting CLAP embeddings into LLM token spaces. Abandoned due to severe, uncontrollable visual/contextual hallucinations.
+- **ALM v9–v11:** Hybrid PyTorch models fusing Whisper with custom scene networks. Abandoned due to compute bottlenecks and inability to match foundation model scale.
+- **ALM v12:** The final Zero-Shot Hybrid Deterministic pipeline. Relies entirely on foundation models for perception and strict Python heuristics for reasoning.
 
 
 ## Project Philosophy
@@ -186,7 +191,7 @@ Existing foundation models (Whisper, CLAP) handle perception flawlessly, but lac
 ALM positions itself at the intersection of **Machine Listening** and **Explainable AI (XAI)**. It is not competing to be the fastest acoustic event detector; it is competing to be the most cognitively robust and transparent auditory reasoning engine. 
 
 ## Current Novelty
-The primary novelty lies in ALM's **Schema-Constrained Provenance Reasoning**. While models like Whisper transcribe speech, and models like HTS-AT tag sounds, ALM is the first architecture to explicitly fuse them, cross-reference them for contradictions (e.g., calm speech overlapping with sirens = Media/Synthetic), and serialize the logic.
+The primary novelty lies in ALM's **Schema-Constrained Provenance Reasoning**. While models like Whisper transcribe speech, and models like CLAP tag environmental sounds, ALM is the first architecture to explicitly fuse them, cross-reference them for contradictions (e.g., calm speech overlapping with sirens = Media/Synthetic), and serialize the logic.
 
 
 ## Repository Analysis
@@ -197,8 +202,8 @@ The primary novelty lies in ALM's **Schema-Constrained Provenance Reasoning**. W
 
 ### `core_modules/`
 - **Purpose:** The physical sensory organs and pipeline orchestration.
-- **Responsibilities:** Extracts literal transcripts and acoustic arrays via Whisper and CLAP/HTS-AT.
-- **Interactions:** Exclusively feeds data UP to the `fusion_layer`, never accepts logic DOWN.
+- **Responsibilities:** Extracts literal transcripts and acoustic arrays via Whisper and CLAP.
+- **Interactions:** Exclusively feeds data UP to `reasoning_engine/fusion/engine.py`, never accepts logic DOWN.
 - **Importance:** High. Any failure in extraction kills the entire pipeline.
 - **Future Maintenance:** Must be updated when new foundation models (like Whisper-v4) release.
 
@@ -281,7 +286,7 @@ ALM v12.0 is a hybrid, deterministic neuro-symbolic pipeline. Raw audio enters t
 1. **Initialization (`main.py`):** The user invokes `main.py` with an audio file path. 
 2. **Orchestration (`inference_pipeline.py`):** The `UnifiedPipelineValidator` is spun up to manage the sequential execution.
 3. **Perception Execution:** The audio is sent to `core_modules/feature_extractor.py`. Whisper and CLAP models are loaded onto the GPU (or MPS), inference is performed, and weights are immediately offloaded to prevent VRAM overflow.
-4. **Data Fusion:** The raw features are passed to `fusion_layer.py` which instantiates the `AudioEvidenceObject` via Pydantic. If validation fails, execution halts.
+4. **Data Fusion:** The raw features are passed to `reasoning_engine/fusion/engine.py` which instantiates the `AudioEvidenceObject` via Pydantic. If validation fails, execution halts.
 5. **Logic Sequence:** The logic flows sequentially through the `reasoning_engine` directories (`semantic` -> `hre` -> `wse` -> `spe` -> `tre` -> `sir`).
 6. **Inference & Heuristics:** The `semantic` engine prompts Qwen3-4B-Instruct to extract intents. The subsequent engines (HRE, WSE, SPE, TRE) execute deterministic Python heuristics (scoring, tracking, bounding) over the semantics to eliminate compounding LLM hallucinations and drastically lower latency.
 7. **Final Output:** The `sir` engine uses explicit templates to yield the final HOASU Markdown report back to `main.py` to be printed or saved.
@@ -398,7 +403,7 @@ OpenAI's Whisper (Large-v3) is universally recognized as the most robust zero-sh
 ## Why Qwen?
 Qwen3-4B-Instruct provides the perfect balance of semantic logic capability and VRAM efficiency. Massive 70B models cannot run locally, and smaller 1B models lack the intelligence required for complex Provenance deduction.
 
-## Why CLAP / HTS-AT?
+## Why CLAP?
 Instead of training a custom sound classifier for thousands of arbitrary labels, CLAP provides a zero-shot textual embedding space, allowing the pipeline to match sounds dynamically to semantic descriptions.
 
 ## Why Schemas (Pydantic)?
@@ -481,7 +486,7 @@ alm-project/
 ## 1. `UnifiedPipelineValidator`
 - **Purpose:** The master orchestrator.
 - **Lifecycle:** Instantiated once per audio file.
-- **Relationships:** Composes the `FeatureExtractor`, `FusionLayer`, and the 6 `ReasoningEngines`.
+- **Relationships:** Composes the `FeatureExtractor`, `EvidenceFusionLayer`, and the 6 `ReasoningEngines`.
 - **Methods:**
   - `execute(audio_path: str) -> str`
   - `_run_perception()`
@@ -550,7 +555,7 @@ When running `evaluation_runner.py` over 250 files, a failure on file #12 must N
 4. **Audio Preprocessing:** The `<audio_path>` is resampled to 16kHz for Whisper and CLAP compatibility.
 5. **Perception Execution:** Transcripts and embeddings are extracted.
 6. **VRAM Flush:** Perception models are deleted. `torch.cuda.empty_cache()` is called.
-7. **Fusion:** `fusion_layer.py` attempts to build the `AudioEvidenceObject`. 
+7. **Fusion:** `reasoning_engine/fusion/engine.py` attempts to build the `AudioEvidenceObject`. 
 8. **LLM Init:** `Qwen3-4B-Instruct` is loaded into VRAM.
 9. **Semantic Reasoning:** `sie` receives AEO, outputs probabilistic intent and tone JSON.
 10. **LLM Unload:** `Qwen3-4B-Instruct` is flushed from VRAM to free memory.
@@ -576,7 +581,7 @@ When running `evaluation_runner.py` over 250 files, a failure on file #12 must N
 - **Purpose:** LLMs often wrap JSON in Markdown blocks (e.g., ```json ... ```). This function must reliably strip the Markdown and return a parsed Python dictionary.
 - **Exceptions:** Must catch `json.JSONDecodeError` and trigger the fallback/retry strategy.
 
-## 3. `FusionLayer.fuse(perception_data: dict) -> AudioEvidenceObject`
+## 3. `EvidenceFusionLayer.fuse(...) -> AudioEvidenceObject`
 - **Purpose:** Attempts to construct the Pydantic schema.
 - **Validation:** Will inherently throw a Pydantic `ValidationError` if types do not match (e.g., if Whisper returns an empty array instead of a string).
 
@@ -588,7 +593,7 @@ When running `evaluation_runner.py` over 250 files, a failure on file #12 must N
 
 ## Stage 1: Scaffolding (1 Day)
 - `[ ]` Create `core_modules/` and `reasoning_engine/` structure.
-- `[ ]` Implement `AudioEvidenceObject` using Pydantic in `fusion_layer.py`.
+- `[ ]` Implement `AudioEvidenceObject` using Pydantic in `reasoning_engine/fusion/models.py`.
 - `[ ]` Implement `BaseReasoningEngine` class with `_parse_json()` logic.
 
 ## Stage 2: Perception (2 Days)
@@ -624,7 +629,7 @@ When running `evaluation_runner.py` over 250 files, a failure on file #12 must N
 
 ## 2. Object & Data Flow
 1. **Raw Audio** enters `core_modules/`.
-2. **Raw Extractions** (Text, Embeddings) are passed to the `fusion_layer`.
+2. **Raw Extractions** (Text, Embeddings) are passed to `reasoning_engine/fusion/`.
 3. **AudioEvidenceObject** (Pydantic model) is instantiated and becomes the single source of truth.
 4. **State Appending:** The `AudioEvidenceObject` is passed sequentially to the reasoning pipeline. The `semantic` engine computes probabilistic intent, while the downstream deterministic engines (HRE, WSE, TRE, SPE) construct their respective JSON states using strict mathematical logic. They append to a master dictionary, ensuring the next engine has total chronological context.
 
@@ -644,7 +649,7 @@ When running `evaluation_runner.py` over 250 files, a failure on file #12 must N
 
 | Phase | Goal | Files Involved | Validation Method | Estimated Completion |
 | :--- | :--- | :--- | :--- | :--- |
-| **Phase 1: Architecture Core** | Build the Pydantic schemas and Base classes. | `fusion_layer.py`, `utilities.py` | PyTest schema validation on mock data. | Week 1 |
+| **Phase 1: Architecture Core** | Build the Pydantic schemas and Base classes. | `reasoning_engine/fusion/models.py`, `utilities.py` | PyTest schema validation on mock data. | Week 1 |
 | **Phase 2: Sensory Perception** | Implement Whisper and CLAP. | `feature_extractor.py` | Run on a 5-second `test.wav` and verify transcript string output. | Week 2 |
 | **Phase 3: Cognitive Sequence** | Implement Qwen3 for SIE and explicit Python heuristics for HRE, WSE, TRE, SPE, SIR. | `semantic/`, `hre/`, `tre/`... | Verify zero-shot logic parsing and deterministic state tracking. | Week 3 |
 | **Phase 4: Orchestration** | Connect Perception to Cognition via the Validator. | `inference_pipeline.py`, `main.py` | Run `python main.py test.wav` and survive without crashing. | Week 4 |
@@ -666,14 +671,14 @@ This roadmap serves as the definitive engineering guide. No deviations from the 
 
 ## Core Dependency Rules
 1. **No Circular Imports:** Modules in `reasoning_engine/` may import from `core_modules/`, but `core_modules/` must NEVER import from `reasoning_engine/`.
-2. **Schema Primacy:** All modules depend on `AudioEvidenceObject` defined in `fusion_layer.py`.
+2. **Schema Primacy:** All modules depend on `AudioEvidenceObject` defined in `reasoning_engine/fusion/models.py`.
 
 ## Execution Dependency Graph
 ```mermaid
 graph TD
     A[main.py] --> B(inference_pipeline.py)
     B --> C(feature_extractor.py)
-    C --> D(fusion_layer.py)
+    C --> D(reasoning_engine/fusion/engine.py)
     D --> E(semantic/ engine)
     E --> F(hre/ engine)
     F --> G(tre/ engine)
@@ -701,7 +706,7 @@ graph TD
 
 ## 2. `reasoning_engine/fusion`
 - **Purpose:** Pydantic validation.
-- **Expected Classes:** `AudioEvidenceObject`, `FusionLayer`
+- **Expected Classes:** `AudioEvidenceObject`, `EvidenceFusionLayer`
 - **Expected Exceptions:** `ValidationError` (If Whisper fails to return text).
 
 ## 3. `reasoning_engine/semantic` through `reasoning_engine/sir`
@@ -764,7 +769,7 @@ The remaining 5 engines do NOT use prompts or LLMs. They execute explicitly code
 
 ## `AudioEvidenceObject` (Pydantic Model)
 - **Why it exists:** To prevent LLM hallucinations by forcing the Semantic engine to cite verified acoustic data, and forcing all downstream deterministic engines to operate strictly over verified semantics.
-- **Who creates it:** `fusion_layer.py`
+- **Who creates it:** `reasoning_engine/fusion/engine.py`
 - **Who consumes it:** All 6 modules in `reasoning_engine/`
 
 ### Fields
