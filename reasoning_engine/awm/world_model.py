@@ -6,6 +6,8 @@ from reasoning_engine.awm.models import (
     EntityNode, EventNode, RelationshipEdge, BeliefObject, 
     WorldStateObject, ProjectionObject
 )
+from reasoning_engine.fusion.models import RecordingCharacterization
+
 from reasoning_engine.awm.exceptions import (
     DuplicateIDError, InvalidReferenceError
 )
@@ -30,6 +32,9 @@ class AuditoryWorldModel:
         
         # Semantic Concepts (from CLAP)
         self.clap_concepts: List[str] = []
+        
+        # Neural Perception Characterization
+        self.recording_characterization: Optional[RecordingCharacterization] = None
 
 
     def get_node(self, node_id: str):

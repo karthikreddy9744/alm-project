@@ -1,0 +1,10 @@
+{
+    "timestamp": "2026-07-19T09:32:01.520420",
+    "total_samples": 50,
+    "hardware_config": {
+        "cpu_cores": 8,
+        "ram_gb": 8.0,
+        "mock_inference": true
+    },
+    "dataset_source": "research/dataset"
+}

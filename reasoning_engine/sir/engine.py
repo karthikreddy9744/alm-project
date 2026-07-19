@@ -20,7 +20,7 @@ class SituationIntelligenceRenderer:
         self._last_snapshot = None
 
     def export(self, mode: RenderMode, world_state: WorldState, projection: SituationProjection, 
-               trace: TransparentReasoningTrace, hypotheses: List[ManagedHypothesisState], streams: Any = None) -> str:
+               trace: TransparentReasoningTrace, hypotheses: List[ManagedHypothesisState], streams: Any = None, awm: Any = None) -> str:
         """Main delegator to specific rendering functions."""
         if mode == RenderMode.HUMAN_COGNITIVE:
             return self.render_human_cognitive(world_state)
@@ -37,7 +37,7 @@ class SituationIntelligenceRenderer:
         elif mode == RenderMode.API:
             return self.render_api(world_state, projection, trace)
         elif mode == RenderMode.THREE_TIER_REPORT:
-            return self.render_three_tier_report(world_state, projection, trace, hypotheses, streams)
+            return self.render_three_tier_report(world_state, projection, trace, hypotheses, streams, awm)
         else:
             raise ValueError(f"Unknown render mode: {mode}")
 
@@ -239,7 +239,7 @@ class SituationIntelligenceRenderer:
         return {"status": "ACTIVE"}
 
     def render_three_tier_report(self, world_state: WorldState, projection: SituationProjection, 
-                                 trace: TransparentReasoningTrace, hypotheses: List[ManagedHypothesisState], streams: Any) -> str:
+                                 trace: TransparentReasoningTrace, hypotheses: List[ManagedHypothesisState], streams: Any, awm: Any = None) -> str:
         
         # ---------------------------------------------------------
         # OUTPUT 1: SPEECH UNDERSTANDING
@@ -387,12 +387,23 @@ class SituationIntelligenceRenderer:
         intent = ", ".join(cs.actors) if cs.actors else "Unknown"
         alts_str = ", ".join([h.situation for h in hypotheses[1:]]) if hypotheses and len(hypotheses) > 1 else "None"
         missing_str = ", ".join(cs.missing_evidence) if cs.missing_evidence else "None"
+        
+        speaker_role = "Unknown"
+        if source_semantic and hasattr(source_semantic, 'speech_understanding') and source_semantic.speech_understanding:
+            speaker_role = getattr(source_semantic.speech_understanding, 'speaker_role', 'Unknown')
+            
+        recording_char_str = "Unknown"
+        if awm and hasattr(awm, 'recording_characterization') and awm.recording_characterization:
+            rc = awm.recording_characterization
+            recording_char_str = f"Quality: {rc.recording_quality} | Dynamic Range: {rc.dynamic_range} | Reverb: {rc.reverberation_profile} | Noise: {rc.noise_profile}"
 
         situation_details = (
             f"**Detailed Breakdown:**\n"
             f"- **Situation:** {situation}\n"
             f"- **Context:** {context}\n"
             f"- **Intent (Who/What):** {intent}\n"
+            f"- **Speaker Role:** {speaker_role}\n"
+            f"- **Recording Characterization:** {recording_char_str}\n"
             f"- **Supporting Evidence:** {primary_evidence}\n"
             f"- **Alternative Interpretations:** {alts_str}\n"
             f"- **Missing Evidence:** {missing_str}\n"

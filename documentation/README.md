@@ -1,6 +1,6 @@
 # ALM Documentation Index
 
-Welcome to the ALM Documentation directory. This folder serves as the single source of truth for the ALM v12.0 architecture, research philosophies, commands, and developer practices. 
+Welcome to the ALM Documentation directory. This folder serves as the single source of truth for the ALM v12.0 Structured Reasoning Architecture, research philosophies, commands, and developer practices. 
 
 ## 📂 Documentation Files
 
@@ -24,4 +24,4 @@ Welcome to the ALM Documentation directory. This folder serves as the single sou
 - **Want to understand the cognitive pipeline?** Read `ALM_MiniProject.md`.
 
 ## ⚠️ Notes for Future Contributors
-The ALM architecture is **permanently frozen** around the Human-Oriented Auditory Situation Understanding paradigm. Future research efforts should focus on *Temporal Memory Scaling* and *LLM Distillation*, rather than re-introducing stochastic LLM generation into the core reasoning loop.
+The ALM Structured Reasoning Architecture is **permanently frozen** around the Human-Oriented Auditory Situation Understanding paradigm. Future research efforts should focus on *Temporal Memory Scaling* and *LLM Distillation*, rather than re-introducing stochastic LLM generation into the core reasoning loop.

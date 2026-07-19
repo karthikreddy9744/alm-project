@@ -59,6 +59,7 @@ class EvidenceFusionLayer:
             ignored_events=ignored_events,
             clap_concepts=getattr(awm, 'clap_concepts', []),
             clap_confidence=0.85,
+            recording_characterization=getattr(awm, 'recording_characterization', None),
             metadata={"source": "ALM_EvidenceFusionLayer"},
             processing_information={"status": "fused"}
         )

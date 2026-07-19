@@ -37,6 +37,7 @@ EXAMPLE 1 (EDUCATIONAL LECTURE - CONTRADICTORY NOISE):
     "summary": "Educational explanation about nuclear fission.",
     "topic": "Nuclear Physics",
     "speaker_intent": "Explaining a concept to an audience.",
+    "speaker_role": "Narrator",
     "emotional_tone": "Calm and instructional.",
     "confidence": 0.95
   },
@@ -100,6 +101,7 @@ EXAMPLE 2 (CYCLONE FIELD REPORT - SUPPORTING NOISE):
     "summary": "A reporter describing severe cyclone damage.",
     "topic": "Natural Disaster",
     "speaker_intent": "Documenting damage and relaying information.",
+    "speaker_role": "Narrator",
     "emotional_tone": "Urgent and descriptive.",
     "confidence": 0.92
   },

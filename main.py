@@ -112,7 +112,7 @@ class UnifiedPipelineValidator:
         logger.info("Running Situation Intelligence Renderer...")
         try:
             sir_output = self._measure_time("SIR", self.sir.export,
-                RenderMode.THREE_TIER_REPORT, world_state, projection, trace, active_hyps, streams
+                RenderMode.THREE_TIER_REPORT, world_state, projection, trace, active_hyps, streams, self.awm
             )
             return {
                 "speech": sir_output.get("speech"),

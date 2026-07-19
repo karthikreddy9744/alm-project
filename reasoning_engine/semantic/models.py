@@ -73,6 +73,7 @@ class SpeechUnderstanding(BaseModel):
     summary: str = Field(description="Brief summary of what was spoken.")
     topic: str = Field(description="The semantic topic.")
     speaker_intent: str = Field(description="Why are they speaking?")
+    speaker_role: str = Field(description="Is the speaker a Participant or a Narrator?")
     emotional_tone: str = Field(description="Emotional state of the speaker.")
     confidence: float = Field(description="0.0 to 1.0 confidence in the speech understanding.")
 

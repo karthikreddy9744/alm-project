@@ -175,6 +175,7 @@ class SemanticInterpretationEngine:
                 summary="Failed to parse JSON.",
                 topic="Unknown",
                 speaker_intent="Unknown",
+                speaker_role="Unknown",
                 emotional_tone="Unknown",
                 confidence=0.0
             ),

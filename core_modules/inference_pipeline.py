@@ -6,6 +6,8 @@ from core_modules.fusion_layer import FusionLayer
 from core_modules.scene_network import SceneContextNetwork, SCENE_LABELS
 from reasoning_engine.awm.world_model import AuditoryWorldModel
 from reasoning_engine.awm.models import EntityNode, EventNode, NodeState, Trajectory, HierarchicalConfidence
+from reasoning_engine.fusion.models import RecordingCharacterization
+
 
 class ALMInferencePipeline:
     """
@@ -59,6 +61,9 @@ class ALMInferencePipeline:
             fused = self.fusion(w_emb, c_emb, h_emb)
             logits = self.scene_net(fused)
             probs = torch.sigmoid(logits).squeeze().tolist()
+            
+        # 2.5 Recording Characterization
+        awm.recording_characterization = self._characterize_recording(audio, sr, probs)
             
         # CLAP semantic concepts (Mega-Scale Universal Acoustic Dictionary: 160+ Unambiguous Scenarios)
         concept_list = [
@@ -265,3 +270,27 @@ class ALMInferencePipeline:
         awm.clap_concepts = nearest_concepts
             
         return awm
+
+    def _characterize_recording(self, audio: np.ndarray, sr: int, scene_probs: list) -> RecordingCharacterization:
+        # Clipping: Check if max amplitude is near 1.0
+        max_amp = np.max(np.abs(audio))
+        clipping = bool(max_amp >= 0.99)
+        
+        # Dynamic Range
+        rms = librosa.feature.rms(y=audio)[0]
+        dynamic_range = "Wide" if np.std(rms) > 0.05 else "Compressed"
+        
+        # Reverb & Noise Profile (Heuristic)
+        # Check if 'music' or 'studio' related scenes scored high in SceneNet
+        # For simplicity in this pipeline, we use basic statistical heuristics
+        zcr = librosa.feature.zero_crossing_rate(audio)[0]
+        noise_profile = "High Frequency Noise" if np.mean(zcr) > 0.2 else "Clean"
+        
+        return RecordingCharacterization(
+            reverberation_profile="Unknown",
+            compression_level="High" if dynamic_range == "Compressed" else "Low",
+            post_processing_artifacts=clipping,
+            dynamic_range=dynamic_range,
+            noise_profile=noise_profile,
+            recording_quality="Poor" if clipping or noise_profile != "Clean" else "Good"
+        )

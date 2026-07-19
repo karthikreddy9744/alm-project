@@ -1,112 +1,28 @@
-###############################################################################
-# ALM v10 - Production Repository .gitignore
-###############################################################################
+# Environments
+venv/
+.venv/
+env/
+.env
 
-###############################################################################
-# Python
-###############################################################################
+# Python caching
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .pytest_cache/
-.mypy_cache/
-.ruff_cache/
-coverage/
-htmlcov/
 
-###############################################################################
-# Virtual Environments
-###############################################################################
-venv/
-.venv/
-env/
-ENV/
-
-###############################################################################
-# Operating System
-###############################################################################
+# System files
 .DS_Store
 Thumbs.db
-desktop.ini
 
-###############################################################################
-# IDE
-###############################################################################
-.vscode/
-.idea/
-*.iml
+# Agent Data
+.gemini/
 
-###############################################################################
-# Logs
-###############################################################################
-*.log
-logs/
-
-###############################################################################
-# Generated Data
-###############################################################################
-data/processed/*
-!data/processed/.gitkeep
-!data/processed/README.md
-data/training/*
-!data/training/.gitkeep
-!data/training/README.md
-
-# Ignore generated shards, temporary datasets, cached datasets, temporary audio
-*.shard
-*.cache
-tmp/
-temp/
-scratch/
-
-###############################################################################
-# Raw Datasets
-###############################################################################
-data/raw/speech/
-data/raw/events/
-data/raw/ambient/
-data/raw/audio/
-data/raw/environment/
-data/raw/ambient_beds/
-*.wav
-*.mp3
-*.flac
-
-###############################################################################
-# Models
-###############################################################################
-# Ignore large binary models
-*.pt
-*.pth
-*.ckpt
-*.onnx
-*.safetensors
-*.bin
-*.pickle
-*.pkl
-
-# Explicitly allow metadata files
-!models/training_metrics.json
-!models/training_config.json
-!models/dataset_manifest.json
-!models/version.json
-!models/model_card.md
-!models/README.md
-!models/best_checkpoint_info.json
-
-###############################################################################
-# Training Outputs
-###############################################################################
-runs/
-checkpoints/
-tensorboard/
-wandb/
-experiments/
-
-###############################################################################
-# Hugging Face
-###############################################################################
-.cache/
-huggingface/
-downloads/
+# Large Artifacts & Data
+archive/
+datasets/
+data/
+models/*.pt
+models/*.bin
+models/*.safetensors
+models/*.ckpt

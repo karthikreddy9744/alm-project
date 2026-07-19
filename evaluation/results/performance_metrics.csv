@@ -1,0 +1,7 @@
+metric,value
+total_samples_evaluated,50
+successful_executions,50
+failed_executions,0
+average_latency_ms,957.0
+average_semantic_confidence,0.9
+json_validation_rate,100%

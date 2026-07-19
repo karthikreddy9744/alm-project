@@ -1,6 +1,0 @@
-{
-    "best_epoch": 40,
-    "best_f1": 0.8429447626765881,
-    "checkpoint_name": "alm_v12_final.pt",
-    "checkpoint_date": "2026-07-04"
-}

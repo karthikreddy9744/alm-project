@@ -1,6 +1,6 @@
-# 🎧 ALM: Human-Oriented Auditory Situation Understanding
+# 🎧 ALM: A Structured Reasoning Architecture for Human-Oriented Auditory Situation Understanding
 
-ALM is a multi-modal cognitive architecture designed to bridge the gap between raw auditory perception and human-plausible situation understanding. Traditional Audio Language Models either classify blindly without context, or use massive LLMs that suffer from high latency and hallucination. 
+ALM is a Structured Reasoning Architecture designed to bridge the gap between raw auditory perception and human-plausible situation understanding. Traditional Audio Language Models either classify blindly without context, or use massive LLMs that suffer from high latency and hallucination. 
 
 ALM completely replaces the stochastic guessing of pure LLMs by confining neural models inside a strict, deterministic cognitive graph, separating objective perception from subjective reasoning.
 
@@ -22,7 +22,7 @@ python3 main.py
 
 ## 🧠 Core Features & Architecture
 - **Offline & Local:** Runs entirely on your local machine. No API keys required.
-- **Explainable AI:** Every situation deduction is tracked by a Transparent Reasoning Engine. No "black box" conclusions.
+- **Reasoning State Exposure:** Every situation deduction is tracked by a Transparent Reasoning Engine exposing 8 explicit reasoning states. No "black box" conclusions.
 - **Provenance Reasoning:** Automatically deduces if audio is a live event, a movie, a song, or synthetic.
 - **Evidence Dominates Assumptions:** Designed never to hallucinate visual details or specific identities without absolute acoustic proof.
 
