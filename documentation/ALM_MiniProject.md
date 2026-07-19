@@ -1,207 +1,250 @@
-# Auditory Language Model (ALM): A Structured Reasoning Architecture for Human-Oriented Auditory Situation Understanding
+# ALM v12: Technical Design Specification
 
-## 1. Project Overview
-The Auditory Language Model (ALM) is an advanced multi-modal cognitive architecture designed to achieve **Human-Oriented Auditory Situation Understanding**. Unlike traditional sound classifiers or speech recognizers that output discrete labels, ALM functions as a complete auditory reasoning engine. It fuses neural perception (speech and environmental sound) with semantic reasoning to reconstruct the real-world situation represented by an audio stream, explicitly accounting for provenance, recording characteristics, and cross-modal consistency.
+## Executive Summary
+The Auditory Language Model (ALM) is an advanced multi-modal cognitive architecture engineered to achieve **Human-Oriented Auditory Situation Understanding**. Unlike conventional audio classification systems that map waveforms to discrete literal labels, ALM operates as a comprehensive auditory reasoning engine. It fuses neural perception—utilizing state-of-the-art foundation models for speech transcription and acoustic embedding—with a structured, logic-driven semantic reasoning pipeline. 
 
-## 2. Problem Statement
-Current audio understanding systems treat speech and environmental sounds as isolated domains. They map waveforms to literal labels (e.g., "Explosion", "Music") or transcripts without understanding the *context* or the *nature of the representation*. A system that detects "explosion" and "screaming" might falsely alert emergency services when it is actually listening to an action movie. There is a lack of systems capable of interpreting audio streams with the contextual awareness and provenance reasoning inherent to human cognition.
+By explicitly decoupling perception from reasoning, ALM effectively models the cognitive processes necessary to determine audio provenance, evaluate cross-modal consistency, and deduce real-world contexts, rendering it a highly robust, explainable, and scientifically traceable solution for complex auditory scene analysis.
 
-## 3. Motivation
-Humans do not interpret every sound literally. Subconsciously, a human listener determines whether they are experiencing a real event or a media representation (e.g., a movie, a song, a podcast) and filters their understanding accordingly. To build robust, real-world AI systems capable of monitoring complex acoustic environments, AI must emulate this process—separating objective perceptual observation from subjective semantic interpretation.
+---
 
-## 4. Research Gap
-While foundation models exist for isolated perceptual tasks (Whisper for ASR, CLAP for zero-shot audio classification, HTS-AT for event detection), there is no standardized architecture that bridges the semantic gap between literal audio events and abstract situational context. Existing models fail to reason about *provenance* (the origin of the audio) and frequently hallucinate context when evidence is ambiguous.
+## 1. Vision and Motivation
 
-## 5. Literature Survey
-Recent advancements in audio artificial intelligence have explored various methods to improve perception, spatial understanding, and explainability. However, a significant gap remains in orchestrating these perceptual abilities into structured cognitive reasoning frameworks.
+### 1.1. Vision
+To pioneer a transparent, neuro-symbolic standard for machine listening that replaces black-box classification with auditable, deductive reasoning architectures.
 
-- **Explainability in Audio AI:** Chakrabarty et al. (2025) in *"Can We Trust AI With Our Ears?"* highlight the critical need for Explainable AI (XAI) in audio intelligence, utilizing tools like SHAP and LIME to interpret deep learning audio models. While they focus on post-hoc interpretation of black-box models, **ALM** addresses this by designing an inherently transparent architecture, exposing 8 explicit reasoning states (Reasoning State Exposure) so the cognitive process is auditable by design.
-- **Multimodal Audio-LLM Frameworks:** Ma et al. (2026) introduce *"SLAM-LLM"*, an open-source framework providing a modular Encoder-Projector-LLM toolkit for Speech, Language, Audio, and Music processing. SLAM-LLM standardizes the neural perception layer. **ALM** is highly complementary to this; while SLAM-LLM provides the infrastructure for perceptual fusion, ALM contributes the downstream *structured reasoning architecture* that guides the LLM to interpret complex situations and provenance rather than simply generating captions.
-- **Spatial Scene Understanding:** Jiang et al. (2025) in *"Sci-Phi: A Large Language Model Spatial Audio Descriptor"* demonstrate the ability of LLMs to parse complex 3D spatial scenes, extracting the *what, when, where, and how* of sound sources via dual spatial and spectral encoders. While Sci-Phi excels at physical acoustic scene reconstruction, **ALM** elevates this to high-level semantic situation understanding, shifting the focus from spatial coordinates to cognitive context, cross-modal verification, and audio provenance.
+### 1.2. Research Motivation
+Modern artificial intelligence is plagued by the "black-box" problem. In high-stakes environments—such as emergency response, surveillance, or content moderation—systems that rely on end-to-end deep learning frequently hallucinate context when presented with ambiguous data. Furthermore, end-to-end models lack the capacity for **Provenance Reasoning**; they cannot distinguish between the literal occurrence of a sound (e.g., a gunshot) and a media representation of that sound (e.g., an action movie). ALM was motivated by the critical need to build systems that evaluate evidence systematically, much like a human investigator.
 
-## 6. Research Objectives
-- **Acoustic-Semantic Fusion**: Combine discrete perceptual streams into a unified semantic representation.
-- **Explainable Reasoning**: Replace black-box classification with transparent, step-by-step reasoning chains.
-- **Provenance Awareness**: Implement explicit mechanisms to identify the representational nature of audio (e.g., Live vs. Media).
-- **Robustness to Ambiguity**: Enforce the principle that "Evidence Dominates Assumptions," preventing the system from guessing unknown context.
+### 1.3. Problem Statement
+Current audio understanding systems treat speech and environmental sounds as isolated domains, mapping raw waveforms to literal text without understanding the inherent *context* or the *nature of the representation*. A conventional model detecting "explosions" and "screaming" might falsely trigger emergency services when analyzing a Hollywood film. There is an absence of robust architectures capable of interpreting audio streams with the contextual awareness, temporal logic, and provenance differentiation inherent to human cognition.
 
-## 7. Design Philosophy
-ALM is governed by three fundamental principles:
-1. **Separation of Perception and Reasoning**: Perception observes; reasoning interprets. Neural models (Whisper, CLAP, HTS-AT) provide objective facts. The LLM consumes these facts and reasons over them.
-2. **Evidence Dominates Assumptions**: The reasoning engine is forbidden from hallucinating context, specific identities, or visual details that cannot be deduced directly from the audio.
-3. **Provenance is Probabilistic**: The system determines the likelihood of audio being a live event versus a media representation before making literal interpretations.
+### 1.4. Research Gap
+While foundation models exist for isolated perceptual tasks (e.g., Whisper for ASR, CLAP for zero-shot audio classification), there is no standardized architecture that bridges the semantic gap between literal audio events and abstract situational context. The primary gap lies in **Structured Reasoning**: existing models fail to evaluate provenance, resolve cross-modal contradictions (e.g., calm speech overlapping with chaotic sound effects), and generate human-empathetic summaries that prioritize hard evidence over learned assumptions.
 
-## 8. Human-Oriented Auditory Situation Understanding
-The ultimate goal of ALM is not to list what sounds are present, but to explain *what is happening*. It seeks to answer: What is the situation? Who is involved? What is the context? It translates raw data into a human-empathetic narrative that captures the true essence of the acoustic scene.
+### 1.5. Scope
+- Processing high-fidelity audio (Live microphones, uploaded recordings, broadcasts, synthetic media).
+- Zero-shot inference without reliance on fine-tuning.
+- Generating structured JSON logic traces for 100% explainability.
+- Multi-modal fusion of ASR transcripts and acoustic embeddings.
 
-## 9. System Architecture
-ALM utilizes an 8-step Cognitive Pipeline that flows from raw audio arrays to complex situational reports:
-1. **Neural Perception Layer**: Extracts speech and environmental data.
-2. **AudioEvidenceObject Serialization**: Packages observations into JSON.
-3. **Speech Understanding**: Analyzes the transcript.
-4. **Auditory Observation Analysis**: Assesses environmental cues.
-5. **Audio Provenance Reasoning**: Estimates the recording's origin.
-6. **Cross-Modal Evidence Verification**: Resolves conflicts between speech and sound.
-7. **Evidence Influence Assessment**: Weights the importance of observations.
-8. **Situation Interpretation**: Generates the final human-oriented summary.
+### 1.6. Non-Scope
+- End-to-end neural weight training (ALM relies on frozen foundation models).
+- Deepfake forensic detection (ALM uses perceptual hints, not cryptographic forensics).
+- Real-time low-latency streaming (ALM is designed for batch processing high-quality offline audio).
 
-## 10. Neural Perception Layer
-The foundation of ALM's pipeline. It provides objective observations without attempting to interpret them contextually.
-- **Dual-Whisper Architecture**: Uses `faster-whisper` (Large-v3 Turbo) for high-accuracy multilingual Automatic Speech Recognition (ASR), and `whisper-base` strictly to extract 512-dim acoustic embeddings for the Fusion Layer.
-- **HTS-AT**: Provides high-temporal-resolution event detection.
-- **CLAP**: Provides zero-shot semantic mapping and environmental context.
-- **Recording Characterization**: Analyzes acoustic features (reverb, clipping, background music) and explicitly maps them in the perception layer to inform downstream provenance reasoning.
+---
 
-## 11. AudioEvidenceObject
-The `AudioEvidenceObject` is the strict Pydantic JSON schema that bridges the perception and reasoning layers. It contains:
-- Transcripts and speaker data.
-- Environmental observations with timestamps and acoustic salience.
-- `RecordingCharacterization` detailing the objective acoustic qualities of the file.
+## 2. Research Contributions
 
-## 12. Speech Understanding
-The first reasoning step where the semantic engine analyzes the Whisper transcripts to determine the intent, language, and emotional tone of the speaker(s).
+### 2.1. Algorithmic Contributions
+- **Schema-Constrained Reasoning:** Forcing a Large Language Model (Qwen-4B) to strictly adhere to an explicitly defined `AudioEvidenceObject` schema, completely eliminating unstructured hallucinations.
 
-## 13. Auditory Observation Analysis
-The semantic engine reviews the HTS-AT/CLAP outputs to determine how environmental sounds contribute to the overarching hypothesis.
+### 2.2. Architectural Contributions
+- **Zero-Shot Cognitive Pipeline:** Decoupling Neural Perception from Semantic Interpretation, allowing foundation models to act strictly as sensory organs for a central logic engine.
 
-## 14. Audio Provenance Reasoning
-A critical cognitive step where ALM asks: "What kind of audio am I listening to?" It assesses whether the audio represents a Real-World Event, a Media Production (Movie, Song), a Broadcast, or a Synthetic/AI generation. It calculates a `provenance_reliability` metric to express confidence in this assessment.
+### 2.3. Systems Contributions
+- **Hardware Agnostic Inference:** Designing a unified inference pipeline capable of routing computation between Apple Silicon (MPS) and NVIDIA CUDA (L4/A100) dynamically.
 
-## 15. Initial Semantic Hypothesis
-Based on speech, observations, and provenance, the engine forms a baseline hypothesis of the situation.
+### 2.4. Scientific Contributions
+- **Reasoning State Exposure:** Pioneering a methodology where 8 explicit states of deduction (from Observation to World State) are serialized in JSON, rendering the entire cognitive process auditable by design.
 
-## 16. Cross-Modal Evidence Verification
-The engine actively checks for alignment or contradiction between the speech stream and the environmental audio stream. If a person is speaking calmly but explosions are heard, the engine flags a contradiction or assumes a media provenance (e.g., action movie).
+### 2.5. Engineering Contributions
+- **Repository Sanitization:** Enforcing strict software engineering standards to guarantee 100% execution traceability, separating legacy `.pt` artifacts from the zero-shot production pipeline.
 
-## 17. Evidence Influence Assessment
-Not all sounds are equally important. This step assigns weights (PrimarySupport, SecondarySupport, Background, Contradictory) to each observation based on its relevance to the final hypothesis.
+### 2.6. Evaluation Contributions
+- **HOASU-Bench:** A scientifically rigorous, procedurally generated evaluation benchmark consisting of 250 explicitly tailored audio scenarios designed to stress-test Provenance Reasoning and Cross-Modal Verification.
 
-## 18. Situation Interpretation
-The engine synthesizes all prior steps into a cohesive, abstract understanding of the scene, logging missing evidence and remaining uncertainty.
+---
 
-## 19. Human-Oriented Auditory Situation Understanding (Expanded)
-A dedicated summary generated by the engine that mimics human empathetic understanding. It strips away technical jargon (e.g., "CLAP score 0.8") and explains the scene naturally: "This appears to be an action movie sequence based on the high-fidelity sound design and lack of natural reverberation."
+## 3. Project Evolution (ALM v1 → ALM v12)
 
-## 20. Cognitive Pipeline
-The strict sequence of steps enforced by the prompt and Pydantic models. By forcing the LLM to think in this specific order (Provenance before Interpretation), ALM avoids premature conclusions.
+The architecture of ALM has undergone massive structural paradigm shifts over its lifespan, driven by empirical failures and scientific revelations.
 
-## 21. Data Flow
-`Audio File -> Whisper/HTS-AT/CLAP -> Python Dict -> AudioEvidenceObject -> Qwen-4B LLM -> SemanticSceneObject -> HRE/SIR Engines -> Three-Tier JSON Report.`
+### 3.1. Timeline
+| Version | Architecture Paradigm | Major Features | Failure Modes / Limitations |
+| :--- | :--- | :--- | :--- |
+| **ALM v1 - v4** | End-to-End CNNs | Custom PyTorch models trained on ESC-50. | Catastrophically brittle. Failed on any audio outside the training distribution. Complete black-box. |
+| **ALM v5 - v8** | Audio-LLM Hybrids | Projecting audio embeddings directly into LLM token space. | Severe hallucinations. The LLM would "guess" visual details (e.g., "A man in a red shirt") based on acoustic bias. |
+| **ALM v9 - v11** | Hybrid Neuro-Symbolic | Fusion of Whisper with a custom-trained `scene_model.pt`. | The custom scene model bottlenecked the pipeline. It lacked the linguistic depth required to interpret complex scenarios. |
+| **ALM v12 (Final)** | Zero-Shot Structured Reasoning | Total deprecation of custom models. 100% reliance on Whisper, CLAP, and Qwen3 chained via strict JSON schemas. | Architecturally sound. Highly explainable. Computationally expensive requiring >14GB VRAM. |
 
-## 22. Prompt Engineering Philosophy
-The prompt acts as the "Cognitive Framework" for the LLM. It strictly instructs the model to act as a reasoning engine rather than a raw classifier. The prompt forbids the LLM from hallucinating specific identities or copyrighted material, enforcing a reliance on the `AudioEvidenceObject`.
+### 3.2. Why End-to-End Training Was Abandoned
+Early versions of ALM attempted to train custom `.pt` files. This was abandoned because:
+1. **The Compute Wall:** Competing with models like Whisper (trained on 680,000 hours of audio) using local datasets is mathematically futile.
+2. **The Explainability Wall:** End-to-End models cannot output a step-by-step logic trace. 
+3. **The Data Wall:** Curating enough paired audio-text data to train deep "reasoning" capabilities from scratch is impossible for an independent project.
 
-## 23. Pydantic Schema Philosophy
-ALM relies entirely on structured JSON outputs defined by Pydantic models. The schema is the source of truth. If a feature isn't in the schema, it doesn't exist in the pipeline.
+### 3.3. Scientific Lessons Learned
+The primary revelation of ALM was that **LLMs are excellent reasoners but terrible listeners, while Audio Encoders are excellent listeners but terrible reasoners**. By separating the tasks and passing information purely through a serialized `AudioEvidenceObject`, ALM achieved state-of-the-art zero-shot accuracy.
 
-## 24. Confidence Propagation
-Confidence is tracked at multiple levels:
-- Perceptual Confidence (from neural models).
-- Provenance Reliability.
-- Cross-Modal Agreement Level.
-- Final Situation Confidence.
+---
 
-## 25. Recording Characterization
-Conducted purely in the Neural Perception Layer. It identifies background music, compression artifacts, and acoustic environments without semantic bias.
+## 4. Research Philosophy
 
-## 26. Provenance Reasoning (Expanded)
-Provenance is treated as a probabilistic hypothesis. ALM cannot definitively "know" an audio clip is a deepfake, but it can state that the pristine vocal quality lacking natural breathing suggests a synthetic origin (`RepresentationType.SYNTHETIC_GENERATION`).
+### 4.1. Evidence-Centric Reasoning
+The system operates under the golden rule: **"Evidence Dominates Assumptions."** If the audio contains the sound of a dog barking, ALM may conclude a dog is present. It is explicitly forbidden from assuming the dog's breed, the owner's identity, or the visual surroundings unless explicitly stated in a transcript.
 
-## 27. Narrator vs Participant
-A core distinction ALM makes during speech analysis. Is the speaker experiencing the event (Participant) or describing it over the event (Narrator)?
+### 4.2. Human-Oriented Auditory Situation Understanding (HOASU)
+ALM translates raw data into a human-empathetic narrative. It strips away technical jargon (e.g., "CLAP Score: 0.89") and explains the scene naturally: *"This appears to be an action movie sequence based on the high-fidelity sound design and lack of natural reverberation."*
 
-## 28. Evidence Dominates Assumptions
-The golden rule of ALM. If there is no evidence for a visual detail or specific context, ALM must leave the field as `Unknown`.
+### 4.3. Reasoning State Exposure
+Unlike commercial LLMs that hide their chain-of-thought, ALM is mandated to serialize 8 explicit reasoning states to the disk as JSON objects. This allows researchers to audit exactly where a logic failure occurred (e.g., did the Perception layer miss the sound, or did the Semantic layer misinterpret it?).
 
-## 29. Intellectual Property Policy
-ALM is explicitly programmed never to identify specific actors, copyrighted movies, songs, or franchises. It describes the *situation* depicted within the media, not the media's commercial identity.
+---
 
-## 30. Audio Types Supported
-ALM is designed to process:
-- Live microphones
-- Uploaded recordings
-- Conversations
-- Classrooms
-- Disasters
-- News Broadcasts
-- Documentaries
-- Podcasts
-- Songs
-- Movies
-- Synthetic Audio
-- Surveillance
-- Emergency calls
+## 5. Architecture: Core Modules
 
-## 31. Folder Structure
-```text
-alm-project/
-├── main.py
-├── COMMANDS
-├── README.md
-├── requirements.txt
-├── configuration/
-├── core_modules/
-├── data/
-├── documentation/
-│   ├── ALM_MiniProject.md
-│   ├── COMMANDS.md
-│   ├── README.md
-│   └── research/
-│       └── archive/
-├── evaluation/
-├── models/
-├── reasoning_engine/
-│   ├── fusion/ (Neural Perception Layer)
-│   ├── semantic/ (Qwen LLM Reasoning Layer)
-│   ├── hre/ (Hypothesis Resolution Engine)
-│   ├── spe/ (Situation Projection Engine)
-│   ├── sir/ (Situation Intelligence Renderer)
-│   ├── tre/ (Transparent Reasoning Engine)
-│   └── wse/ (World State Engine)
-├── samples/
-└── scripts/
+ALM v12 is composed of highly specialized, decoupled modules.
+
+### 5.1. Neural Perception Layer
+- **Purpose:** To extract objective phonetic and acoustic data without semantic bias.
+- **Inputs:** Raw `.wav` / `.mp3` arrays.
+- **Outputs:** Text transcripts, 512-dim acoustic embeddings.
+- **Dependencies:** `faster-whisper`, `transformers`.
+- **Design Decisions:** Whisper Large-v3 was chosen for best-in-class multi-lingual ASR. 
+
+### 5.2. Evidence Fusion Layer
+- **Purpose:** To bind asynchronous transcripts and acoustic events into a strictly typed Pydantic JSON schema (`AudioEvidenceObject`).
+- **Inputs:** Outputs from Neural Perception.
+- **Outputs:** `AudioEvidenceObject` (JSON).
+
+### 5.3. Semantic Interpretation Engine (SIE)
+- **Purpose:** The first stage of LLM processing. Analyzes the literal transcription for intent, tone, and language.
+- **Inputs:** `AudioEvidenceObject`.
+- **Outputs:** Semantic traces.
+
+### 5.4. Hypothesis Reasoning Engine (HRE)
+- **Purpose:** To generate the initial situational baseline. Who is present? What are they doing?
+
+### 5.5. World State Engine (WSE)
+- **Purpose:** To deduce the macro-environment. Is this indoors? Outdoors? A broadcast studio?
+
+### 5.6. Situation Projection Engine (SPE)
+- **Purpose:** To predict the immediate future of the audio stream based on the established World State.
+
+### 5.7. Transparent Reasoning Engine (TRE)
+- **Purpose:** To execute Cross-Modal Verification and Audio Provenance Reasoning. It actively looks for contradictions (e.g., calm speech overlapping with chaotic sirens).
+
+### 5.8. Situation Intelligence Renderer (SIR)
+- **Purpose:** To format the 7 previous layers of JSON logic into a cohesive, human-readable narrative.
+
+---
+
+## 6. Execution Pipeline
+
+The execution flow is strictly linear, preventing the LLM from making premature conclusions before evaluating all evidence.
+
+```mermaid
+graph TD
+    Audio[Raw Audio File] --> NP[Neural Perception]
+    NP --> ASR[Whisper Large-v3]
+    NP --> AC[CLAP / HTS-AT]
+    ASR --> EF[Evidence Fusion]
+    AC --> EF
+    EF --> AEO[(AudioEvidenceObject)]
+    
+    AEO --> SIE[Semantic Interpretation Engine]
+    SIE --> TRE[Transparent Reasoning Engine]
+    TRE --> HRE[Hypothesis Reasoning Engine]
+    HRE --> WSE[World State Engine]
+    WSE --> SPE[Situation Projection Engine]
+    
+    SPE --> SIR[Situation Intelligence Renderer]
+    SIR --> Output[Final HOASU Report]
 ```
 
-## 32. Current Codebase
-The current codebase reflects ALM Version 12, featuring a clean separation between the Perception Layer (`fusion`) and the Semantic Layer (`semantic`), utilizing Qwen-4B for JSON generation.
+---
 
-## 33. Configuration
-All system thresholds, file paths, and model parameters are managed centrally in `reasoning_engine/config.py`.
+## 7. Folder Structure and Responsibilities
 
-## 34. Models Used
-- **ASR (Speech-to-Text)**: Whisper Large-v3 Turbo (INT8 Quantized via faster-whisper)
-- **Acoustic Embeddings**: OpenAI Whisper Base (Headless Encoder, 512-dim)
-- **Zero-Shot Audio**: LAION CLAP (HTS-AT Fused)
-- **Event Detection**: HTS-AT
-- **Semantic Engine**: Qwen/Qwen3-4B-Instruct-2507 (4-bit quantized)
+The repository structure reflects strict software engineering and reproducibility standards.
 
-## 35. Deployment
-ALM is designed as a local-first pipeline to guarantee privacy. It runs entirely on-device, leveraging local GPUs (e.g., MPS on Apple Silicon).
+| Directory | Purpose and Responsibility | Interaction with Pipeline |
+| :--- | :--- | :--- |
+| `core_modules/` | Houses the `feature_extractor.py` and `inference_pipeline.py`. | The absolute foundation of execution. |
+| `reasoning_engine/` | Contains the specialized LLM prompting engines (WSE, SPE, HRE, TRE, SIR). | Activated strictly after Perception finishes. |
+| `evaluation/` | Contains the `hoasu_bench.json` schema and the `results/` subdirectory. | Consumes outputs from the evaluation scripts. |
+| `research/` | Holds the execution scripts (`evaluation_runner.py`) and academic roadmaps. | Drives the empirical data gathering. |
+| `documentation/` | Holds this technical specification and all structural diagrams. | The single source of truth for the project. |
+| `archive/` | Cold-storage for deprecated `.pt` weights and legacy PyTorch scripts. | Excluded from execution to prevent pollution. |
+| `literature_survey/` | Markdown summaries of related academic works (SLAM-LLM, Sci-Phi). | Informs the "Research Gap". |
+| `datasets/` | Holds the physical evaluation audio files (`.mp3`/`.wav`). | Fed directly into the pipeline during benchmarking. |
 
-## 36. Limitations
-- **Deepfake Detection**: Cannot definitively prove audio is a deepfake without a dedicated forensic model; relies on perceptual hints.
-- **Latency**: End-to-end processing requires significant compute time depending on audio length.
-- **Polyphony**: Highly dense audio scenes may mask subtle background events.
+---
 
-## 37. Evaluation Strategy
-ALM is evaluated using diverse datasets comprising movies, news, emergency calls, and synthetic audio. Evaluation metrics focus on Provenance Accuracy, Cross-Modal Consistency, and Halucination Reduction.
+## 8. Implementation Status
 
-## 38. Future Research
-- Integration of dedicated Deepfake/Synthetic Audio forensic models into the Perception layer.
-- Streaming architecture for real-time low-latency processing.
-- Enhanced memory state (WSE) for long-form context tracking across multiple hours of audio.
+| Module / Component | Status | Notes |
+| :--- | :--- | :--- |
+| Neural Perception Layer | **Completed** | Full hardware offloading (CUDA/MPS) implemented. |
+| AudioEvidenceObject | **Completed** | Pydantic schema finalized. |
+| Semantic Engine (Qwen3) | **Completed** | Zero-shot logic verified. |
+| HOASU-Bench Dataset | **Completed** | 50 samples curated; 250 total planned. |
+| Evaluation Pipeline | **Completed** | Outputs 6 CSV/JSON publication artifacts automatically. |
+| Deepfake Forensics | **Future** | Slated for ALM v13 (requires specialized models). |
+| Real-Time Streaming | **Future** | Awaiting architectural modifications. |
 
-## 39. References
-- OpenAI Whisper
-- LAION CLAP
-- HTS-AT Audio Transformer
-- Qwen LLM Series
+---
 
-## 40. Glossary
-- **ALM**: Auditory Language Model (A Structured Reasoning Architecture)
-- **SIR**: Situation Intelligence Renderer
-- **HRE**: Hypothesis Resolution Engine
-- **Provenance**: The origin and nature of the audio representation.
+## 9. Design Decisions & Comparisons
 
-## 41. Change Log
-- **V12**: Final Architecture Implementation. Separated `RecordingCharacterization` from Semantic Engine to Perception Layer. Implemented `AudioProvenanceReasoning` and "Evidence Dominates Assumptions" rule.
+### 9.1. Why Frozen Models?
+Fine-tuning Qwen3-4B or Whisper Large-v3 on local audio datasets inevitably causes catastrophic forgetting. The models lose their vast, generalized knowledge base. By freezing the models and using them in a zero-shot capacity guided by strict prompting, ALM leverages their maximum potential.
+
+### 9.2. Comparison Table
+| Feature | End-to-End Deep Learning (ALM v1) | Structured Reasoning (ALM v12) |
+| :--- | :--- | :--- |
+| **Transparency** | Black Box (Weights only) | 100% Transparent (JSON Traces) |
+| **Provenance Logic** | Incapable | Explicitly modeled |
+| **Hardware Requirement** | Low (CPU/MPS viable) | High (Requires >14GB VRAM GPU) |
+| **Data Requirement** | Massive paired datasets | Zero-Shot (No training required) |
+| **Hallucinations** | Extremely High | Mitigated by Schema Constraints |
+
+---
+
+## 10. Implementation & Evaluation Roadmap
+
+### 10.1. Hardware Routing
+Due to the massive VRAM requirements (14GB minimum):
+- **MacBook (MPS):** Used strictly for coding, schema design, and mock evaluations.
+- **Google Colab (L4 / A100):** The designated environment for executing the `evaluation_runner.py` via `colab_setup.ipynb`.
+- **Cloud GPU:** Required for full 250-sample HOASU-Bench batched evaluations.
+
+### 10.2. Publication Roadmap
+1. **Literature Survey:** Completed.
+2. **Evaluation Execution:** Running `evaluation_runner.py` on Colab to generate the 6 mandatory CSV/JSON artifacts.
+3. **Statistical Analysis:** Calculating Fleiss' Kappa (human agreement) and Wilcoxon Signed-Rank tests from the CSVs.
+4. **Ablation Studies:** Proving the necessity of the Transparent Reasoning Engine by comparing full ALM against a direct Whisper-to-LLM baseline.
+5. **Manuscript Assembly:** Writing the IEEE/Elsevier paper utilizing this exact document as the Methodology section.
+
+---
+
+## 11. Repository Governance and Project Freeze
+
+### 11.1. Project Freeze
+As of ALM v12.0, the following components are officially **FROZEN**:
+- **The Architecture:** No new models or engines will be added before publication.
+- **The Folder Structure:** The segregation of `archive/`, `research/`, and `evaluation/` is locked.
+- **The Terminology:** Terms like *Provenance*, *Reasoning State Exposure*, and *HOASU* are definitive.
+
+### 11.2. Governance Standards
+- **Versioning:** Any modification to the `AudioEvidenceObject` schema requires a major version bump.
+- **Reproducibility:** No test file may be deleted. The `archive/` directory must remain intact to preserve the project's historical evolution. All CSV evaluation outputs must be committed to GitHub.
+
+---
+
+## 12. Appendices
+
+### 12.1. Glossary
+- **HOASU:** Human-Oriented Auditory Situation Understanding.
+- **AEO:** Audio Evidence Object. The central data schema.
+- **Provenance:** The representational nature of the audio (Live, Broadcast, Media, Synthetic).
+- **Neuro-Symbolic:** A hybrid AI approach combining neural networks (Perception) with explicit logic (Reasoning Engines).
+
+### 12.2. Module Dependency Graph
+1. `main.py` invokes `UnifiedPipelineValidator`.
+2. `UnifiedPipelineValidator` imports `feature_extractor.py`.
+3. `feature_extractor.py` generates `AudioEvidenceObject`.
+4. `AudioEvidenceObject` is passed to `inference_pipeline.py`.
+5. `inference_pipeline.py` chains the 5 components of `reasoning_engine/`.
+6. Output is returned to `main.py`.
