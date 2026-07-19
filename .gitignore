@@ -10,10 +10,12 @@ __pycache__/
 *.pyo
 *.pyd
 .pytest_cache/
+.ipynb_checkpoints/
 
 # System files
 .DS_Store
 Thumbs.db
+.sixth/
 
 # Agent Data
 .gemini/
@@ -22,7 +24,17 @@ Thumbs.db
 archive/
 datasets/
 data/
-models/*.pt
-models/*.bin
-models/*.safetensors
-models/*.ckpt
+samples/
+models/
+research/
+scripts/
+
+# Generated Evaluation Output
+evaluation/results/
+*.csv
+*.log
+
+# Ignore all extra markdown documents, we only want the Master Specs
+*.md
+!README.md
+!documentation/ALM_MiniProject.md
