@@ -29,7 +29,7 @@
   - [Module Dependency](#module-dependency)
   - [Module Design](#module-design)
   - [Output System](#output-system)
-  - [Prompt Architecture](#prompt-architecture)
+  - [Cognitive Heuristic Architecture](#cognitive-heuristic-architecture)
   - [Schema Reference](#schema-reference)
   - [Testing Strategy](#testing-strategy)
 - **Standardization Reports**
@@ -63,7 +63,7 @@ This document maps the entire ALM v12.0 directory structure, providing explicit 
 ```text
 alm-project/
 ├── core_modules/        # [Active] Physical sensory extraction and pipeline execution.
-├── reasoning_engine/    # [Active] High-level LLM logic constraints (HRE, TRE, etc.).
+├── reasoning_engine/    # [Active] High-level semantic and deterministic reasoning constraints (SIE, HRE, TRE, etc.).
 ├── evaluation/          # [Active] Evaluation datasets and generated statistical results.
 ├── research/            # [Active] Benchmarking scripts and LaTeX rendering utilities.
 ├── archive/             # [Archive] Deprecated custom PyTorch weights and early scripts.
@@ -120,8 +120,8 @@ All zero-shot folders (`core_modules`, `reasoning_engine`, `evaluation`) are act
 - **Reason for Moving On:** Hit the "Compute Wall".
 
 ## ALM v12 (Zero-Shot Structured Reasoning - FINAL)
-- **Main Idea:** Total deprecation of custom models. 100% reliance on Whisper, CLAP, and Qwen3 chained sequentially via strict JSON schemas (`AudioEvidenceObject`).
-- **Why it became final:** Architecturally sound, highly explainable, entirely zero-shot, and resolves all hallucination issues through Schema-Constrained Reasoning.
+- **Main Idea:** Total deprecation of custom models. 100% reliance on a Hybrid Deterministic pipeline (Whisper + CLAP -> Semantic Qwen3 -> Deterministic Python Heuristics) strictly governed by the `AudioEvidenceObject`.
+- **Why it became final:** Architecturally sound, highly explainable, entirely zero-shot, drastically lowers latency, and resolves all hallucination issues by replacing downstream LLM reasoning with reproducible mathematical heuristics.
 
 
 ## Project Philosophy
@@ -287,7 +287,7 @@ ALM v12.0 is a hybrid, deterministic neuro-symbolic pipeline. Raw audio enters t
 7. **Final Output:** The `sir` engine uses explicit templates to yield the final HOASU Markdown report back to `main.py` to be printed or saved.
 
 ## Schema Flow
-The primary mechanism for preventing hallucination is Schema Flow. The `AudioEvidenceObject` acts as an immutable ledger. Once perception writes the transcript and acoustic classes into the object, the LLM logic engines are structurally forced to reference that object in their JSON responses. They cannot invent new events because they must cite a timestamp from the AEO.
+The primary mechanism for preventing hallucination is Schema Flow. The `AudioEvidenceObject` acts as an immutable ledger. Once perception writes the transcript and acoustic classes into the object, the Semantic Interpretation Engine and downstream deterministic engines are structurally forced to reference that object in their processing. They cannot invent new events because they must cite a timestamp from the AEO.
 
 
 ## Research
@@ -306,8 +306,8 @@ Due to the qualitative, logic-driven nature of ALM, standard loss metrics (e.g.,
 ## Experimental Design & Ablations
 To scientifically prove the necessity of ALM's massive architecture, experiments are run against baselines.
 - **Baseline 1:** Raw Whisper + LLM (No CLAP, No strict schemas).
-- **Baseline 2:** ALM without the Transparent Reasoning Engine (TRE).
-- **ALM Full:** The complete v12.0 pipeline.
+- **Baseline 2:** Multi-LLM ALM (Chaining multiple LLMs without deterministic tracing).
+- **ALM Full:** The complete v12.0 Hybrid Deterministic pipeline.
 By ablating the TRE, researchers can mathematically prove the pipeline's inability to detect deepfakes or resolve cross-modal contradictions without explicit symbolic layers.
 
 ## Publication Strategy
@@ -422,12 +422,13 @@ The final ALM v12.0 architecture and methodology is targeted for submission to:
 
 ## Research Contribution Outline
 To pass peer-review, the paper will explicitly delineate contributions:
-- **Algorithmic:** Forcing multi-modal LLM reasoning through the strict `AudioEvidenceObject` schema.
-- **Scientific:** Formalizing Provenance Reasoning (distinguishing live audio from synthetic/media).
+- **Neuro-Symbolic Architecture:** Pioneering a hybrid pipeline that uses a single Semantic LLM to extract meaning, followed strictly by deterministic symbolic reasoning engines (HRE, TRE, WSE, SPE).
+- **Algorithmic:** Proving that deterministic mathematical heuristics executed over structured semantic outputs are scientifically preferable to chaining multiple LLMs. This architecture guarantees reproducibility, drastically lowers inference latency, prevents hallucination propagation, and ensures 100% auditable evidence traces.
+- **Scientific:** Formalizing Provenance Reasoning (distinguishing live audio from synthetic/media) using deterministic cross-modal contradiction analysis.
 - **Evaluation:** Introduction of the `hoasu_bench.json` dataset as a superior metric over ESC-50.
 
 ## Limitations and Future Work
-- **Limitations:** ALM currently struggles with 20+ speaker overlaps (cocktail party problem) due to Whisper's diarization limitations. Real-time streaming is currently impossible due to the sequential LLM inference latency.
+- **Limitations:** ALM currently struggles with 20+ speaker overlaps (cocktail party problem) due to Whisper's diarization limitations. While the deterministic engines operate in milliseconds, real-time streaming is still currently bottlenecked by the initial Whisper and Semantic LLM inference latency.
 - **Future Work (ALM v13):** Integration of Cryptographic Digital Forensics layers for hard deepfake detection, bypassing purely semantic inference. 
 
 ## Patent Discussion
@@ -486,18 +487,15 @@ alm-project/
   - `_run_perception()`
   - `_run_reasoning_chain()`
 
-## 2. `BaseReasoningEngine` (Abstract Base Class)
-- **Purpose:** Standardize LLM inference across all engines.
-- **Attributes:** `llm_client`, `system_prompt`, `expected_schema`
-- **Methods:**
-  - `generate_state(context: dict) -> dict`
-  - `_parse_json(response: str) -> dict`
-- **Inheritance:** `SemanticEngine(BaseReasoningEngine)`, `HypothesisEngine(BaseReasoningEngine)`, etc.
+## 2. Engine Base Classes
+- **Purpose:** Standardize processing logic across the pipeline.
+- **Semantic Engine:** Inherits from `BaseReasoningEngine` (which manages the `QwenClient`, `system_prompt`, and `_parse_json()` logic).
+- **Deterministic Engines (HRE, TRE, WSE, SPE, SIR):** Inherit from `BaseDeterministicEngine`. They do not possess an LLM client or prompt. They apply strict mathematical heuristics and state tracking over the semantic schema.
 
 ## 3. `QwenClient`
 - **Purpose:** Singleton wrapper for Qwen3-4B-Instruct.
-- **Responsibilities:** Manage VRAM loading, tokenization, and `generate()` calls.
-- **Lifecycle:** Must be instantiated exactly once to avoid CUDA OOM.
+- **Responsibilities:** Manage VRAM loading, tokenization, and `generate()` calls for the Semantic Interpretation Engine.
+- **Lifecycle:** Must be instantiated exactly once to avoid CUDA OOM and unloaded immediately after Semantic processing.
 
 
 ## Configuration System
@@ -554,13 +552,14 @@ When running `evaluation_runner.py` over 250 files, a failure on file #12 must N
 6. **VRAM Flush:** Perception models are deleted. `torch.cuda.empty_cache()` is called.
 7. **Fusion:** `fusion_layer.py` attempts to build the `AudioEvidenceObject`. 
 8. **LLM Init:** `Qwen3-4B-Instruct` is loaded into VRAM.
-9. **Semantic Reasoning:** `sie` receives AEO, outputs intent and tone JSON.
-10. **Hypothesis Reasoning:** `hre` receives AEO + Semantic JSON, outputs entity JSON.
-11. **Transparent Reasoning:** `tre` receives AEO + Semantic + HRE JSON, outputs Provenance JSON.
-12. **World State:** `wse` infers environment.
-13. **Projection:** `spe` infers future events.
-14. **Rendering:** `sir` converts the JSON stack into a final Markdown HOASU string.
-15. **Output Generation:** The string is printed to `stdout` and logged to disk. Program exits 0.
+9. **Semantic Reasoning:** `sie` receives AEO, outputs probabilistic intent and tone JSON.
+10. **LLM Unload:** `Qwen3-4B-Instruct` is flushed from VRAM to free memory.
+11. **Hypothesis Reasoning:** `hre` receives AEO + Semantic JSON, deterministically scores hypotheses.
+12. **World State:** `wse` infers environment context from historical trace.
+13. **Transparent Reasoning:** `tre` receives active hypotheses, builds explicit contradiction trace.
+14. **Projection:** `spe` estimates deterministic risk boundaries.
+15. **Rendering:** `sir` converts the JSON stack into a final Markdown HOASU string using deterministic templates.
+16. **Output Generation:** The string is printed to `stdout` and logged to disk. Program exits 0.
 
 
 ## Function Design
@@ -603,8 +602,9 @@ When running `evaluation_runner.py` over 250 files, a failure on file #12 must N
 - `[ ]` Implement retry/failover logic for JSON generation.
 
 ## Stage 4: Engine Instantiation (3 Days)
-- `[ ]` Subclass `BaseReasoningEngine` into `SIE`, `HRE`, `TRE`, `WSE`, `SPE`, `SIR`.
-- `[ ]` Inject the specific system prompts into each subclass.
+- `[ ]` Subclass `BaseReasoningEngine` exclusively for `SIE`.
+- `[ ]` Implement independent deterministic reasoning modules (`HRE`, `WSE`, `TRE`, `SPE`, `SIR`).
+- `[ ]` Define deterministic scoring, tracing, and threshold heuristics for downstream modules.
 
 ## Stage 5: Orchestration (1 Day)
 - `[ ]` Implement `UnifiedPipelineValidator.execute()`.
@@ -626,7 +626,7 @@ When running `evaluation_runner.py` over 250 files, a failure on file #12 must N
 1. **Raw Audio** enters `core_modules/`.
 2. **Raw Extractions** (Text, Embeddings) are passed to the `fusion_layer`.
 3. **AudioEvidenceObject** (Pydantic model) is instantiated and becomes the single source of truth.
-4. **State Appending:** The `AudioEvidenceObject` is passed sequentially to all 6 reasoning engines. Each engine computes its respective JSON state and appends it to a master dictionary, ensuring the next engine has total chronological context.
+4. **State Appending:** The `AudioEvidenceObject` is passed sequentially to the reasoning pipeline. The `semantic` engine computes probabilistic intent, while the downstream deterministic engines (HRE, WSE, TRE, SPE) construct their respective JSON states using strict mathematical logic. They append to a master dictionary, ensuring the next engine has total chronological context.
 
 ## 3. Configuration & Logging Flow
 - Configuration is loaded via environment variables (`ALM_GPU_OVERRIDE`, `ALM_MOCK_PERCEPTION`) to ensure seamless switching between MacBook development and Colab execution.
@@ -646,15 +646,15 @@ When running `evaluation_runner.py` over 250 files, a failure on file #12 must N
 | :--- | :--- | :--- | :--- | :--- |
 | **Phase 1: Architecture Core** | Build the Pydantic schemas and Base classes. | `fusion_layer.py`, `utilities.py` | PyTest schema validation on mock data. | Week 1 |
 | **Phase 2: Sensory Perception** | Implement Whisper and CLAP. | `feature_extractor.py` | Run on a 5-second `test.wav` and verify transcript string output. | Week 2 |
-| **Phase 3: Cognitive Sequence** | Implement Qwen3 and the 6 logic engines. | `semantic/`, `hre/`, `tre/`... | Pass the real AEO into the LLM and verify JSON parsing. | Week 3 |
+| **Phase 3: Cognitive Sequence** | Implement Qwen3 for SIE and explicit Python heuristics for HRE, WSE, TRE, SPE, SIR. | `semantic/`, `hre/`, `tre/`... | Verify zero-shot logic parsing and deterministic state tracking. | Week 3 |
 | **Phase 4: Orchestration** | Connect Perception to Cognition via the Validator. | `inference_pipeline.py`, `main.py` | Run `python main.py test.wav` and survive without crashing. | Week 4 |
 | **Phase 5: Benchmarking** | Deploy to Google Colab and run 250 samples. | `evaluation_runner.py` | Verify generation of `evaluation_results.csv`. | Week 5 |
 
 ## Possible Failures & Recovery
 - **Failure:** Mac MPS crashes during Phase 2.
 - **Recovery:** Fallback `ALM_DEVICE_OVERRIDE="cpu"`. 
-- **Failure:** LLM outputs invalid JSON during Phase 3.
-- **Recovery:** Implement strict retry loops in `BaseReasoningEngine`.
+- **Failure:** Semantic LLM outputs invalid JSON during Phase 3.
+- **Recovery:** Implement strict retry loops in `BaseReasoningEngine` for the Semantic Interpretation Engine.
 
 This roadmap serves as the definitive engineering guide. No deviations from the architecture defined herein are permitted without prior Architecture Review Board approval.
 
@@ -685,7 +685,7 @@ graph TD
 
 ## Shared Objects
 - The `AudioEvidenceObject` is the fundamental data contract.
-- The `QwenClient` (an abstract wrapper for Qwen3 inference) must be instantiated once at the start of the reasoning phase and passed to all engines to prevent memory leaks from multiple model instantiations.
+- The `QwenClient` (an abstract wrapper for Qwen3 inference) must be instantiated once at the start of the reasoning phase, passed EXCLUSIVELY to the Semantic engine, and unloaded immediately after to prevent memory leaks.
 
 
 ## Module Design
@@ -705,9 +705,9 @@ graph TD
 - **Expected Exceptions:** `ValidationError` (If Whisper fails to return text).
 
 ## 3. `reasoning_engine/semantic` through `reasoning_engine/sir`
-- **Purpose:** The Cognitive LLM pipeline.
-- **Expected Classes:** `SemanticEngine`, `HypothesisEngine`, `TransparentEngine`, `WorldStateEngine`, `ProjectionEngine`, `RendererEngine`.
-- **Base Class:** All engines should inherit from a generic `BaseReasoningEngine` which handles the Qwen3 inference calls and JSON parsing logic to prevent code duplication.
+- **Purpose:** The Hybrid Cognitive pipeline (One LLM -> Deterministic Heuristics).
+- **Expected Classes:** `SemanticEngine`, `HypothesisEngine`, `WorldStateEngine`, `TransparentEngine`, `ProjectionEngine`, `RendererEngine`.
+- **Base Class:** The `SemanticEngine` inherits from `BaseReasoningEngine` to handle Qwen3 inference calls. All other engines execute deterministic rules and should NOT invoke the LLM.
 
 
 ## Output System
@@ -718,7 +718,7 @@ graph TD
 ## 1. Single Execution Outputs
 When running `main.py` on a single file:
 - **`hoasu_report.md`:** The final human-readable intelligence briefing.
-- **`logic_trace.json`:** A complete dump of the `AudioEvidenceObject` and all 6 semantic engine states for auditability.
+- **`logic_trace.json`:** A complete dump of the `AudioEvidenceObject` and all reasoning engine states for auditability.
 
 ## 2. Batch Execution Outputs (`evaluation_runner.py`)
 Stored in `evaluation/results/`:
@@ -727,30 +727,34 @@ Stored in `evaluation/results/`:
 - **`execution_log.md`:** A human-readable log of which files passed, which hit CUDA OOM, and which hit JSON errors.
 
 
-## Prompt Architecture
+## Cognitive Heuristic Architecture
 
-# Prompt Architecture
-**Objective:** The definitive guide to LLM Prompting for the 6 Logic Engines.
+# Cognitive Heuristic Architecture
+**Objective:** Define the boundaries between probabilistic LLM generation and deterministic symbolic reasoning.
 
-## Core Prompt Constraints
-Every engine follows a strict multi-modal system prompt structure:
-1. **Persona:** "You are the ALM [Engine Name]. You do not output conversational text. You output strictly valid JSON."
-2. **Context Injection:** The prompt dynamically injects the `AudioEvidenceObject` and all previously generated JSON states.
-3. **The Golden Rule:** "Evidence Dominates Assumptions. If an answer cannot be deduced from the injected JSON, output 'Unknown'."
+## Semantic Interpretation Engine (LLM)
+- **Purpose:** Extracts unstructured meaning (intent, tone, dynamics) into structured JSON.
+- **Prompt Constraints:** Uses strict JSON output forcing and dynamically injects the `AudioEvidenceObject`. 
+- **Retry Logic:** If parsing fails, the pipeline re-prompts the LLM up to 3 times.
 
-## Engine Specifics
-### 1. Transparent Reasoning Engine (TRE)
-- **Purpose:** Provenance Deduction.
-- **Expected JSON:** 
-  ```json
-  {
-    "contradictions_detected": ["List of cross-modal contradictions"],
-    "provenance_classification": "Live | Media | Synthetic | Broadcast",
-    "confidence_score": 0.0 - 1.0
-  }
-  ```
-- **Failure Modes:** Sometimes the LLM will output a rationale outside the JSON block. 
-- **Retry Logic:** If `_parse_json` fails, the pipeline will re-prompt the LLM up to 3 times, appending a strict warning: `ERROR: Invalid JSON. Output ONLY JSON.`
+## Deterministic Symbolic Engines
+The remaining 5 engines do NOT use prompts or LLMs. They execute explicitly coded Python heuristics over the semantic output.
+
+### 1. Deterministic Scoring (HRE)
+- **Purpose:** Ranks baseline situations.
+- **Mechanics:** Computes a composite score (`semantic_confidence` + `acoustic_score` + `temporal_score`).
+
+### 2. Temporal State Transitions (WSE)
+- **Purpose:** Maps environment changes.
+- **Mechanics:** Analyzes sliding historical windows and applies EMA momentum filters to detect situational shifts.
+
+### 3. Explicit Contradiction Analysis (TRE)
+- **Purpose:** Generates audit traces and deduces provenance.
+- **Mechanics:** Maps contradictions deterministically by cross-referencing semantic intents against acoustic limits.
+
+### 4. Deterministic Rendering (SIR)
+- **Purpose:** Produces the HOASU report.
+- **Mechanics:** Injects JSON state variables directly into structured Markdown templates.
 
 
 ## Schema Reference
@@ -759,7 +763,7 @@ Every engine follows a strict multi-modal system prompt structure:
 **Objective:** The definitive layout of the Pydantic `AudioEvidenceObject`.
 
 ## `AudioEvidenceObject` (Pydantic Model)
-- **Why it exists:** To prevent LLM hallucinations by forcing all logic to cite verified acoustic data.
+- **Why it exists:** To prevent LLM hallucinations by forcing the Semantic engine to cite verified acoustic data, and forcing all downstream deterministic engines to operate strictly over verified semantics.
 - **Who creates it:** `fusion_layer.py`
 - **Who consumes it:** All 6 modules in `reasoning_engine/`
 
@@ -800,14 +804,14 @@ class AudioEvidenceObject(BaseModel):
 - **Expected Result:** Must throw `pydantic.ValidationError`. This proves the "Schema is Law" firewall works.
 
 ## 2. LLM Parsing Testing (Unit)
-- **Method:** Mocking `llm_client.generate()`.
+- **Method:** Mocking `llm_client.generate()` for the Semantic Interpretation Engine.
 - **Scope:** Pass strings wrapped in ````json ... ````, plain strings, and trailing comma JSON into `_parse_json()`.
 - **Expected Result:** Must cleanly extract and return a valid Python dictionary, or trigger the retry limit.
 
 ## 3. Full Pipeline Testing (Integration)
 - **Method:** Mocking `FeatureExtractor` and `QwenClient`.
-- **Scope:** Run `UnifiedPipelineValidator.execute()` using stubbed acoustic data and stubbed LLM text.
-- **Expected Result:** The pipeline must complete the 6-engine loop without crashing, proving module integration.
+- **Scope:** Run `UnifiedPipelineValidator.execute()` using stubbed acoustic data and stubbed semantic LLM text.
+- **Expected Result:** The pipeline must complete the hybrid (1 LLM + 5 deterministic) loop without crashing, proving module integration.
 
 
 ---
