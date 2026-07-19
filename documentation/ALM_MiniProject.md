@@ -230,7 +230,7 @@ The primary novelty lies in ALM's **Schema-Constrained Provenance Reasoning**. W
 # 06: Architecture
 
 ## Entire Architecture Flow
-ALM v12.0 is a strictly linear, neuro-symbolic pipeline. Raw audio enters the Neural Perception Layer, is serialized into an `AudioEvidenceObject`, and then passes through 6 sequential Large Language Model (Qwen3) Logic Engines.
+ALM v12.0 is a hybrid, deterministic neuro-symbolic pipeline. Raw audio enters the Neural Perception Layer and is mapped via an `AudioEvidenceObject`. It is processed by a single Large Language Model (Qwen3) for Semantic Interpretation, followed by a sequence of explicit, reproducible deterministic heuristics (HRE, TRE, WSE, SPE, SIR) to eliminate compounding hallucination risks.
 
 ## Core Modules & Schemas
 
@@ -249,27 +249,27 @@ ALM v12.0 is a strictly linear, neuro-symbolic pipeline. Raw audio enters the Ne
 - **Output:** `SemanticState` JSON.
 
 ### 4. Hypothesis Reasoning Engine (`reasoning_engine/hre`)
-- **Purpose:** Generates the initial situational baseline (Who is present? What are they doing?).
-- **Input:** `SemanticState`
-- **Output:** `HypothesisState` JSON.
+- **Purpose:** Deterministically evaluates hypotheses by combining acoustic evidence, temporal consistency, and semantic confidence into a composite score.
+- **Input:** `SemanticSceneObject`, `SegregatedStreams`, Temporal History
+- **Output:** Ranked `ManagedHypothesisState` List.
 
 ### 5. Transparent Reasoning Engine (`reasoning_engine/tre`)
-- **Purpose:** Executes Cross-Modal Verification and Audio Provenance Reasoning. Detects contradictions.
-- **Input:** `HypothesisState`
-- **Output:** `ProvenanceState` JSON (Live, Media, Synthetic, Broadcast).
+- **Purpose:** Explicitly maps the reasoning chain backwards to generate an auditable, deterministic provenance trace without LLM generation.
+- **Input:** Active Hypotheses, World State, Projection
+- **Output:** `TransparentReasoningTrace`.
 
 ### 6. World State Engine (`reasoning_engine/wse`)
-- **Purpose:** Deduces the macro-environment using acoustic metadata (e.g., reverb = indoors).
-- **Input:** `ProvenanceState`
-- **Output:** `WorldState` JSON.
+- **Purpose:** Maintains temporal transitions and extracts deterministic confidence metrics to update the environment state over time.
+- **Input:** Ranked Hypotheses, `SegregatedStreams`
+- **Output:** `WorldState`.
 
 ### 7. Situation Projection Engine (`reasoning_engine/spe`)
-- **Purpose:** Predicts immediate future developments based on the World State.
+- **Purpose:** Calculates deterministic risk, urgency, and stability bounds based on keyword constraints and confidence thresholds.
 - **Input:** `WorldState`
-- **Output:** `ProjectionState` JSON.
+- **Output:** `SituationProjection`.
 
 ### 8. Situation Intelligence Renderer (`reasoning_engine/sir`)
-- **Purpose:** Formats the 7 previous JSON states into a cohesive, human-empathetic Markdown report (HOASU).
+- **Purpose:** Uses reproducible logic templates to render the deterministic engine states into a cohesive, human-empathetic Markdown report (HOASU).
 
 
 ## Implementation
@@ -282,9 +282,9 @@ ALM v12.0 is a strictly linear, neuro-symbolic pipeline. Raw audio enters the Ne
 2. **Orchestration (`inference_pipeline.py`):** The `UnifiedPipelineValidator` is spun up to manage the sequential execution.
 3. **Perception Execution:** The audio is sent to `core_modules/feature_extractor.py`. Whisper and CLAP models are loaded onto the GPU (or MPS), inference is performed, and weights are immediately offloaded to prevent VRAM overflow.
 4. **Data Fusion:** The raw features are passed to `fusion_layer.py` which instantiates the `AudioEvidenceObject` via Pydantic. If validation fails, execution halts.
-5. **Logic Sequence:** The `AudioEvidenceObject` is handed sequentially to the `reasoning_engine` directories (`semantic` -> `hre` -> `tre` -> `wse` -> `spe` -> `sir`).
-6. **LLM Inference:** Each engine dynamically prompts Qwen3-4B-Instruct, appending the prior JSON states into the prompt context to ensure chronological reasoning.
-7. **Final Output:** The `sir` engine yields the final HOASU Markdown report back to `main.py` to be printed or saved.
+5. **Logic Sequence:** The logic flows sequentially through the `reasoning_engine` directories (`semantic` -> `hre` -> `wse` -> `spe` -> `tre` -> `sir`).
+6. **Inference & Heuristics:** The `semantic` engine prompts Qwen3-4B-Instruct to extract intents. The subsequent engines (HRE, WSE, SPE, TRE) execute deterministic Python heuristics (scoring, tracking, bounding) over the semantics to eliminate compounding LLM hallucinations and drastically lower latency.
+7. **Final Output:** The `sir` engine uses explicit templates to yield the final HOASU Markdown report back to `main.py` to be printed or saved.
 
 ## Schema Flow
 The primary mechanism for preventing hallucination is Schema Flow. The `AudioEvidenceObject` acts as an immutable ledger. Once perception writes the transcript and acoustic classes into the object, the LLM logic engines are structurally forced to reference that object in their JSON responses. They cannot invent new events because they must cite a timestamp from the AEO.
@@ -1073,7 +1073,9 @@ ightarrow$ Paper:**
    - **Status:** PENDING. The final Wilcoxon and Fleiss' Kappa scores must be physically written into the LaTeX manuscript.
 
 ## Verdict
-ALM exhibits **100% Research Traceability**. Every scientific claim (e.g., "The pipeline takes X seconds to run", "The pipeline caught Y hallucinations") can be mathematically proven by running the benchmark and pointing to the generated CSV artifacts. There is zero reliance on "anecdotal" execution.
+The implementation is consistent with the documented architecture and supports the documented reasoning workflow. All core architectural and implementation claims defined in this document are supported by the current codebase.
+
+ALM exhibits **strong Research Traceability**. Empirical performance claims (e.g., "The pipeline takes X seconds to run", "The pipeline caught Y hallucinations") remain to be formally validated through the evaluation phase. Remaining validation concerns relate to experimental evidence rather than software architecture, as there is zero reliance on "anecdotal" execution.
 
 
 ---
