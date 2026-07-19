@@ -64,7 +64,7 @@ class SemanticInterpretationEngine:
             generated_ids = self.model.generate(
                 model_inputs.input_ids,
                 attention_mask=model_inputs.attention_mask,
-                max_new_tokens=1024,
+                max_new_tokens=2048,
                 do_sample=True,
                 temperature=0.3,
                 top_p=0.9,

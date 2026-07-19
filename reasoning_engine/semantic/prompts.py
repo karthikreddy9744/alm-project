@@ -153,4 +153,19 @@ def build_user_prompt(audio_evidence_json: str) -> str:
 
 {audio_evidence_json}
 
-Return ONLY the JSON object conforming to the SemanticSceneObject schema."""
+Return ONLY a single valid JSON object conforming to the SemanticSceneObject schema. You MUST include ALL of the following top-level keys:
+- speech_understanding
+- auditory_observations
+- audio_provenance_reasoning
+- cross_modal_assessment
+- primary_situation
+- environmental_context
+- actors
+- human_goals
+- alternative_hypotheses
+- missing_evidence
+- likely_next_state
+- interpretation_confidence
+- human_oriented_summary
+
+Do not omit any fields or include any markdown formatting outside the JSON."""
